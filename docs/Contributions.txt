@@ -1,0 +1,10 @@
+======================
+= Code Contributions =
+======================
+
+To make a contribution to ARM Enterprise ACS project, follow these steps.
+1. Create a change description for use in the source control commit log.
+2. Your commit message must include your "Signed-off-by" signature.
+3. Submit your code to the ARM Enterprise ACS project project using GitHub Pull requests.
+   For more information, please refer https://help.github.com/articles/about-pull-requests
+
