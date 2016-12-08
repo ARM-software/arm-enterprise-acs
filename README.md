@@ -36,7 +36,7 @@ The SBSA test suites are check for compliance against the [SBSA] specification. 
 SBBR tests:<br />
 The SBBR test suites are check for compliance against the [SBBR] specification. The tests are delivered through two bodies of code:<br />
     SBBR tests contained in UEFI Self Certification Tests (SCT) tests. Many requirements in SBBR are UEFI implementation requirements which are tested by SCT.<br />
-    Note that that time of writing there is a possibility that SCT tests may move to EDK2. In this case SBBR tests will leverage EDK2 tests.<br />
+    Note that at the time of writing, there is a possibility that SCT tests may move to EDK2. In this case SBBR tests will leverage EDK2 tests.<br />
 <br />
     SBBR based on FWTS: The Firmware Test Suite is a package hosted by Canonical which provides tests for ACPI, SMBIOS and UEFI.<br />
     A number of SBBR assertions are tested though FWTS.<br />
@@ -44,8 +44,8 @@ The SBBR test suites are check for compliance against the [SBBR] specification. 
 The tests sources are delivered in an open source fashion. SBSA and the abstraction layers are opened sourced, with an appropriate apache v2 license 
 that allows external contributions.<br />
 SBBR SCT and FWTS tests shall be up streamed into SCT (or EDK2 if things change) and FWTS up streams.<br />
-Finally a number of scripts needed to initiate testing, or construct test images are also be included in this open source release.<br />
-To enable a unified tests experience,<br />
+Finally a number of scripts needed to initiate testing, or construct test images are also included in this open source release.<br />
+To enable a unified test experience, the following are delivered:<br />
     1. Scripts to build the tests and create appropriate test images.<br />
     2. Bootable LuvOS image that can run all SBSA and SBBR tests.<br />
     3. Documentation on how to run these tests.<br />
@@ -61,8 +61,8 @@ features and key aspects of system architecture.
 For more information, please refer (https://github.com/ARM-software/sbsa-acs).
 
 # Server Base Boot Requirements (SBBR)
-This Server Base Boot Requirements (SBBR) specification is intended for SBSA[2]-compliant 64-bit ARMv8 servers. 
-It defines the base firmware requirements for out-of-box support of any ARM SBSA-compatible Operating System or hypervisor. 
+This Server Base Boot Requirements (SBBR) specification is intended for SBSA-compliant 64-bit ARMv8 servers.
+It defines the base firmware requirements for out-of-box support of any ARM SBSA-compatible Operating System or hypervisor.
 The requirements in this specification are expected to be minimal yet complete for booting a multi-core ARMv8 server platform, 
 while leaving plenty of room for OEM or ODM innovations and design details.
 
@@ -73,57 +73,83 @@ For more information, download the [SBBR specification](http://infocenter.arm.co
 **Architecture compliance tests** are self-checking, portable C-based tests with directed stimulus.
 The present release implements a UEFI shell application to execute these tests from a UEFI Shell and also implements OS context tests as enhancements to Firmware Test Suite (FWTS).
 Both the UEFI Shell based tests and OS Context tests are packaged into Linux UEFI Validation (LUVOS) Operating System.
-A bootable Linux UEFI Validation(luvOS) Operating System Image is created at the end of build process to ease the process of testing.
+A bootable Linux UEFI Validation (LuvOS) Operating System Image is created at the end of build process to ease the process of testing.
 
 
 ## Release Details
  - Code Quality : Alpha
  - The result of a test should not be taken as a true indication of compliance. There is a possibility of false positives / false negatives.
- - There are gaps in the test coverage. Refer to the [Testcase checklist](docs/testcase-checklist.md) for details.
+ - There are gaps in the test coverage. Refer to the [Test case checklist](docs/testcase-checklist.md) for details.
 
 
 ### Prerequisites
 1. Ubuntu 14.04 or 16.04 LTS
-2. Install GCC 5.3 or later toolchain for Linux from [here](https://releases.linaro.org/components/toolchain/binaries/)
-3. Install the Build pre-requisite packages from [here](https://community.arm.com/docs/DOC-10804)
-4. The acs_sync.sh script will check for all required package dependencies.
-5. Windows Build Steps will be provided in future releases.
+2. Windows Build Steps will be provided in future releases.
 
 ## Additional Reading
-For details on the test coverage, the scenarios implemented in the present release of the ACS and the scenarios planned in the future release, refer to the [Testcase checklist](docs/testcase-checklist.md)
+For details on the test coverage, the scenarios implemented in the present release of the ACS and the scenarios planned in the future release, refer to the [Test case checklist](docs/testcase-checklist.md)
 
 ### ACS Build steps
 NOTE 1: Must use BASH shell.<br />
 Note 2: Must be a member of https://github.com/UEFI/UEFI-SCT. if not, please request access by email: admin@uefi.org by providing GitHub account Id.<br />
+Note 3: These build steps generate AArch64 binaries only.
 
 1.  mkdir "preferred directory"
 2.  cd "preferred directory"
 3.  git clone https://github.com/ARM-software/arm-enterprise-acs.git
 4.  cd arm-enterprise-acs
 5.  git checkout master
-6.  ./acs_sync.sh -> which will download the luvOS repository and apply the patches.
+6.  ./acs_sync.sh -> which will download the LuvOS repository and apply the patches.
 7.  cd luv
 8.  ./build_luvos.sh -> which will build SBSA/SBBR binaries, SBBR (including UEFI-SCT and FWTS. NOTE: You must be a member of  https://github.com/UEFI/UEFI-SCT as your username and password will be requested.
 
 ### Build Output
 The luv-live-image.img executable file is generated at:
-"preferred directory"/arm-enterprise-acs/luv/build/tmp/deploy/images/qemuarm64/luv-live-image.img
+"preferred directory"/arm-enterprise-acs/luv/build/tmp/deploy/images/qemuarm64/luv-live-image.img<br />
+
+luv-live-image.img consists of two FAT file system partitions recognized by UEFI:
+1. "luv-results" partition ---> To store logs and to install UEFI-SCT. (Approximate size: 120 MB)
+2. "boot" partition ---> Contains bootable executables/applications and test suites. (Approximate size: 60 MB)
 
 For more information, please refer <br />
 https://www.yoctoproject.org/documentation <br />
 https://github.com/01org/luv-yocto <br />
 
 
+### Juno Reference Platform
+
+Please install the required firmware components for Juno Reference Platform from [here](https://community.arm.com/docs/DOC-10804)
+For additional information, please refer https://community.arm.com/groups/arm-development-platforms
+
+On a system where a USB port is available and functional, follow the below steps
+
+1. Copy the luv-live-image.img to a USB Flash drive.
+   a. Mount a USB drive in Linux distro being used.
+   b. Use dmesg to determine where the USB drive is mounted.
+   c. Use dd to transfer file to USB drive. (For example, sudo dd if=luv-live-image.img of=/dev/sdb). Two partitions are created - luv-results and boot.
+2. Plug in the USB Flash drive with luv-live-image.img into USB slot on Juno board.
+3. Power on board or press Reset button on back.
+4. After Juno has booted and the message "Press ESCAPE for boot options Warning: LAN9118 Driver in stopped stat", press ESCAPE to access the Juno Boot Options menu.
+5. Select the Boot Manager Menu and see if USB FLASH Drive is the first device that is booted. If not then move it to top of list.
+6. Press RETURN/ENTER to continue.
+
+### Emulation environment with secondary storage
+Please install the required firmware components
+
+luv-live-image.img can be loaded as virtual disk image. (For example, in ARMv8 FVP Base Models, the image can be loaded with the FVP model argument:
+bp.virtioblockdevice.image_path="<Path to luv-live-image.img>"
+
+
 ## Test Suite Execution
 The compliance suite execution will vary depending on the Test environment.
 
 1. It will boot to Grub, where it will have two menu entries: <br />
-   - luvOS (OS context Test cases).<br />
+   - luv (OS context Test cases).<br />
       - FWTS will perform default tests.<br />
       -  Login as "root" and enter the following commands: <br />
       -  fwts -h (to get run options) <br />
       -  fwts -a (to run all tests) <br />
-   - SBBR/SBSA (Default Choice - UEFI Shell context test cases.) <br />
+   - sbbr/sbsa (Default Choice - UEFI Shell context test cases.) <br />
 
 Note: The next set of commands are an example of our typical run of the test suites.<br />
 Please note that the File System Partition in your platform may vary.<br />
@@ -139,6 +165,7 @@ Please note that the File System Partition in your platform may vary.<br />
         - cd EFI\BOOT\sbbr <br />
         - InstallAARCH64.efi <br />
         - 2 (to select install destination. Install needs min 100Mb of space) <br />
+        Note : SCT is intended to be installed onto "luv-results" partition of luv-live-image.img which is fs2: in our typical run.<br />
 
       - The following commands are used after installation of SCT <br />
         - FS2: <br />
@@ -146,7 +173,7 @@ Please note that the File System Partition in your platform may vary.<br />
         - SCT.efi -a -v (to run all tests) <br />
 
 2. User can make a selection and run tests based on his/her choices. See READMEs for SCT, FWTS and SBSA on how to run tests.<br />
-   SCT User Guide: download UEFI-Self-Cerification Test(SCT) from (http://http://www.uefi.org/testtools) <br />
+   SCT User Guide: download UEFI-Self-Certification Test(SCT) from (http://http://www.uefi.org/testtools) <br />
    FWTS README: (http://kernel.ubuntu.com/git/hwe/fwts.git) <br />
    SBSA README: (https://github.com/ARM-software/sbsa-acs) <br />
 
@@ -156,32 +183,9 @@ Please note that the File System Partition in your platform may vary.<br />
    https://github.com/01org/luv-yocto <br />
 
 
-### Juno Reference Platform
-
-Please install the required firmware components for Juno Reference Platform from here:
-https://community.arm.com/groups/arm-development-platforms
-
-On a system where a USB port is available and functional, follow the below steps
-
-1. Copy the luv-live-image.img to a USB Flash drive.
-   a. Mount a USB drive in Linux distro being used.
-   b. Use dmesg to determine where the USB drive is mounted.
-   c. Use dd to transfer file to USB drive. (For example, sudo dd if=luv-live-image.img of=/dev/sdb). Two partitions are created - luv-results and boot.
-2. Plug in the USB Flash drive with luv-live-image.img into usb slot on Juno board.
-3. Power on board or press Reset button on back.
-4. After Juno has booted and the message "Press ESCAPE for boot options Warning: LAN9118 Driver in stopped stat", press ESCAPE to access the Juno Boot Options menu.
-5. Select the Boot Manager Menu and see if USB FLASH Drive is the first device that is booted. If not then move it to top of list.
-6. Press RETURN/ENTER to continue.
-
-### Emulation environment with secondary storage
-Please install the required firmware components
-
-luv-live-image.img can be loaded as virtual disk image. (For example, in ARMv8 FVP Base Models, the image can be loaded with the FVP model argument: 
-bp.virtioblockdevice.image_path="<Path to luv-live-image.img>"
-
 ## Baselines for Open Source Software in this release:
 
-        (*) Linux Uefi Validation OS (LuvOS) SHA: c60e8de440c832708f70ac953c801150a4963262
+        (*) Linux UEFI Validation OS (LuvOS) SHA: c60e8de440c832708f70ac953c801150a4963262
             https://github.com/01org/luv-yocto
             (Patched in the release to add SBSA and SBBR support)
 
@@ -194,7 +198,7 @@ bp.virtioblockdevice.image_path="<Path to luv-live-image.img>"
 
         NOTE: At the time of writing, You must be a member of
         https://github.com/UEFI/UEFI-SCT to access UEFI Self Certification Tests.
-        There is a possibility that this will migrate to tianocore edk2
+        There is a possibility that this will migrate to Tianocore EDK2
         repository in future. (https://github.com/tianocore/edk2/)
         (*) UEFI Self Certification Tests (UEFI-SCT) TAG: c78ea66cb114390e8dd8de922bdf4ff3e9770f8c
             https://github.com/UEFI/UEFI-SCT
@@ -210,11 +214,16 @@ bp.virtioblockdevice.image_path="<Path to luv-live-image.img>"
 
 
     b. Known issues
-        On Juno, When FWTS EFI Runtime services Tests specifically associated with monotonic
-        counter are run, Juno boot crashes the next time, it is booted. This is because
-        of destructive nature of the test.
-        To get around this, Stop the Autoboot by pressing Enter/Return and flash eraseall
-        command needs to be executed from the Command prompt, before booting again.
+        -  On Juno, When FWTS EFI Runtime services Tests specifically associated with monotonic
+           counter are run, Juno boot crashes the next time, it is booted. This is because
+           of destructive nature of the test or the issue with the firmware.
+           To get around this, stop the auto boot by pressing Enter/Return and execute "eraseall" command
+           from flash menu, before booting again.
+
+        -  SBSA may hang on "Starting Power and Wakeup semantic tests".
+
+        -  SBBR (UEFI-SCT) Timer tests may appear hanged. It can be recovered by resetting the system,
+           in case any of the tests appear hanged.
 
     c. Planned enhancements
        Upstream SBBR code to open source repositories FWTS and UEFI-SCT.
