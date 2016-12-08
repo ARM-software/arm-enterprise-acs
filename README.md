@@ -5,48 +5,50 @@ Architecture Compliance Suites (ACS) are used for ensuring architectural complia
 of the architecture and delivered in the form of an Architecture Compliance Kit (ACK). 
 The ACK is delivered with tests in source form along with a build environment, 
 the output of the build being a bootable Linux UEFI Validation (LUV) OS Image 
-and documentation on how to run the test suites. This is collectively known as the ARM Architecture Compliance Kit. 
- ________________________________________________________________________________________________
-|                                                                                                |
-|              ------------- LuvOS --------------                                                |
-|              |FWTS (SBBR)|       |SBSA|       |                                                |
-|              ----------------------------------                                                |
-|                                                                                                |
-|              ------------ UEFI Shell ----------                                                |
-|              |SCT (SBBR)|        |SBSA|       |                                                |
-|              ----------------------------------                                                |
-|                                                                                                |
-|________________________________________________________________________________________________|
-Figure 1 ARM Enterprise ACS product
-Figure 1 illustrates the various components that make up this product. These are described below
-SBSA tests:
-The SBSA test suites are check for compliance against the [SBSA] specification. The tests are delivered through two bodies of code:
-    UEFI Shell SBSA tests: These tests are written on top of Validation and Platform Adaptation Layers (VAL, PAL). 
-    The abstraction layers provide the tests with platform information and runtime environment to enable execution of the tests. 
-    In the case of ARM's deliveries the VAL and PAL shall be written on top of UEFI and ARM Trusted Firmware. 
+and documentation on how to run the test suites. This is collectively known as the ARM Architecture Compliance Kit.<br />
+<br />
+|--------------------------------------------------------------|<br />
+|                                                              |<br />
+|              ------------- LuvOS --------------              |<br />
+|              |FWTS (SBBR)|       |SBSA|       |              |<br />
+|              ----------------------------------              |<br />
+|                                                              |<br />
+|              ------------ UEFI Shell ----------              |<br />
+|              |SCT (SBBR)|        |SBSA|       |              |<br />
+|              ----------------------------------              |<br />
+|                                                              |<br />
+|--------------------------------------------------------------|<br />
+Figure 1 ARM Enterprise ACS product.
+<br />
+Figure 1 illustrates the various components that make up this product. These are described below<br />
+SBSA tests:<br />
+The SBSA test suites are check for compliance against the [SBSA] specification. The tests are delivered through two bodies of code:<br />
+    UEFI Shell SBSA tests: These tests are written on top of Validation and Platform Adaptation Layers (VAL, PAL).<br />
+    The abstraction layers provide the tests with platform information and runtime environment to enable execution of the tests.<br />
+    In the case of ARM's deliveries the VAL and PAL shall be written on top of UEFI and ARM Trusted Firmware.<br />
     Partners may also write their own abstraction layer implementations to enable SBSA tests to be executed in other environments, 
-    for example as raw workload on an RTL simulation.
+    for example as raw workload on an RTL simulation.<br />
+<br />
+    OS SBSA tests:  It is anticipated that some SBSA tests may require being written in a full OS environment.<br />
+    This is particularly true for IO tests. These tests would be written on top of a simple test API and run as tests scripts in an OS image.<br />
+    Currently LuvOS is being used but other OS images could be considered in future.<br />
 
-    OS SBSA tests:  It is anticipated that some SBSA tests may require being written in a full OS environment. 
-    This is particularly true for IO tests. These tests would be written on top of a simple test API and run as tests scripts in an OS image. 
-    Currently LuvOS is being used but other OS images could be considered in future.
-
-SBBR tests:
-The SBBR test suites are check for compliance against the [SBBR] specification. The tests are delivered through two bodies of code:
-    SBBR tests contained in UEFI Self Certification Tests (SCT) tests. Many requirements in SBBR are UEFI implementation requirements which are tested by SCT. 
-    Note that that time of writing there is a possibility that SCT tests may move to EDK2. In this case SBBR tests will leverage EDK2 tests.
-    
-    SBBR based on FWTS: The Firmware Test Suite is a package hosted by Canonical which provides tests for ACPI, SMBIOS and UEFI. 
-    A number of SBBR assertions are tested though FWTS.
+SBBR tests:<br />
+The SBBR test suites are check for compliance against the [SBBR] specification. The tests are delivered through two bodies of code:<br />
+    SBBR tests contained in UEFI Self Certification Tests (SCT) tests. Many requirements in SBBR are UEFI implementation requirements which are tested by SCT.<br />
+    Note that that time of writing there is a possibility that SCT tests may move to EDK2. In this case SBBR tests will leverage EDK2 tests.<br />
+<br />
+    SBBR based on FWTS: The Firmware Test Suite is a package hosted by Canonical which provides tests for ACPI, SMBIOS and UEFI.<br />
+    A number of SBBR assertions are tested though FWTS.<br />
 
 The tests sources are delivered in an open source fashion. SBSA and the abstraction layers are opened sourced, with an appropriate apache v2 license 
-that allows external contributions. 
-SBBR SCT and FWTS tests shall be up streamed into SCT (or EDK2 if things change) and FWTS up streams. 
-Finally a number of scripts needed to initiate testing, or construct test images are also be included in this open source release.
-To enable a unified tests experience, 
-    1. Scripts to build the tests and create appropriate test images.
-    2. Bootable LuvOS image that can run all SBSA and SBBR tests.
-    3. Documentation on how to run these tests.
+that allows external contributions.<br />
+SBBR SCT and FWTS tests shall be up streamed into SCT (or EDK2 if things change) and FWTS up streams.<br />
+Finally a number of scripts needed to initiate testing, or construct test images are also be included in this open source release.<br />
+To enable a unified tests experience,<br />
+    1. Scripts to build the tests and create appropriate test images.<br />
+    2. Bootable LuvOS image that can run all SBSA and SBBR tests.<br />
+    3. Documentation on how to run these tests.<br />
 
 Overall, the ARM Enterprise ACS product contains architectural tests presented as a UEFI application and a Linux Driver/Application to 
 prove compliance to the SBSA and SBBR specifications. Architectural implementations are recommended to sign off against the ACS to prove compliance to these specifications. 
@@ -91,17 +93,17 @@ A bootable Linux UEFI Validation(luvOS) Operating System Image is created at the
 For details on the test coverage, the scenarios implemented in the present release of the ACS and the scenarios planned in the future release, refer to the [Testcase checklist](docs/testcase-checklist.md)
 
 ### ACS Build steps
-NOTE 1: Must use BASH shell. 
-Note 2: Must be a member of https://github.com/UEFI/UEFI-SCT. if not, please request access by email: admin@uefi.org by providing GitHub account Id.
+NOTE 1: Must use BASH shell.<br />
+Note 2: Must be a member of https://github.com/UEFI/UEFI-SCT. if not, please request access by email: admin@uefi.org by providing GitHub account Id.<br />
 
 1.  mkdir "preferred directory"
 2.  cd "preferred directory"
 3.  git clone https://github.com/ARM-software/arm-enterprise-acs.git
 4.  cd arm-enterprise-acs
 5.  git checkout master
-3.  ./acs_sync.sh -> which will download the luvOS repository and apply the patches.
-4.  cd luv
-5.  ./build_luvos.sh -> which will build SBSA/SBBR binaries, SBBR (including UEFI-SCT and FWTS. NOTE: You must be a member of  https://github.com/UEFI/UEFI-SCT as your username and password will be requested.
+6.  ./acs_sync.sh -> which will download the luvOS repository and apply the patches.
+7.  cd luv
+8.  ./build_luvos.sh -> which will build SBSA/SBBR binaries, SBBR (including UEFI-SCT and FWTS. NOTE: You must be a member of  https://github.com/UEFI/UEFI-SCT as your username and password will be requested.
 
 ### Build Output
 The luv-live-image.img executable file is generated at:
@@ -116,29 +118,33 @@ https://github.com/01org/luv-yocto <br />
 The compliance suite execution will vary depending on the Test environment.
 
 1. It will boot to Grub, where it will have two menu entries: <br />
-     luvOS (OS context Test cases).<br />
-       FWTS will perform default tests.<br />
-       Login as "root" and enter the following commands: <br />
-         fwts -h (to get run options) <br />
-         fwts -a (to run all tests) <br />
-     *SBBR/SBSA (Default Choice - UEFI Shell context test cases.) <br />
-Note: The next set of commands are an example of our typical run of the test suites.<br />
-      Please note that the File System Partition in your platform may vary.<br />
+   - luvOS (OS context Test cases).<br />
+      - FWTS will perform default tests.<br />
+      -  Login as "root" and enter the following commands: <br />
+      -  fwts -h (to get run options) <br />
+      -  fwts -a (to run all tests) <br />
+   - SBBR/SBSA (Default Choice - UEFI Shell context test cases.) <br />
 
-       SBSA - Enter the following commands: <br />
-         FS3: <br />
-         cd EFI\BOOT\sbsa <br />
-         Sbsa.efi <br />
-       SBBR <br />
-         The following commands only apply to the first time the image is executed to install the SCT tests) <br />
-           FS3: <br />
-           cd EFI\BOOT\sbbr <br />
-           InstallAARCH64.efi <br />
-           2 (to select install destination. Install needs min 100Mb of space) <br />
-         The following commands are used after installation of SCT <br />
-           FS2: <br />
-           cd SCT <br />
-           SCT.efi -a -v (to run all tests) <br />
+Note: The next set of commands are an example of our typical run of the test suites.<br />
+Please note that the File System Partition in your platform may vary.<br />
+
+   - SBSA - Enter the following commands: <br />
+      - FS3: <br />
+      - cd EFI\BOOT\sbsa <br />
+      - Sbsa.efi <br />
+<br />
+   - SBBR <br />
+      - The following commands only apply to the first time the image is executed to install the SCT tests) <br />
+        - FS3: <br />
+        - cd EFI\BOOT\sbbr <br />
+        - InstallAARCH64.efi <br />
+        - 2 (to select install destination. Install needs min 100Mb of space) <br />
+
+      - The following commands are used after installation of SCT <br />
+        - FS2: <br />
+        - cd SCT <br />
+        - SCT.efi -a -v (to run all tests) <br />
+
 2. User can make a selection and run tests based on his/her choices. See READMEs for SCT, FWTS and SBSA on how to run tests.<br />
    SCT User Guide: download UEFI-Self-Cerification Test(SCT) from (http://http://www.uefi.org/testtools) <br />
    FWTS README: (http://kernel.ubuntu.com/git/hwe/fwts.git) <br />
@@ -183,11 +189,13 @@ bp.virtioblockdevice.image_path="<Path to luv-live-image.img>"
             http://kernel.ubuntu.com/git/hwe/fwts.git
             (Patched in the release to add SBBR support)
 
-        (*) Server Base System Architecture Test Suite (SBSA) TAG: 7e31fd1557522cc8ab23dabc74e402b891a95713
+        (*) Server Base System Architecture (SBSA) TAG: 7e31fd1557522cc8ab23dabc74e402b891a95713
             https://github.com/ARM-software/sbsa-acs
 
-        NOTE: At the time of writing, You must be a member of  https://github.com/UEFI/UEFI-SCT to access UEFI Self Certification Tests.
-        There is a possibility that this will migrate to tianocore edk2 repository in future. (https://github.com/tianocore/edk2/)
+        NOTE: At the time of writing, You must be a member of
+        https://github.com/UEFI/UEFI-SCT to access UEFI Self Certification Tests.
+        There is a possibility that this will migrate to tianocore edk2
+        repository in future. (https://github.com/tianocore/edk2/)
         (*) UEFI Self Certification Tests (UEFI-SCT) TAG: c78ea66cb114390e8dd8de922bdf4ff3e9770f8c
             https://github.com/UEFI/UEFI-SCT
             (Patched in the release to add SBBR support)
@@ -202,10 +210,11 @@ bp.virtioblockdevice.image_path="<Path to luv-live-image.img>"
 
 
     b. Known issues
-        On Juno, When FWTS EFI Runtime services Tests specifically associated with monotonic counter are run, 
-        Juno boot crashes the next time, it is booted. This is because of destructive nature of the test. 
-        To get around this, Stop the Autoboot by pressing Enter/Return and flash eraseall command needs to be executed 
-        from the Command prompt, before booting again.
+        On Juno, When FWTS EFI Runtime services Tests specifically associated with monotonic
+        counter are run, Juno boot crashes the next time, it is booted. This is because
+        of destructive nature of the test.
+        To get around this, Stop the Autoboot by pressing Enter/Return and flash eraseall
+        command needs to be executed from the Command prompt, before booting again.
 
     c. Planned enhancements
        Upstream SBBR code to open source repositories FWTS and UEFI-SCT.
