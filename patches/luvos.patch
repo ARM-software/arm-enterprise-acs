@@ -316,7 +316,7 @@ index 0000000..4b86191
 +make -C BaseTools/Source/C
 +
 +echo "do_compile: Building SBSA."
-+source AppPkg/Applications/Sbsa/avsbuild.sh
++source AppPkg/Applications/sbsa-acs/tools/scripts/avsbuild.sh
 \ No newline at end of file
 diff --git a/meta-luv/recipes-bsp/sbsa/sbsa.bb b/meta-luv/recipes-bsp/sbsa/sbsa.bb
 new file mode 100644
@@ -367,7 +367,7 @@ index 0000000..0543333
 +
 +    # Linking SBSA and EDK2.
 +    echo "do_configure: Linking SBSA to EDK2."
-+    cd ${WORKDIR}/git/suites/uefi_app
++    cd ${WORKDIR}/git/uefi_app
 +    if [ -d val ]
 +    then
 +        echo "do_configure: Existing val found, deleted."
@@ -384,10 +384,10 @@ index 0000000..0543333
 +        rm test_pool
 +    fi
 +    cd ${WORKDIR}/edk2/AppPkg/Applications
-+    if [ -d Sbsa ]
++    if [ -d sbsa-acs ]
 +    then
-+        echo "do_configure: Existing Sbsa found, deleted."
-+        rm Sbsa
++        echo "do_configure: Existing sbsa-acs found, deleted."
++        rm sbsa-acs
 +    fi
 +    cd ${WORKDIR}/git
 +    set -- "${WORKDIR}/git" "${WORKDIR}/edk2"
@@ -399,15 +399,15 @@ index 0000000..0543333
 +    echo "do_configure: Modifying edk2/ShellPkg/ShellPkg.dsc to build SBSA."
 +    if ! grep -q SbsaPalLib "${WORKDIR}/edk2/ShellPkg/ShellPkg.dsc"
 +    then
-+        sed -i '/LibraryClasses.common/ a \ \ SbsaPalLib|AppPkg/Applications/Sbsa/pal/SbsaPalLib.inf' ${WORKDIR}/edk2/ShellPkg/ShellPkg.dsc
++        sed -i '/LibraryClasses.common/ a \ \ SbsaPalLib|AppPkg/Applications/sbsa-acs/platform/pal_uefi/SbsaPalLib.inf' ${WORKDIR}/edk2/ShellPkg/ShellPkg.dsc
 +    fi
 +    if ! grep -q SbsaValLib "${WORKDIR}/edk2/ShellPkg/ShellPkg.dsc"
 +    then
-+        sed -i '/LibraryClasses.common/ a \ \ SbsaValLib|AppPkg/Applications/Sbsa/val/SbsaValLib.inf' ${WORKDIR}/edk2/ShellPkg/ShellPkg.dsc
++        sed -i '/LibraryClasses.common/ a \ \ SbsaValLib|AppPkg/Applications/sbsa-acs/val/SbsaValLib.inf' ${WORKDIR}/edk2/ShellPkg/ShellPkg.dsc
 +    fi
 +    if ! grep -q SbsaAvs "${WORKDIR}/edk2/ShellPkg/ShellPkg.dsc"
 +    then
-+        sed -i '/Components/ a \ \ AppPkg/Applications/Sbsa/SbsaAvs.inf' ${WORKDIR}/edk2/ShellPkg/ShellPkg.dsc
++        sed -i '/Components/ a \ \ AppPkg/Applications/sbsa-acs/uefi_app/SbsaAvs.inf' ${WORKDIR}/edk2/ShellPkg/ShellPkg.dsc
 +    fi
 +}
 +
