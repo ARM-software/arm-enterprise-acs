@@ -1,5 +1,5 @@
 
-# SBSA and SBBR - Architecture Compliance Kit (ACK).
+# SBSA and SBBR - Architecture Compliance Kit (ACK)
 ARM Enterprise ACS, tests compliance against SBSA and SBBR specifications [SBSA, SBBR].
 Architecture Compliance Suites (ACS) are used for ensuring architectural compliance across different implementations/variants 
 of the architecture and delivered in the form of an Architecture Compliance Kit (ACK). 
@@ -7,51 +7,43 @@ The ACK is delivered with tests in source form along with a build environment,
 the output of the build being a bootable Linux UEFI Validation (LUV) OS Image 
 and documentation on how to run the test suites. This is collectively known as the ARM Architecture Compliance Kit.<br />
 <br />
-|--------------------------------------------------------------|<br />
-|                                                              |<br />
-|              ------------- LuvOS --------------              |<br />
-|              |FWTS (SBBR)|       |SBSA|       |              |<br />
-|              ----------------------------------              |<br />
-|                                                              |<br />
-|              ------------ UEFI Shell ----------              |<br />
-|              |SCT (SBBR)|        |SBSA|       |              |<br />
-|              ----------------------------------              |<br />
-|                                                              |<br />
-|--------------------------------------------------------------|<br />
-Figure 1 ARM Enterprise ACS product.
-<br />
-Figure 1 illustrates the various components that make up this product. These are described below<br />
-SBSA tests:<br />
-The SBSA test suites are check for compliance against the [SBSA] specification. The tests are delivered through two bodies of code:<br />
-    UEFI Shell SBSA tests: These tests are written on top of Validation and Platform Adaptation Layers (VAL, PAL).<br />
-    The abstraction layers provide the tests with platform information and runtime environment to enable execution of the tests.<br />
-    In the case of ARM's deliveries the VAL and PAL shall be written on top of UEFI and ARM Trusted Firmware.<br />
-    Partners may also write their own abstraction layer implementations to enable SBSA tests to be executed in other environments, 
-    for example as raw workload on an RTL simulation.<br />
-<br />
-    OS SBSA tests:  It is anticipated that some SBSA tests may require being written in a full OS environment.<br />
-    This is particularly true for IO tests. These tests would be written on top of a simple test API and run as tests scripts in an OS image.<br />
-    Currently LuvOS is being used but other OS images could be considered in future.<br />
+<center><img src="docs/ack-fig1.png"></img></center>
+<center>Figure 1 ARM Enterprise ACS product.</center>
+ 
 
-SBBR tests:<br />
-The SBBR test suites are check for compliance against the [SBBR] specification. The tests are delivered through two bodies of code:<br />
-    SBBR tests contained in UEFI Self Certification Tests (SCT) tests. Many requirements in SBBR are UEFI implementation requirements which are tested by SCT.<br />
-    Note that at the time of writing, there is a possibility that SCT tests may move to EDK2. In this case SBBR tests will leverage EDK2 tests.<br />
-<br />
-    SBBR based on FWTS: The Firmware Test Suite is a package hosted by Canonical which provides tests for ACPI, SMBIOS and UEFI.<br />
-    A number of SBBR assertions are tested though FWTS.<br />
+Figure 1 illustrates the various components that make up this product. These are described below
+##SBSA tests
+The SBSA test suites are check for compliance against the [SBSA] specification. The tests are delivered through two bodies of code:
+###UEFI Shell SBSA tests
+These tests are written on top of Validation and Platform Abstraction Layers (VAL, PAL).
 
-The tests sources are delivered in an open source fashion. SBSA and the abstraction layers are opened sourced, with an appropriate apache v2 license 
-that allows external contributions.<br />
-SBBR SCT and FWTS tests shall be up streamed into SCT (or EDK2 if things change) and FWTS up streams.<br />
-Finally a number of scripts needed to initiate testing, or construct test images are also included in this open source release.<br />
-To enable a unified test experience, the following are delivered:<br />
-    1. Scripts to build the tests and create appropriate test images.<br />
-    2. Bootable LuvOS image that can run all SBSA and SBBR tests.<br />
-    3. Documentation on how to run these tests.<br />
+The abstraction layers provide the tests with platform information and runtime environment to enable execution of the tests.
+In the case of ARM's deliveries the VAL and PAL shall be written on top of UEFI and ARM Trusted Firmware.
+Partners may also write their own abstraction layer implementations to enable SBSA tests to be executed in other environments, for example as raw workload on an RTL simulation.
 
-Overall, the ARM Enterprise ACS product contains architectural tests presented as a UEFI application and a Linux Driver/Application to 
-prove compliance to the SBSA and SBBR specifications. Architectural implementations are recommended to sign off against the ACS to prove compliance to these specifications. 
+###OS SBSA tests
+It is anticipated that some SBSA tests may require being written in a full OS environment.
+This is particularly true for IO tests. These tests would be written on top of a simple test API and run as tests scripts in an OS image.
+Currently LuvOS is being used but other OS images could be considered in future.
+
+##SBBR tests
+The SBBR test suites are check for compliance against the [SBBR] specification. The tests are delivered through two bodies of code:
+###UEFI Self Certification Tests (SCT) tests
+Many requirements in SBBR are UEFI implementation requirements which are tested by SCT.
+Note that at the time of writing, there is a possibility that SCT tests may move to EDK2. In this case SBBR tests will leverage EDK2 tests.
+
+###SBBR based on FWTS
+The Firmware Test Suite is a package hosted by Canonical which provides tests for ACPI, SMBIOS and UEFI.
+A number of SBBR assertions are tested though FWTS.
+
+The tests sources are delivered in an open source fashion. SBSA and the abstraction layers are opened sourced, with an appropriate apache v2 license that allows external contributions. SBBR SCT and FWTS tests shall be up streamed into SCT (or EDK2 if things change) and FWTS up streams.
+
+Finally, a number of scripts needed to initiate testing, or construct test images are also included in this open source release.<br />
+To enable a unified test experience, the following are delivered:<ol>
+1. Scripts to build the tests and create appropriate test images.<br />
+2. Bootable LuvOS image that can run all SBSA and SBBR tests.<br />
+3. Documentation on how to run these tests.<br /></ol>
+Overall, the ARM Enterprise ACS product contains architectural tests presented as a UEFI application and a Linux Driver/Application to prove compliance to the SBSA and SBBR specifications. Architectural implementations are recommended to sign off against the ACS to prove compliance to these specifications.
 
 
 # Server Base System Architecture - Architecture Compliance Suite

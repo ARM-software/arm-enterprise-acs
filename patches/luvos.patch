@@ -341,7 +341,7 @@ index 0000000..0543333
 +# SCT files placed in ${WORKDIR}/git
 +# GCC files placed in ${WORKDIR}/gcc-linaro-5.3.1-2016.05-x86_64_aarch64-linux-gnu
 +SRC_URI = "git://github.com/ARM-software/sbsa-acs.git;protocol=https;user="${SCTUSERNAME}":"${SCTPASSWORD}" \
-+           https://releases.linaro.org/components/toolchain/binaries/latest-5/aarch64-linux-gnu/gcc-linaro-5.3.1-2016.05-x86_64_aarch64-linux-gnu.tar.xz \
++           https://releases.linaro.org/components/toolchain/binaries/5.3-2016.05/aarch64-linux-gnu/gcc-linaro-5.3.1-2016.05-x86_64_aarch64-linux-gnu.tar.xz \
 +           file://compile.sh"
 +
 +PV = "1.0+git${SRCPV}"
@@ -1488,6 +1488,39 @@ index 0000000..5f4d57f
 +    # Print totals.
 +    outFile.write("| Total | | | | %d | %d | %d |" % (totalPasses, totalWarnings, totalErrors))
 +
++def log_sbsa(d):
++    sbsaDir = os.path.join(d, "sbsa_results")
++    if os.path.isdir(sbsaDir) == False:
++        print "SBSA results results directory \"%s\" not found.  Skipping." % sbsaDir
++        return -1
++
++    uefi = "not found";
++    linux = "not found";
++    for entry in os.listdir(sbsaDir):
++        if(entry == "uefi"):
++            sbsaUefiLogs = os.path.join(sbsaDir, "uefi", "SbsaResults.log")
++	    try:
++		f = open(sbsaUefiLogs, "r")
++	    except IOError:
++		print "SBSA UEFI results file \"%s\" could not be opened, skipping." % sbsaUefiLogs
++                continue
++            logs = f.read()
++            outFile.write("\n\nSBSA UEFI Test Results\n\n")
++            outFile.write(logs)
++	    uefi = "collected"
++	if(entry=="linux"):
++	    sbsaLinuxLogs = os.path.join(sbsaDir, "linux", "SbsaResults.log")
++	    try:
++		f = open(sbsaLinuxLogs, "r")
++	    except IOError:
++		print "SBSA Linux results file \"%s\" could not be opened, skipping." % sbsaLinuxLogs
++		continue
++            logs = f.read()
++            outFile.write("\n\nSBSA Linux Test Results\n\n")
++            outFile.write(logs)
++	    linux = "collected"
++    print "SBSA Results for linux %s\n" % linux
++    print "SBSA Results for UEFI %s\n" % uefi
 +
 +# Script entry point.
 +
@@ -1522,6 +1555,10 @@ index 0000000..5f4d57f
 +# Scanning SBBR.
 +print "Gathering UEFI SBBR SCT test results..."
 +log_sbbr(arg_directory)
++
++# Scanning SBSA.
++print "Gathering SBSA test results..."
++log_sbsa(arg_directory)
 +
 +outFile.close()
 +
