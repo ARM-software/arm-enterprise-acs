@@ -39,7 +39,7 @@ LUVOS_DIR="luv"
 DOWNLOAD_LUVOS=1
 REMOVE_LUVOS=1
 LUVOS_GIT_CLONE="git clone https://github.com/01org/luv-yocto.git"
-LUVOS_GIT_CHECKOUT="git checkout c60e8de440c832708f70ac953c801150a4963262"
+LUVOS_GIT_CHECKOUT="git checkout -b v2.1-rc2 v2.1-rc2"
 LUVOS_PATCH_FILE="../patches/luvos.patch"
 LUVOS_GIT_APPLY="git apply $LUVOS_PATCH_FILE"
 
