@@ -1,9 +1,45 @@
+From c08a316455fdf148cd4d4390babbfe8f5383ac37 Mon Sep 17 00:00:00 2001
+From: Sakar Arora <Sakar.Arora@arm.com>
+Date: Thu, 23 Mar 2017 21:16:07 +0530
+Subject: [PATCH] luv v4.10
+
+---
+ build_luvos.sh                                     |  93 +++
+ meta-luv/classes/luv-efi.bbclass                   |  59 +-
+ meta-luv/conf/distro/luv.conf                      |   2 +-
+ meta-luv/recipes-bsp/sbbr/sbbr/README.md           |   2 +
+ meta-luv/recipes-bsp/sbbr/sbbr_v1.0.bb             |  98 +++
+ meta-luv/recipes-bsp/sbsa/files/compile.sh         |  16 +
+ meta-luv/recipes-bsp/sbsa/sbsa.bb                  | 103 +++
+ meta-luv/recipes-core/fwts/fwts/sbbr.patch         | 814 +++++++++++++++++++++
+ meta-luv/recipes-core/fwts/fwts_git.bb             |   1 +
+ .../images/core-image-efi-initramfs.bb             |   1 +
+ meta-luv/recipes-core/images/luv-live-image.bb     |   8 +-
+ meta-luv/recipes-core/images/luv-netboot-image.bb  |  10 +-
+ meta-luv/recipes-core/luv-test/luv-test.bb         |   6 +
+ .../luv-test/luv-test/luv-collect-results          | 209 ++++++
+ .../recipes-core/luv-test/luv-test/luv-sbsa-test   |   5 +
+ .../luv-test/luv-test/luv-test-manager             |   5 +
+ .../linux/linux-yocto-efi-test_4.10.bb             |   3 +
+ meta/conf/bitbake.conf                             |   2 +-
+ sbsa_setup.sh                                      |  25 +
+ 19 files changed, 1449 insertions(+), 13 deletions(-)
+ create mode 100755 build_luvos.sh
+ create mode 100644 meta-luv/recipes-bsp/sbbr/sbbr/README.md
+ create mode 100644 meta-luv/recipes-bsp/sbbr/sbbr_v1.0.bb
+ create mode 100755 meta-luv/recipes-bsp/sbsa/files/compile.sh
+ create mode 100644 meta-luv/recipes-bsp/sbsa/sbsa.bb
+ create mode 100644 meta-luv/recipes-core/fwts/fwts/sbbr.patch
+ create mode 100644 meta-luv/recipes-core/luv-test/luv-test/luv-collect-results
+ create mode 100755 meta-luv/recipes-core/luv-test/luv-test/luv-sbsa-test
+ create mode 100755 sbsa_setup.sh
+
 diff --git a/build_luvos.sh b/build_luvos.sh
 new file mode 100755
-index 0000000..30b9ae2
+index 0000000..c5ff99d
 --- /dev/null
 +++ b/build_luvos.sh
-@@ -0,0 +1,90 @@
+@@ -0,0 +1,93 @@
 +#!/bin/bash
 +# The material contained herein is not a license, either
 +# expressly or impliedly, to any intellectual property owned
@@ -51,12 +87,13 @@ index 0000000..30b9ae2
 +TOPDIR=`pwd`
 +
 +METALUV="$TOPDIR/meta-luv \\\\"
++METAOE="$TOPDIR/meta-oe \\\\"
 +BB_CONF="conf/bblayers.conf"
 +LOCAL_CONF="conf/local.conf"
 +MACHINE="\"qemuarm64\""
 +LUV="\"luv\""
 +NUM_THREADS="BB_NUMBER_THREADS ?= \"16\""
-+OUTPUT_FILE="$PWD/build/tmp/deploy/images/qemuarm64/luv-live-image.img"
++OUTPUT_FILE="$PWD/build/tmp/deploy/images/qemuarm64/luv-live-image-gpt.img"
 +
 +echo "Building LuvOS Image with SBBR and SBSA for AARCH4 ..."
 +echo "UEFI-SCT source is available only to members of UEFI Forum."
@@ -68,6 +105,7 @@ index 0000000..30b9ae2
 +read -s SCTPASSWORD
 +export SCTUSERNAME
 +export SCTPASSWORD
++./sbsa_setup.sh
 +rm -rf build
 +source oe-init-build-env
 +export BB_ENV_EXTRAWHITE="BB_ENV_EXTRAWHITE SCTUSERNAME SCTPASSWORD"
@@ -75,6 +113,7 @@ index 0000000..30b9ae2
 +# include meta-luv  for building
 +line=`grep -n "meta-yocto-bsp" $BB_CONF | cut -d : -f 1`
 +sed -i "$line a $(echo "  $METALUV")" $BB_CONF
++sed -i "$line a $(echo "  $METAOE")" $BB_CONF
 +
 +# modify local.conf to edit Machine Type, Distro and Number of Threads
 +sed -i -e "s/\(MACHINE ??= \).*/\1$MACHINE/" $LOCAL_CONF
@@ -95,7 +134,7 @@ index 0000000..30b9ae2
 +echo "Built image can be found at $OUTPUT_FILE"
 +exit
 diff --git a/meta-luv/classes/luv-efi.bbclass b/meta-luv/classes/luv-efi.bbclass
-index 889bbce..ced456a 100644
+index d23c33d..3ed03a1 100644
 --- a/meta-luv/classes/luv-efi.bbclass
 +++ b/meta-luv/classes/luv-efi.bbclass
 @@ -16,6 +16,13 @@ def get_bits_depends(bb, d):
@@ -112,7 +151,7 @@ index 889bbce..ced456a 100644
  # The x86 build is depends on grub-efi and AArch64 build depends on grub_git
  def get_grub_depends(bb, d):
           import re
-@@ -56,8 +63,9 @@ efi_populate() {
+@@ -57,8 +64,9 @@ efi_populate() {
  
      # Install grub2 in EFI directory
      if [ "${TARGET_ARCH}" = "aarch64" ]; then
@@ -124,7 +163,7 @@ index 889bbce..ced456a 100644
  
      # TODO: need conditional signing; e.g., if (DISTRO_FEATURES contains secure_boot)
      # shim bootloader does not seem to work with i386. Thus we don't use it for 32-bit
-@@ -81,7 +89,7 @@ efi_populate() {
+@@ -82,7 +90,7 @@ efi_populate() {
                  mv ${DEPLOY_DIR_IMAGE}/${EFI_LOADER_IMAGE} ${DEPLOY_DIR_IMAGE}/shim.efi
                  mv ${DEPLOY_DIR_IMAGE}/${EFI_LOADER_IMAGE}-unsigned ${DEPLOY_DIR_IMAGE}/${EFI_LOADER_IMAGE}
      else
@@ -133,8 +172,8 @@ index 889bbce..ced456a 100644
      fi
  
      if echo "${TARGET_ARCH}" | grep -q "i.86" || [ "${TARGET_ARCH}" = "x86_64" ]; then
-@@ -94,6 +102,25 @@ efi_populate() {
-     install -m 0644 ${WORKDIR}/${SPLASH_IMAGE} ${DEST}${EFIDIR}
+@@ -98,6 +106,41 @@ efi_populate() {
+     install -m 0644 ${LUV_CFG} ${DEST}
  }
  
 +efi_populate_sbbr() {
@@ -154,12 +193,28 @@ index 889bbce..ced456a 100644
 +efi_populate_sbsa() {
 +        DEST=$1
 +        cp -r ${DEPLOY_DIR_IMAGE}/sbsa ${DEST}${EFIDIR}/sbsa
++        echo "echo -off
++              if not exist sbsa_results then
++                mkdir sbsa_results
++              endif
++              cd sbsa_results
++              if not exist uefi then
++                mkdir uefi
++              endif
++              cd uefi
++              for %i in 0 1 2 3 4 5 6 7 8 9 A B C D E F then
++                if exist FS%i:\EFI\BOOT\sbsa\Sbsa.efi then
++                  FS%i:\EFI\BOOT\sbsa\Sbsa.efi -f SbsaResults.log
++                  goto Done
++                endif
++              endfor
++              :Done" > ${DEST}${EFIDIR}/sbsa/sbsa.nsh
 +}
 +
  efi_populate_bits() {
      DEST=$1
      # TODO: weird behavior here. When building luv-live-image,
-@@ -173,6 +200,11 @@ python build_efi_cfg() {
+@@ -177,6 +220,11 @@ python build_efi_cfg() {
         cfgfile.write('timeout=0\n')
         cfgfile.write('fallback=0\n')
  
@@ -169,9 +224,9 @@ index 889bbce..ced456a 100644
 +       cfgfile.write('fallback=0\n')
 +
      cfgfile.write('menuentry \'luv\' {\n')
-     if re.search("(x86_64|i.86)", target):
-        cfgfile.write('linux /vmlinuz')
-@@ -204,6 +236,11 @@ python build_efi_cfg() {
+     cfgfile.write('linux /vmlinuz ')
+ 
+@@ -203,6 +251,11 @@ python build_efi_cfg() {
         cfgfile.write('chainloader /EFI/BOOT/bits/%s\n' % loader)
         cfgfile.write('}\n')
  
@@ -183,6 +238,16 @@ index 889bbce..ced456a 100644
      cfgfile.close()
  }
  
+diff --git a/meta-luv/conf/distro/luv.conf b/meta-luv/conf/distro/luv.conf
+index 1676a0e..4cc253b 100644
+--- a/meta-luv/conf/distro/luv.conf
++++ b/meta-luv/conf/distro/luv.conf
+@@ -17,4 +17,4 @@ VIRTUAL-RUNTIME_init_manager = "systemd"
+ VIRTUAL-RUNTIME_initscripts = ""
+ DISTRO_FEATURES_BACKFILL_CONSIDERED += "sysvinit"
+ 
+-INITRAMFS_MAXSIZE = "200000"
++INITRAMFS_MAXSIZE = "345364"
 diff --git a/meta-luv/recipes-bsp/sbbr/sbbr/README.md b/meta-luv/recipes-bsp/sbbr/sbbr/README.md
 new file mode 100644
 index 0000000..06f0264
@@ -297,7 +362,7 @@ index 0000000..758cdcc
 +addtask deploy before do_build after do_install
 diff --git a/meta-luv/recipes-bsp/sbsa/files/compile.sh b/meta-luv/recipes-bsp/sbsa/files/compile.sh
 new file mode 100755
-index 0000000..4b86191
+index 0000000..a47251a
 --- /dev/null
 +++ b/meta-luv/recipes-bsp/sbsa/files/compile.sh
 @@ -0,0 +1,16 @@
@@ -317,13 +382,12 @@ index 0000000..4b86191
 +
 +echo "do_compile: Building SBSA."
 +source AppPkg/Applications/sbsa-acs/tools/scripts/avsbuild.sh
-\ No newline at end of file
 diff --git a/meta-luv/recipes-bsp/sbsa/sbsa.bb b/meta-luv/recipes-bsp/sbsa/sbsa.bb
 new file mode 100644
-index 0000000..0543333
+index 0000000..631da02
 --- /dev/null
 +++ b/meta-luv/recipes-bsp/sbsa/sbsa.bb
-@@ -0,0 +1,105 @@
+@@ -0,0 +1,103 @@
 +# Recipe created by recipetool
 +# This is the basis of a recipe and may need further editing in order to be fully functional.
 +# (Feel free to remove these comments when editing.)
@@ -355,7 +419,6 @@ index 0000000..0543333
 +inherit deploy
 +
 +do_configure () {
-+
 +    # Downloading EDK2 into ${WORKDIR}/edk2.
 +    echo "do_configure: Checking if EDK2 repository already exists."
 +    cd ${WORKDIR}
@@ -393,7 +456,6 @@ index 0000000..0543333
 +    set -- "${WORKDIR}/git" "${WORKDIR}/edk2"
 +    . ${WORKDIR}/git/tools/scripts/avssetup.sh
 +    set --
-+    cd ../..
 +
 +    # Modifying EDK2 to build SBSA.
 +    echo "do_configure: Modifying edk2/ShellPkg/ShellPkg.dsc to build SBSA."
@@ -431,12 +493,12 @@ index 0000000..0543333
 +addtask deploy before do_build after do_install
 diff --git a/meta-luv/recipes-core/fwts/fwts/sbbr.patch b/meta-luv/recipes-core/fwts/fwts/sbbr.patch
 new file mode 100644
-index 0000000..53e5cb7
+index 0000000..ef5cc09
 --- /dev/null
 +++ b/meta-luv/recipes-core/fwts/fwts/sbbr.patch
-@@ -0,0 +1,823 @@
+@@ -0,0 +1,814 @@
 +diff --git a/src/acpi/acpitables/acpitables.c b/src/acpi/acpitables/acpitables.c
-+index 064dabe..99ac65a 100644
++index 1fcf32a..3a0a0d3 100644
 +--- a/src/acpi/acpitables/acpitables.c
 ++++ b/src/acpi/acpitables/acpitables.c
 +@@ -14,7 +14,10 @@
@@ -464,15 +526,6 @@ index 0000000..53e5cb7
 + static bool acpi_table_check_field(const char *field, const size_t len)
 + {
 + 	size_t i;
-+@@ -106,7 +115,7 @@ static int acpi_table_check_test1(fwts_framework *fw)
-+ 		passed = acpi_table_check_field_test(fw, name, "Signature", hdr->signature, 4) &
-+ 			 acpi_table_check_field_test(fw, name, "OEM ID", hdr->oem_id, 6) &
-+ 			 acpi_table_check_field_test(fw, name, "OEM Table ID", hdr->oem_tbl_id, 8) &
-+-			acpi_table_check_field_test(fw, name, "OEM Creator ID", hdr->creator_id, 4);
-++			 acpi_table_check_field_test(fw, name, "OEM Creator ID", hdr->creator_id, 4);
-+ 		if (passed)
-+ 			fwts_passed(fw, "Table %s has valid signature and ID strings.", name);
-+ 
 +@@ -116,9 +125,193 @@ static int acpi_table_check_test1(fwts_framework *fw)
 + 
 + 	return FWTS_OK;
@@ -668,7 +721,7 @@ index 0000000..53e5cb7
 + };
 + 
 +diff --git a/src/acpi/dbg2/dbg2.c b/src/acpi/dbg2/dbg2.c
-+index 38ca65e..85b2bce 100644
++index e6f6f09..cb6356d 100644
 +--- a/src/acpi/dbg2/dbg2.c
 ++++ b/src/acpi/dbg2/dbg2.c
 +@@ -39,8 +39,8 @@ static int dbg2_init(fwts_framework *fw)
@@ -683,7 +736,7 @@ index 0000000..53e5cb7
 + 
 + 	return FWTS_OK;
 +diff --git a/src/acpi/fadt/fadt.c b/src/acpi/fadt/fadt.c
-+index 533882d..903ade3 100644
++index d2bea65..0581006 100644
 +--- a/src/acpi/fadt/fadt.c
 ++++ b/src/acpi/fadt/fadt.c
 +@@ -213,14 +213,9 @@ static int fadt_revision(fwts_framework *fw)
@@ -732,7 +785,7 @@ index 0000000..53e5cb7
 + };
 + 
 +diff --git a/src/acpi/method/method.c b/src/acpi/method/method.c
-+index bc18224..5da9c3e 100644
++index 0a56159..5f17b9f 100644
 +--- a/src/acpi/method/method.c
 ++++ b/src/acpi/method/method.c
 +@@ -210,7 +210,7 @@
@@ -947,7 +1000,7 @@ index 0000000..53e5cb7
 + 
 + 	{ NULL, NULL }
 +diff --git a/src/acpi/rsdp/rsdp.c b/src/acpi/rsdp/rsdp.c
-+index f7e10bb..09ec1be 100644
++index a084d9c..3c00de2 100644
 +--- a/src/acpi/rsdp/rsdp.c
 ++++ b/src/acpi/rsdp/rsdp.c
 +@@ -123,6 +123,17 @@ static int rsdp_test1(fwts_framework *fw)
@@ -969,7 +1022,7 @@ index 0000000..53e5cb7
 + 		fwts_log_warning(fw, "NOTE: The RSDT and XSDT are both "
 + 			"defined. An operating system supporting ACPI "
 +diff --git a/src/acpi/spcr/spcr.c b/src/acpi/spcr/spcr.c
-+index 26cae54..e100ff3 100644
++index c38229b..395e687 100644
 +--- a/src/acpi/spcr/spcr.c
 ++++ b/src/acpi/spcr/spcr.c
 +@@ -39,8 +39,8 @@ static int spcr_init(fwts_framework *fw)
@@ -984,7 +1037,7 @@ index 0000000..53e5cb7
 + 	spcr = (const fwts_acpi_table_spcr*)table->data;
 + 
 +diff --git a/src/acpi/xsdt/xsdt.c b/src/acpi/xsdt/xsdt.c
-+index 032f1a1..7042a59 100644
++index 37a45c8..82cfd72 100644
 +--- a/src/acpi/xsdt/xsdt.c
 ++++ b/src/acpi/xsdt/xsdt.c
 +@@ -45,6 +45,8 @@ static int xsdt_init(fwts_framework *fw)
@@ -1007,7 +1060,7 @@ index 0000000..53e5cb7
 + 	return FWTS_OK;
 + }
 +diff --git a/src/dmi/dmicheck/dmicheck.c b/src/dmi/dmicheck/dmicheck.c
-+index 1934ebe..d00411c 100644
++index 49b523d..6770d3b 100644
 +--- a/src/dmi/dmicheck/dmicheck.c
 ++++ b/src/dmi/dmicheck/dmicheck.c
 +@@ -313,12 +313,15 @@ static int dmi_load_file(const char* filename, void *buf, size_t size)
@@ -1078,7 +1131,7 @@ index 0000000..53e5cb7
 + 
 + 	if (dmi_load_file("/sys/firmware/dmi/tables/smbios_entry_point", anchor, 5) == FWTS_OK
 + 			&& strncmp(anchor, "_SM3_", 5) == 0) {
-+@@ -1877,10 +1887,15 @@ static int dmicheck_test3(fwts_framework *fw)
++@@ -1878,10 +1888,15 @@ static int dmicheck_test3(fwts_framework *fw)
 + 	return FWTS_OK;
 + }
 + 
@@ -1094,7 +1147,7 @@ index 0000000..53e5cb7
 + 	{ NULL, NULL }
 + };
 + 
-+@@ -1892,3 +1907,124 @@ static fwts_framework_ops dmicheck_ops = {
++@@ -1893,3 +1908,124 @@ static fwts_framework_ops dmicheck_ops = {
 + FWTS_REGISTER("dmicheck", &dmicheck_ops, FWTS_TEST_ANYTIME, FWTS_FLAG_BATCH | FWTS_FLAG_ROOT_PRIV)
 + 
 + #endif
@@ -1220,7 +1273,7 @@ index 0000000..53e5cb7
 ++	return FWTS_OK;
 ++}
 +diff --git a/src/lib/src/fwts_smbios.c b/src/lib/src/fwts_smbios.c
-+index 21263b4..0ed57eb 100644
++index 8d0ea39..2baa31b 100644
 +--- a/src/lib/src/fwts_smbios.c
 ++++ b/src/lib/src/fwts_smbios.c
 +@@ -52,6 +52,8 @@ static void *fwts_smbios_find_entry_uefi(fwts_framework *fw, fwts_smbios_entry *
@@ -1259,55 +1312,64 @@ index 0000000..53e5cb7
 + 		if (fwts_load_file("/sys/firmware/dmi/tables/smbios_entry_point",
 + 				entry, sizeof(fwts_smbios30_entry)) == FWTS_OK && !strncmp((char*)entry, "_SM3_", 5)) {
 diff --git a/meta-luv/recipes-core/fwts/fwts_git.bb b/meta-luv/recipes-core/fwts/fwts_git.bb
-index 73e6b61..5a2a5b1 100644
+index fd8a8f8..4b8f139 100644
 --- a/meta-luv/recipes-core/fwts/fwts_git.bb
 +++ b/meta-luv/recipes-core/fwts/fwts_git.bb
-@@ -4,11 +4,12 @@ HOMEPAGE = "https://wiki.ubuntu.com/Kernel/Reference/fwts"
- LICENSE = "GPLv2+"
- LIC_FILES_CHKSUM = "file://src/main.c;beginline=1;endline=16;md5=31da590f3e9f3bd34dcdb9e4db568519"
- 
--PV = "V16.09.00+git${SRCPV}"
-+PV = "V16.11.00+git${SRCPV}"
- 
--SRCREV = "7fd1834a879f27647b371c18284868c9a54f6474"
-+SRCREV = "e2ed99a74c06f62e3bb7ab1dcb4c344f5abc3a29"
+@@ -9,6 +9,7 @@ PV = "V17.03.00+git${SRCPV}"
+ SRCREV = "e3e9d1442b4cc70f5b30199f584cec8e25aeaad4"
  SRC_URI = "git://kernel.ubuntu.com/hwe/fwts.git \
             file://luv-parser-fwts \
 +           file://sbbr.patch \
            "
  
  S = "${WORKDIR}/git"
+diff --git a/meta-luv/recipes-core/images/core-image-efi-initramfs.bb b/meta-luv/recipes-core/images/core-image-efi-initramfs.bb
+index 82a9cb8..b7e6a8d 100644
+--- a/meta-luv/recipes-core/images/core-image-efi-initramfs.bb
++++ b/meta-luv/recipes-core/images/core-image-efi-initramfs.bb
+@@ -9,6 +9,7 @@ IMAGE_INSTALL = "\
+     util-linux-mount util-linux-umount kmod sed tar net-tools \
+     shadow util-linux procps efivarfs-test \
+     plymouth plymouth-set-default-theme kernel-efi-warnings linux-firmware kexec \
++    sbsa-acs-drv sbsa-acs-app \
+     "
+ 
+ X86_ADDITIONS = "chipsec python-codecs python-subprocess vmcore-dmesg bits \
 diff --git a/meta-luv/recipes-core/images/luv-live-image.bb b/meta-luv/recipes-core/images/luv-live-image.bb
-index 20c2194..8464c8c 100644
+index 50cad08..03d2ec8 100644
 --- a/meta-luv/recipes-core/images/luv-live-image.bb
 +++ b/meta-luv/recipes-core/images/luv-live-image.bb
-@@ -12,11 +12,11 @@ INITRD = "${DEPLOY_DIR_IMAGE}/${INITRD_IMAGE}-${MACHINE}.cpio.gz"
- MACHINE_FEATURES += "efi"
- APPEND = "debug crashkernel=256M console=ttyS0,115200 console=ttyPCH0,115200 ip=dhcp log_buf_len=1M"
- APPEND_netconsole = "luv_netconsole=10.11.12.13,64001"
--APPEND_aarch64 = "crashkernel=256M console=ttyAMA0 uefi_debug acpi=force"
-+APPEND_aarch64 = "crashkernel=256M earlycon uefi_debug acpi=force"
+@@ -26,7 +26,7 @@ COMMON_CMDLINE_x86 += "splash nomodeset crash_kexec_post_notifiers"
+ 
+ # Unlike the += operand, _append's do not insert a space between the current value
+ # and the appended string. Thus, we add them.
+-CMDLINE_append_aarch64 = " acpi=on"
++CMDLINE_append_aarch64 = " acpi=on crashkernel=256M earlycon uefi_debug"
+ CMDLINE_append_x86 = "${COMMON_CMDLINE_x86}"
+ CMDLINE_append_x86-64 = "${COMMON_CMDLINE_x86}"
+ 
+@@ -42,7 +42,7 @@ python() {
  
  SPLASH_IMAGE = "blue-luv.jpg"
  
 -GRUB_TIMEOUT = "2"
 +GRUB_TIMEOUT = "1"
  
- inherit bootimg
+ inherit image-live
  
-@@ -32,8 +32,8 @@ build_img() {
-     # Sectors: 512 bytes
-     # Blocks: 1024 bytes
+@@ -66,8 +66,8 @@ build_img() {
+     BYTES_PER_SECTOR=512
+     MiB=$(expr 1024 \* 1024)
      VFAT_RESULTS=${DEPLOY_DIR_IMAGE}/${PN}-results.hddimg
--    # 16MB of space for test results
--    VFAT_RESULTS_SPACE=16777216
+-    # 16MB of space to store test results
+-    VFAT_RESULTS_SPACE_MiB=16
 +    # 128 MB of space for test results and SCT installation
-+    VFAT_RESULTS_SPACE=134217728
++    VFAT_RESULTS_SPACE_MiB=128
+     VFAT_RESULTS_SPACE=$(expr $VFAT_RESULTS_SPACE_MiB \* $MiB)
      VFAT_RESULTS_BLOCKS=$(expr $VFAT_RESULTS_SPACE / 1024)
      # TODO: do we need to dynamically generate the UUID?
-     # For now, every time this UUID changes, the file etc/init.d/luv-test-manager
 diff --git a/meta-luv/recipes-core/images/luv-netboot-image.bb b/meta-luv/recipes-core/images/luv-netboot-image.bb
-index 0fc7333..0962380 100644
+index d8205ee..d3811fa 100644
 --- a/meta-luv/recipes-core/images/luv-netboot-image.bb
 +++ b/meta-luv/recipes-core/images/luv-netboot-image.bb
 @@ -1,7 +1,7 @@
@@ -1317,18 +1379,18 @@ index 0fc7333..0962380 100644
 -DEPENDS_${PN} = "bits"
 +DEPENDS_${PN} = "bits sbbr"
  
- INITRD_IMAGE = "core-image-efi-initramfs"
- INITRD = "${DEPLOY_DIR_IMAGE}/${INITRD_IMAGE}-${MACHINE}.cpio.gz"
-@@ -15,7 +15,7 @@ PCBIOS_append = "0"
+ INITRD_IMAGE_LIVE = "core-image-efi-initramfs"
+ IMGDEPLOYDIR = "${DEPLOY_DIR_IMAGE}"
+@@ -28,7 +28,7 @@ COMMON_CMDLINE_x86 += "splash nomodeset crash_kexec_post_notifiers"
  
- APPEND = "debug crashkernel=256M console=ttyS0,115200 console=ttyPCH0,115200 luv.netboot ip=dhcp log_buf_len=1M"
- APPEND_netconsole = "luv_netconsole=10.11.12.13,64001"
--APPEND_aarch64 = "crashkernel=256M console=ttyAMA0 uefi_debug acpi=force luv.netboot"
-+APPEND_aarch64 = "crashkernel=256M earlycon uefi_debug acpi=force luv.netboot"
+ # Unlike the += operand, _append's do not insert a space between the current value
+ # and the appended string. Thus, we add them.
+-CMDLINE_append_aarch64 = " acpi=on"
++CMDLINE_append_aarch64 = " acpi=on crashkernel=256M earlycon uefi_debug luv.netboot"
+ CMDLINE_append_x86 = "${COMMON_CMDLINE_x86}"
+ CMDLINE_append_x86-64 = "${COMMON_CMDLINE_x86}"
  
- HDDDIR = "${S}/hddimg"
- 
-@@ -33,7 +33,8 @@ do_mkimage[depends] += "${EXTRABOOTIMGDEPS} \
+@@ -59,7 +59,8 @@ do_mkimage[depends] += "dosfstools-native:do_populate_sysroot \
                          mtools-native:do_populate_sysroot \
                          cdrtools-native:do_populate_sysroot \
                          virtual/kernel:do_deploy \
@@ -1338,7 +1400,7 @@ index 0fc7333..0962380 100644
  
  do_bootimg[noexec] = "1"
  
-@@ -42,7 +43,8 @@ do_populate_image() {
+@@ -68,7 +69,8 @@ do_populate_image() {
  	if [ "${TARGET_ARCH}" != "aarch64" ]; then
  		efi_populate_bits ${HDDDIR}
  	else
@@ -1348,12 +1410,36 @@ index 0fc7333..0962380 100644
  		install -m 0644 ${DEPLOY_DIR_IMAGE}/bootaa64.efi ${HDDDIR}${EFIDIR}
  	fi
  	install -m 0644 ${GRUBCFG} ${HDDDIR}${EFIDIR}
-diff --git a/meta-luv/recipes-core/initscripts/initscripts/luv-collect-results b/meta-luv/recipes-core/initscripts/initscripts/luv-collect-results
+diff --git a/meta-luv/recipes-core/luv-test/luv-test.bb b/meta-luv/recipes-core/luv-test/luv-test.bb
+index 7a94cc3..a35e2b9 100644
+--- a/meta-luv/recipes-core/luv-test/luv-test.bb
++++ b/meta-luv/recipes-core/luv-test/luv-test.bb
+@@ -32,6 +32,8 @@ SRC_URI += "file://luv-test-manager file://luv-test-parser \
+             file://luv-test-manager.service \
+             file://luv-crash-handler.service \
+             file://luv-netconsole.service \
++            file://luv-collect-results \
++            file://luv-sbsa-test \
+           "
+ 
+ RDEPENDS_${PN}-netconsole+= "kernel-modules curl iputils iproute2 bash init-ifupdown dhcp-client"
+@@ -67,6 +69,10 @@ do_install_append() {
+        install -m 0644 ${WORKDIR}/luv-scripts ${D}${datadir}/luv/html
+        install -m 0644 ${WORKDIR}/luv-css-styles ${D}${datadir}/luv/html
+ 
++       # Install luv-collect-results script
++       install -m 755 ${WORKDIR}/luv-collect-results ${D}${sysconfdir}/
++       install -m 755 ${WORKDIR}/luv-sbsa-test ${D}${sysconfdir}/
++
+        install -d ${D}${systemd_unitdir}/system
+ 
+        install -m 0644 ${WORKDIR}/luv-test-manager.service ${D}${systemd_unitdir}/system
+diff --git a/meta-luv/recipes-core/luv-test/luv-test/luv-collect-results b/meta-luv/recipes-core/luv-test/luv-test/luv-collect-results
 new file mode 100644
-index 0000000..5f4d57f
+index 0000000..e6542e4
 --- /dev/null
-+++ b/meta-luv/recipes-core/initscripts/initscripts/luv-collect-results
-@@ -0,0 +1,172 @@
++++ b/meta-luv/recipes-core/luv-test/luv-test/luv-collect-results
+@@ -0,0 +1,209 @@
 +#!/usr/bin/env python
 +
 +import sys
@@ -1563,494 +1649,52 @@ index 0000000..5f4d57f
 +outFile.close()
 +
 +print "Done, test results can be found in \"%s\"" % arg_output
-diff --git a/meta-luv/recipes-core/initscripts/initscripts/luv-test-manager b/meta-luv/recipes-core/initscripts/initscripts/luv-test-manager
-index 326683d..0abe8c6 100644
---- a/meta-luv/recipes-core/initscripts/initscripts/luv-test-manager
-+++ b/meta-luv/recipes-core/initscripts/initscripts/luv-test-manager
-@@ -251,7 +251,8 @@ done | awk '/\[\+/  { units += 1 }
- 		suites, units, passes, fails, skips, warns)
-     }' | html_inline ${LUV_HTML_REPORT} | tee -a /dev/kmsg /tmp/luv.results \
+diff --git a/meta-luv/recipes-core/luv-test/luv-test/luv-sbsa-test b/meta-luv/recipes-core/luv-test/luv-test/luv-sbsa-test
+new file mode 100755
+index 0000000..756bc02
+--- /dev/null
++++ b/meta-luv/recipes-core/luv-test/luv-test/luv-sbsa-test
+@@ -0,0 +1,5 @@
++#!/bin/bash
++
++insmod /lib/modules/4.10.0-yocto-standard/extra/sbsa_acs.ko
++mkdir -p $1/sbsa_results/linux
++sbsa > $1/sbsa_results/linux/SbsaResults.log
+diff --git a/meta-luv/recipes-core/luv-test/luv-test/luv-test-manager b/meta-luv/recipes-core/luv-test/luv-test/luv-test-manager
+index 38aa116..0197db9 100644
+--- a/meta-luv/recipes-core/luv-test/luv-test/luv-test-manager
++++ b/meta-luv/recipes-core/luv-test/luv-test/luv-test-manager
+@@ -256,6 +256,11 @@ done | awk '/\[\+/  { units += 1 }
+ cat /tmp/testsuites | html_inline ${LUV_HTML_REPORT} | tee -a /dev/kmsg /tmp/luv.results \
           ${LUV_SAVE_RESULTS_DIR}/luv.results
--
+ 
++# test SBSA compliance on luv
++sh /etc/luv-sbsa-test ${LUV_STORAGE}
 +# collecting test results
 +python /etc/luv-collect-results ${LUV_STORAGE} ${LUV_STORAGE}/results.md
- html_finish ${LUV_HTML_REPORT}
- 
- mountpoint -q ${LUV_EFI}
-diff --git a/meta-luv/recipes-core/initscripts/initscripts_1.0.bbappend b/meta-luv/recipes-core/initscripts/initscripts_1.0.bbappend
-index 676bc81..b0d9305 100644
---- a/meta-luv/recipes-core/initscripts/initscripts_1.0.bbappend
-+++ b/meta-luv/recipes-core/initscripts/initscripts_1.0.bbappend
-@@ -5,7 +5,8 @@ SRC_URI += "file://luv-test-manager file://luv-test-parser \
-             file://luv-netconsole \
-             file://luv-netconsole-params \
-             file://luv-scripts \
--            file://luv-css-styles"
-+            file://luv-css-styles \
-+            file://luv-collect-results"
- 
- RDEPENDS_${PN}+= "kernel-modules iputils iproute2 bash init-ifupdown dhcp-client"
- 
-@@ -40,6 +41,9 @@ do_install_append() {
-         install -d ${D}${datadir}/luv/html
-         install -m 0644 ${WORKDIR}/luv-scripts ${D}${datadir}/luv/html
-         install -m 0644 ${WORKDIR}/luv-css-styles ${D}${datadir}/luv/html
 +
-+        # Install luv-collect-results script
-+        install -m 755 ${WORKDIR}/luv-collect-results ${D}${sysconfdir}/
- }
- 
- FILES_${PN} += "${datadir}/luv/html/luv-scripts ${datadir}/luv/html/luv-css-styles"
-diff --git a/meta-luv/recipes-kernel/linux/linux-yocto-efi-test/0005-ACPI-Console-Through-SPCR-Table.patch b/meta-luv/recipes-kernel/linux/linux-yocto-efi-test/0005-ACPI-Console-Through-SPCR-Table.patch
-new file mode 100644
-index 0000000..19ad9e8
---- /dev/null
-+++ b/meta-luv/recipes-kernel/linux/linux-yocto-efi-test/0005-ACPI-Console-Through-SPCR-Table.patch
-@@ -0,0 +1,419 @@
-+From 55148bc607319db1f439fdff3ac76923e20b4283 Mon Sep 17 00:00:00 2001
-+From: Supreeth Venkatesh <supreeth.venkatesh@arm.com>
-+Date: Sat, 3 Dec 2016 01:14:00 +0000
-+Subject: [PATCH] ACPI: Console Through SPCR Table.
-+
-+---
-+ arch/arm64/Kconfig              |   1 +
-+ arch/arm64/kernel/acpi.c        |  12 ++++-
-+ drivers/acpi/Kconfig            |   3 ++
-+ drivers/acpi/Makefile           |   1 +
-+ drivers/acpi/spcr.c             | 111 ++++++++++++++++++++++++++++++++++++++++
-+ drivers/of/fdt.c                |  10 +---
-+ drivers/tty/serial/amba-pl011.c |  54 +++++++++++++++++++
-+ drivers/tty/serial/earlycon.c   |  19 ++++++-
-+ include/linux/acpi.h            |   6 +++
-+ include/linux/of_fdt.h          |   3 ++
-+ include/linux/serial_core.h     |   9 +++-
-+ 11 files changed, 216 insertions(+), 13 deletions(-)
-+ create mode 100644 drivers/acpi/spcr.c
-+
-+diff --git a/arch/arm64/Kconfig b/arch/arm64/Kconfig
-+index 5a0a691..cc78080 100644
-+--- a/arch/arm64/Kconfig
-++++ b/arch/arm64/Kconfig
-+@@ -3,6 +3,7 @@ config ARM64
-+ 	select ACPI_CCA_REQUIRED if ACPI
-+ 	select ACPI_GENERIC_GSI if ACPI
-+ 	select ACPI_REDUCED_HARDWARE_ONLY if ACPI
-++	select ACPI_SPCR_TABLE if ACPI
-+ 	select ARCH_HAS_DEVMEM_IS_ALLOWED
-+ 	select ARCH_HAS_ATOMIC64_DEC_IF_POSITIVE
-+ 	select ARCH_HAS_ELF_RANDOMIZE
-+diff --git a/arch/arm64/kernel/acpi.c b/arch/arm64/kernel/acpi.c
-+index 3e4f1a4..191acdd 100644
-+--- a/arch/arm64/kernel/acpi.c
-++++ b/arch/arm64/kernel/acpi.c
-+@@ -24,6 +24,7 @@
-+ #include <linux/memblock.h>
-+ #include <linux/of_fdt.h>
-+ #include <linux/smp.h>
-++#include <linux/serial_core.h>
-+ 
-+ #include <asm/cputype.h>
-+ #include <asm/cpu_ops.h>
-+@@ -206,7 +207,7 @@ void __init acpi_boot_table_init(void)
-+ 	if (param_acpi_off ||
-+ 	    (!param_acpi_on && !param_acpi_force &&
-+ 	     of_scan_flat_dt(dt_scan_depth1_nodes, NULL)))
-+-		return;
-++		goto done;;
-+ 
-+ 	/*
-+ 	 * ACPI is disabled at this point. Enable it in order to parse
-+@@ -226,6 +227,15 @@ void __init acpi_boot_table_init(void)
-+ 		if (!param_acpi_force)
-+ 			disable_acpi();
-+ 	}
-++
-++done:
-++	if (acpi_disabled) {
-++		if (earlycon_init_is_deferred)
-++			early_init_dt_scan_chosen_stdout();
-++	} else {
-++		parse_spcr(earlycon_init_is_deferred);
-++	}
-++
-+ }
-+ 
-+ #ifdef CONFIG_ACPI_APEI
-+diff --git a/drivers/acpi/Kconfig b/drivers/acpi/Kconfig
-+index b7e2e77..89218ea 100644
-+--- a/drivers/acpi/Kconfig
-++++ b/drivers/acpi/Kconfig
-+@@ -77,6 +77,9 @@ config ACPI_DEBUGGER_USER
-+ 
-+ endif
-+ 
-++config ACPI_SPCR_TABLE
-++	bool
-++
-+ config ACPI_SLEEP
-+ 	bool
-+ 	depends on SUSPEND || HIBERNATION
-+diff --git a/drivers/acpi/Makefile b/drivers/acpi/Makefile
-+index 251ce85..43cde68 100644
-+--- a/drivers/acpi/Makefile
-++++ b/drivers/acpi/Makefile
-+@@ -81,6 +81,7 @@ obj-$(CONFIG_ACPI_EC_DEBUGFS)	+= ec_sys.o
-+ obj-$(CONFIG_ACPI_CUSTOM_METHOD)+= custom_method.o
-+ obj-$(CONFIG_ACPI_BGRT)		+= bgrt.o
-+ obj-$(CONFIG_ACPI_CPPC_LIB)	+= cppc_acpi.o
-++obj-$(CONFIG_ACPI_SPCR_TABLE)	+= spcr.o
-+ obj-$(CONFIG_ACPI_DEBUGGER_USER) += acpi_dbg.o
-+ 
-+ # processor has its own "processor." module_param namespace
-+diff --git a/drivers/acpi/spcr.c b/drivers/acpi/spcr.c
-+new file mode 100644
-+index 0000000..01c0e15
-+--- /dev/null
-++++ b/drivers/acpi/spcr.c
-+@@ -0,0 +1,111 @@
-++/*
-++ * Copyright (c) 2012, Intel Corporation
-++ * Copyright (c) 2015, Red Hat, Inc.
-++ * Copyright (c) 2015, 2016 Linaro Ltd.
-++ *
-++ * This program is free software; you can redistribute it and/or modify
-++ * it under the terms of the GNU General Public License version 2 as
-++ * published by the Free Software Foundation.
-++ *
-++ */
-++
-++#define pr_fmt(fmt) "ACPI: SPCR: " fmt
-++
-++#include <linux/acpi.h>
-++#include <linux/console.h>
-++#include <linux/kernel.h>
-++#include <linux/serial_core.h>
-++
-++/**
-++ * parse_spcr() - parse ACPI SPCR table and add preferred console
-++ *
-++ * @earlycon: set up earlycon for the console specified by the table
-++ *
-++ * For the architectures with support for ACPI, CONFIG_ACPI_SPCR_TABLE may be
-++ * defined to parse ACPI SPCR table.  As a result of the parsing preferred
-++ * console is registered and if @earlycon is true, earlycon is set up.
-++ *
-++ * When CONFIG_ACPI_SPCR_TABLE is defined, this function should be called
-++ * from arch inintialization code as soon as the DT/ACPI decision is made.
-++ *
-++ */
-++int __init parse_spcr(bool earlycon)
-++{
-++	static char opts[64];
-++	struct acpi_table_spcr *table;
-++	acpi_size table_size;
-++	acpi_status status;
-++	char *uart;
-++	char *iotype;
-++	int baud_rate;
-++	int err;
-++
-++	if (acpi_disabled)
-++		return -ENODEV;
-++
-++	status = acpi_get_table_with_size(ACPI_SIG_SPCR, 0,
-++					  (struct acpi_table_header **)&table,
-++					  &table_size);
-++
-++	if (ACPI_FAILURE(status))
-++		return -ENOENT;
-++
-++	if (table->header.revision < 2) {
-++		err = -ENOENT;
-++		pr_err("wrong table version\n");
-++		goto done;
-++	}
-++
-++	iotype = table->serial_port.space_id == ACPI_ADR_SPACE_SYSTEM_MEMORY ?
-++			"mmio" : "io";
-++
-++	switch (table->interface_type) {
-++	case ACPI_DBG2_ARM_SBSA_32BIT:
-++		iotype = "mmio32";
-++		/* fall through */
-++	case ACPI_DBG2_ARM_PL011:
-++	case ACPI_DBG2_ARM_SBSA_GENERIC:
-++	case ACPI_DBG2_BCM2835:
-++		uart = "pl011";
-++		break;
-++	case ACPI_DBG2_16550_COMPATIBLE:
-++	case ACPI_DBG2_16550_SUBSET:
-++		uart = "uart";
-++		break;
-++	default:
-++		err = -ENOENT;
-++		goto done;
-++	}
-++
-++	switch (table->baud_rate) {
-++	case 3:
-++		baud_rate = 9600;
-++		break;
-++	case 4:
-++		baud_rate = 19200;
-++		break;
-++	case 6:
-++		baud_rate = 57600;
-++		break;
-++	case 7:
-++		baud_rate = 115200;
-++		break;
-++	default:
-++		err = -ENOENT;
-++		goto done;
-++	}
-++
-++	snprintf(opts, sizeof(opts), "%s,%s,0x%llx,%d", uart, iotype,
-++		 table->serial_port.address, baud_rate);
-++
-++	pr_info("console: %s\n", opts);
-++
-++	if (earlycon)
-++		setup_earlycon(opts);
-++
-++	err = add_preferred_console(uart, 0, opts + strlen(uart) + 1);
-++
-++done:
-++	early_acpi_os_unmap_memory((void __iomem *)table, table_size);
-++	return err;
-++}
-+diff --git a/drivers/of/fdt.c b/drivers/of/fdt.c
-+index 33daffc..bc8d9e2 100644
-+--- a/drivers/of/fdt.c
-++++ b/drivers/of/fdt.c
-+@@ -904,7 +904,7 @@ static inline void early_init_dt_check_for_initrd(unsigned long node)
-+ 
-+ #ifdef CONFIG_SERIAL_EARLYCON
-+ 
-+-static int __init early_init_dt_scan_chosen_serial(void)
-++int __init early_init_dt_scan_chosen_stdout(void)
-+ {
-+ 	int offset;
-+ 	const char *p, *q, *options = NULL;
-+@@ -949,14 +949,6 @@ static int __init early_init_dt_scan_chosen_serial(void)
-+ 	return -ENODEV;
-+ }
-+ 
-+-static int __init setup_of_earlycon(char *buf)
-+-{
-+-	if (buf)
-+-		return 0;
-+-
-+-	return early_init_dt_scan_chosen_serial();
-+-}
-+-early_param("earlycon", setup_of_earlycon);
-+ #endif
-+ 
-+ /**
-+diff --git a/drivers/tty/serial/amba-pl011.c b/drivers/tty/serial/amba-pl011.c
-+index 1b7331e..fa7c5fa 100644
-+--- a/drivers/tty/serial/amba-pl011.c
-++++ b/drivers/tty/serial/amba-pl011.c
-+@@ -2288,6 +2288,60 @@ static int __init pl011_console_setup(struct console *co, char *options)
-+ 	return uart_set_options(&uap->port, co, baud, parity, bits, flow);
-+ }
-+ 
-++/**
-++ *	pl011_console_match - non-standard console matching
-++ *	@co:	  registering console
-++ *	@name:	  name from console command line
-++ *	@idx:	  index from console command line
-++ *	@options: ptr to option string from console command line
-++ *
-++ *	Only attempts to match console command lines of the form:
-++ *	    console=pl011,mmio|mmio32,<addr>[,<options>]
-++ *	    console=pl011,0x<addr>[,<options>]
-++ *	This form is used to register an initial earlycon boot console and
-++ *	replace it with the amba_console at pl011 driver init.
-++ *
-++ *	Performs console setup for a match (as required by interface)
-++ *	If no <options> are specified, then assume the h/w is already setup.
-++ *
-++ *	Returns 0 if console matches; otherwise non-zero to use default matching
-++ */
-++static int __init pl011_console_match(struct console *co, char *name, int idx,
-++				      char *options)
-++{
-++	unsigned char iotype;
-++	unsigned long addr;
-++	int i;
-++
-++	if (strcmp(name, "pl011") != 0)
-++		return -ENODEV;
-++
-++	if (uart_parse_earlycon(options, &iotype, &addr, &options))
-++		return -ENODEV;
-++
-++	if (iotype != UPIO_MEM && iotype != UPIO_MEM32)
-++		return -ENODEV;
-++
-++	/* try to match the port specified on the command line */
-++	for (i = 0; i < ARRAY_SIZE(amba_ports); i++) {
-++		struct uart_port *port;
-++
-++		if (!amba_ports[i])
-++			continue;
-++
-++		port = &amba_ports[i]->port;
-++
-++		if (port->mapbase != addr)
-++			continue;
-++
-++		co->index = i;
-++		port->cons = co;
-++		return pl011_console_setup(co, options);
-++	}
-++
-++	return -ENODEV;
-++}
-++
-+ static struct uart_driver amba_reg;
-+ static struct console amba_console = {
-+ 	.name		= "ttyAMA",
-+diff --git a/drivers/tty/serial/earlycon.c b/drivers/tty/serial/earlycon.c
-+index 067783f..ea00b9f 100644
-+--- a/drivers/tty/serial/earlycon.c
-++++ b/drivers/tty/serial/earlycon.c
-+@@ -21,6 +21,7 @@
-+ #include <linux/sizes.h>
-+ #include <linux/of.h>
-+ #include <linux/of_fdt.h>
-++#include <linux/acpi.h>
-+ 
-+ #ifdef CONFIG_FIX_EARLYCON_MEM
-+ #include <asm/fixmap.h>
-+@@ -199,6 +200,14 @@ int __init setup_earlycon(char *buf)
-+ 	return -ENOENT;
-+ }
-+ 
-++/*
-++ * When CONFIG_ACPI_SPCR_TABLE is defined, "earlycon" without parameters in
-++ * command line does not start DT earlycon immediately, instead it defers
-++ * starting it until DT/ACPI decision is made.  At that time if ACPI is enabled
-++ * call parse_spcr(), else call early_init_dt_scan_chosen_stdout()
-++ */
-++bool earlycon_init_is_deferred __initdata;
-++
-+ /* early_param wrapper for setup_earlycon() */
-+ static int __init param_setup_earlycon(char *buf)
-+ {
-+@@ -208,8 +217,14 @@ static int __init param_setup_earlycon(char *buf)
-+ 	 * Just 'earlycon' is a valid param for devicetree earlycons;
-+ 	 * don't generate a warning from parse_early_params() in that case
-+ 	 */
-+-	if (!buf || !buf[0])
-+-		return 0;
-++	if (!buf || !buf[0]) {
-++		if (IS_ENABLED(CONFIG_ACPI_SPCR_TABLE)) {
-++			earlycon_init_is_deferred = true;
-++			return 0;
-++		} else {
-++			return early_init_dt_scan_chosen_stdout();
-++		}
-++	}
-+ 
-+ 	err = setup_earlycon(buf);
-+ 	if (err == -ENOENT || err == -EALREADY)
-+diff --git a/include/linux/acpi.h b/include/linux/acpi.h
-+index 288fac5..1de43be 100644
-+--- a/include/linux/acpi.h
-++++ b/include/linux/acpi.h
-+@@ -997,4 +997,10 @@ static inline struct fwnode_handle *acpi_get_next_subnode(struct device *dev,
-+ #define acpi_probe_device_table(t)	({ int __r = 0; __r;})
-+ #endif
-+ 
-++#ifdef CONFIG_ACPI_SPCR_TABLE
-++int parse_spcr(bool earlycon);
-++#else
-++static inline int parse_spcr(bool earlycon) { return 0; }
-++#endif
-++
-+ #endif	/*_LINUX_ACPI_H*/
-+diff --git a/include/linux/of_fdt.h b/include/linux/of_fdt.h
-+index 901ec01..11eb9a7 100644
-+--- a/include/linux/of_fdt.h
-++++ b/include/linux/of_fdt.h
-+@@ -14,6 +14,7 @@
-+ 
-+ #include <linux/types.h>
-+ #include <linux/init.h>
-++#include <linux/errno.h>
-+ 
-+ /* Definitions used by the flattened device tree */
-+ #define OF_DT_HEADER		0xd00dfeed	/* marker */
-+@@ -64,6 +65,7 @@ extern int early_init_dt_scan_chosen(unsigned long node, const char *uname,
-+ 				     int depth, void *data);
-+ extern int early_init_dt_scan_memory(unsigned long node, const char *uname,
-+ 				     int depth, void *data);
-++extern int early_init_dt_scan_chosen_stdout(void);
-+ extern void early_init_fdt_scan_reserved_mem(void);
-+ extern void early_init_fdt_reserve_self(void);
-+ extern void early_init_dt_add_memory_arch(u64 base, u64 size);
-+@@ -92,6 +94,7 @@ extern void early_get_first_memblock_info(void *, phys_addr_t *);
-+ extern u64 of_flat_dt_translate_address(unsigned long node);
-+ extern void of_fdt_limit_memory(int limit);
-+ #else /* CONFIG_OF_FLATTREE */
-++static inline int early_init_dt_scan_chosen_stdout(void) { return -ENODEV; }
-+ static inline void early_init_fdt_scan_reserved_mem(void) {}
-+ static inline void early_init_fdt_reserve_self(void) {}
-+ static inline const char *of_flat_dt_get_machine_name(void) { return NULL; }
-+diff --git a/include/linux/serial_core.h b/include/linux/serial_core.h
-+index a3d7c0d..926c416 100644
-+--- a/include/linux/serial_core.h
-++++ b/include/linux/serial_core.h
-+@@ -361,11 +361,18 @@ extern const struct earlycon_id __earlycon_table_end[];
-+ 
-+ #define EARLYCON_DECLARE(_name, fn)	OF_EARLYCON_DECLARE(_name, "", fn)
-+ 
-+-extern int setup_earlycon(char *buf);
-+ extern int of_setup_earlycon(const struct earlycon_id *match,
-+ 			     unsigned long node,
-+ 			     const char *options);
-+ 
-++#ifdef CONFIG_SERIAL_EARLYCON
-++extern bool earlycon_init_is_deferred __initdata;
-++int setup_earlycon(char *buf);
-++#else
-++static const bool earlycon_init_is_deferred;
-++static inline int setup_earlycon(char *buf) { return 0; }
-++#endif
-++
-+ struct uart_port *uart_get_console(struct uart_port *ports, int nr,
-+ 				   struct console *c);
-+ int uart_parse_earlycon(char *p, unsigned char *iotype, unsigned long *addr,
-+-- 
-+2.7.4
-+
-diff --git a/meta-luv/recipes-kernel/linux/linux-yocto-efi-test/qemuarm64/acpi.cfg b/meta-luv/recipes-kernel/linux/linux-yocto-efi-test/qemuarm64/acpi.cfg
-index 09fe7c7..155a101 100644
---- a/meta-luv/recipes-kernel/linux/linux-yocto-efi-test/qemuarm64/acpi.cfg
-+++ b/meta-luv/recipes-kernel/linux/linux-yocto-efi-test/qemuarm64/acpi.cfg
-@@ -1,2 +1,3 @@
- CONFIG_EXPERT = y
- CONFIG_EMBEDDED=y
-+CONFIG_ACPI=y
-diff --git a/meta-luv/recipes-kernel/linux/linux-yocto-efi-test_4.7.bb b/meta-luv/recipes-kernel/linux/linux-yocto-efi-test_4.7.bb
-index 5a577cc..d4c73d6 100644
---- a/meta-luv/recipes-kernel/linux/linux-yocto-efi-test_4.7.bb
-+++ b/meta-luv/recipes-kernel/linux/linux-yocto-efi-test_4.7.bb
-@@ -64,6 +64,7 @@ SRC_URI += "file://0001-Add-function-to-fixup-page-faults-in-BOOT_SERVICES_-.pat
-             file://0002-efi-allow-efi_mem_desc_lookup-find-EFI_BOOT_SERVICES.patch \
-             file://0003-x86-efi-Fixup-faults-from-UEFI-firmware.patch \
-             file://0004-x86-efi-Introduce-EFI_BOOT_SERVICES_WARN.patch \
-+            file://0005-ACPI-Console-Through-SPCR-Table.patch \
+ result=$(cat /tmp/testsuites)
+ plymouth_write "$result"
+ sleep 2
+diff --git a/meta-luv/recipes-kernel/linux/linux-yocto-efi-test_4.10.bb b/meta-luv/recipes-kernel/linux/linux-yocto-efi-test_4.10.bb
+index 916cc71..cc504a3 100644
+--- a/meta-luv/recipes-kernel/linux/linux-yocto-efi-test_4.10.bb
++++ b/meta-luv/recipes-kernel/linux/linux-yocto-efi-test_4.10.bb
+@@ -78,6 +78,9 @@ SRC_URI += "file://0001-x86-efi-Move-efi_bgrt_init-to-early-stage.patch \
+ SRC_URI += "file://0001-serial-SPCR-check-bit-width-for-the-16550-UART.patch  \
             "
  
- # Add the defconfig from v4.6 kernel and the configuration x86 fragments
++SRC_URI += "file://0001-SBSA-ACS-linux-4.10.patch \
++           "
++
+ COMMON_CFG_x86 = " file://${MACHINE}/defconfig \
+                    file://qemux86/modules.cfg \
+                    file://qemux86/display.cfg \
 diff --git a/meta/conf/bitbake.conf b/meta/conf/bitbake.conf
-index e80ee18..8a1b9d5 100644
+index 54a587f..b05fe94 100644
 --- a/meta/conf/bitbake.conf
 +++ b/meta/conf/bitbake.conf
-@@ -717,7 +717,7 @@ INITRAMFS_FSTYPES ?= "cpio.gz"
+@@ -728,7 +728,7 @@ INITRAMFS_FSTYPES ?= "cpio.gz"
  # The maximum size in Kbytes for the generated initramfs image size.
  # Usually, it should be less than 1/2 of ram size, or you may fail to
  # boot it.
@@ -2059,3 +1703,37 @@ index e80ee18..8a1b9d5 100644
  
  DEFAULT_TASK_PROVIDER ?= "packagegroup-base"
  MACHINE_TASK_PROVIDER ?= "${DEFAULT_TASK_PROVIDER}"
+diff --git a/sbsa_setup.sh b/sbsa_setup.sh
+new file mode 100755
+index 0000000..946de8d
+--- /dev/null
++++ b/sbsa_setup.sh
+@@ -0,0 +1,25 @@
++#!/bin/bash
++
++#create tmp directory
++TMPDIR=$PWD/tmp
++LUVDIR=$PWD
++rm -rf $TMPDIR
++mkdir $TMPDIR
++cd $TMPDIR
++#clone linux-acs repo
++git clone git://linux-arm.org/linux-acs.git
++cd linux-acs
++#copy .bb and source files to relevant places
++mv sbsa-acs-drv $LUVDIR/meta-luv/recipes-core/
++mv kernel/src/0001-SBSA-ACS-linux-4.10.patch $LUVDIR/meta-luv/recipes-kernel/linux/linux-yocto-efi-test/
++
++cd $TMPDIR
++git clone https://github.com/ARM-software/sbsa-acs.git
++cd sbsa-acs
++mv val test_pool $LUVDIR/meta-luv/recipes-core/sbsa-acs-drv/files/
++
++mkdir $LUVDIR/meta-luv/recipes-utils/sbsa-acs-app
++mv linux_app/* $LUVDIR/meta-luv/recipes-utils/sbsa-acs-app/
++
++cd $TMPDIR/..
++rm -rf $TMPDIR
+-- 
+2.7.4
+
