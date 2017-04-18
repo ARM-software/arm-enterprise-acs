@@ -1,4 +1,4 @@
-From c08a316455fdf148cd4d4390babbfe8f5383ac37 Mon Sep 17 00:00:00 2001
+From 38e2e4e842c16101a18f0919664fdca891e8c1cb Mon Sep 17 00:00:00 2001
 From: Sakar Arora <Sakar.Arora@arm.com>
 Date: Thu, 23 Mar 2017 21:16:07 +0530
 Subject: [PATCH] luv v4.10
@@ -134,7 +134,7 @@ index 0000000..c5ff99d
 +echo "Built image can be found at $OUTPUT_FILE"
 +exit
 diff --git a/meta-luv/classes/luv-efi.bbclass b/meta-luv/classes/luv-efi.bbclass
-index d23c33d..3ed03a1 100644
+index d23c33d..be3c4a6 100644
 --- a/meta-luv/classes/luv-efi.bbclass
 +++ b/meta-luv/classes/luv-efi.bbclass
 @@ -16,6 +16,13 @@ def get_bits_depends(bb, d):
@@ -230,7 +230,7 @@ index d23c33d..3ed03a1 100644
         cfgfile.write('chainloader /EFI/BOOT/bits/%s\n' % loader)
         cfgfile.write('}\n')
  
-+    if "${TARGET_ARCH}" == "aarch64":
++    if re.search("aarch64", target):
 +       cfgfile.write('menuentry \'sbbr/sbsa\' {\n')
 +       cfgfile.write('chainloader /EFI/BOOT/Shell.efi\n')
 +       cfgfile.write('}\n')
@@ -239,7 +239,7 @@ index d23c33d..3ed03a1 100644
  }
  
 diff --git a/meta-luv/conf/distro/luv.conf b/meta-luv/conf/distro/luv.conf
-index 1676a0e..4cc253b 100644
+index 1676a0e..a36d97c 100644
 --- a/meta-luv/conf/distro/luv.conf
 +++ b/meta-luv/conf/distro/luv.conf
 @@ -17,4 +17,4 @@ VIRTUAL-RUNTIME_init_manager = "systemd"
@@ -247,7 +247,7 @@ index 1676a0e..4cc253b 100644
  DISTRO_FEATURES_BACKFILL_CONSIDERED += "sysvinit"
  
 -INITRAMFS_MAXSIZE = "200000"
-+INITRAMFS_MAXSIZE = "345364"
++INITRAMFS_MAXSIZE = "400000"
 diff --git a/meta-luv/recipes-bsp/sbbr/sbbr/README.md b/meta-luv/recipes-bsp/sbbr/sbbr/README.md
 new file mode 100644
 index 0000000..06f0264
