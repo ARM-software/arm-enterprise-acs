@@ -1,10 +1,10 @@
-From 38e2e4e842c16101a18f0919664fdca891e8c1cb Mon Sep 17 00:00:00 2001
+From 4d5c86a226d611533b9cbfe1f76130fe705f6325 Mon Sep 17 00:00:00 2001
 From: Sakar Arora <Sakar.Arora@arm.com>
 Date: Thu, 23 Mar 2017 21:16:07 +0530
 Subject: [PATCH] luv v4.10
 
 ---
- build_luvos.sh                                     |  93 +++
+ build_luvos.sh                                     |  97 +++
  meta-luv/classes/luv-efi.bbclass                   |  59 +-
  meta-luv/conf/distro/luv.conf                      |   2 +-
  meta-luv/recipes-bsp/sbbr/sbbr/README.md           |   2 +
@@ -23,7 +23,7 @@ Subject: [PATCH] luv v4.10
  .../linux/linux-yocto-efi-test_4.10.bb             |   3 +
  meta/conf/bitbake.conf                             |   2 +-
  sbsa_setup.sh                                      |  25 +
- 19 files changed, 1449 insertions(+), 13 deletions(-)
+ 19 files changed, 1453 insertions(+), 13 deletions(-)
  create mode 100755 build_luvos.sh
  create mode 100644 meta-luv/recipes-bsp/sbbr/sbbr/README.md
  create mode 100644 meta-luv/recipes-bsp/sbbr/sbbr_v1.0.bb
@@ -36,10 +36,10 @@ Subject: [PATCH] luv v4.10
 
 diff --git a/build_luvos.sh b/build_luvos.sh
 new file mode 100755
-index 0000000..c5ff99d
+index 0000000..412450e
 --- /dev/null
 +++ b/build_luvos.sh
-@@ -0,0 +1,93 @@
+@@ -0,0 +1,97 @@
 +#!/bin/bash
 +# The material contained herein is not a license, either
 +# expressly or impliedly, to any intellectual property owned
@@ -103,13 +103,17 @@ index 0000000..c5ff99d
 +read SCTUSERNAME
 +echo -n Password:
 +read -s SCTPASSWORD
++echo ""
++echo "Default kernel command line parameters: 'systemd.log_target=null plymouth.ignore-serial-consoles debug ip=dhcp log_buf_len=1M efi=debug acpi=on crashkernel=256M earlycon uefi_debug'"
++echo -n "Append parameters (press Enter for default):"
++read ACS_CMDLINE_APPEND
 +export SCTUSERNAME
 +export SCTPASSWORD
++export ACS_CMDLINE_APPEND
 +./sbsa_setup.sh
 +rm -rf build
 +source oe-init-build-env
-+export BB_ENV_EXTRAWHITE="BB_ENV_EXTRAWHITE SCTUSERNAME SCTPASSWORD"
-+
++export BB_ENV_EXTRAWHITE="BB_ENV_EXTRAWHITE SCTUSERNAME SCTPASSWORD ACS_CMDLINE_APPEND"
 +# include meta-luv  for building
 +line=`grep -n "meta-yocto-bsp" $BB_CONF | cut -d : -f 1`
 +sed -i "$line a $(echo "  $METALUV")" $BB_CONF
@@ -134,7 +138,7 @@ index 0000000..c5ff99d
 +echo "Built image can be found at $OUTPUT_FILE"
 +exit
 diff --git a/meta-luv/classes/luv-efi.bbclass b/meta-luv/classes/luv-efi.bbclass
-index d23c33d..be3c4a6 100644
+index d23c33d..88977a8 100644
 --- a/meta-luv/classes/luv-efi.bbclass
 +++ b/meta-luv/classes/luv-efi.bbclass
 @@ -16,6 +16,13 @@ def get_bits_depends(bb, d):
@@ -218,9 +222,9 @@ index d23c33d..be3c4a6 100644
         cfgfile.write('timeout=0\n')
         cfgfile.write('fallback=0\n')
  
-+    if "${TARGET_ARCH}" == "aarch64":
++    if re.search("aarch64", target):
 +       cfgfile.write('default=sbbr/sbsa\n')
-+       cfgfile.write('timeout=1\n')
++       cfgfile.write('timeout=10\n')
 +       cfgfile.write('fallback=0\n')
 +
      cfgfile.write('menuentry \'luv\' {\n')
@@ -1336,7 +1340,7 @@ index 82a9cb8..b7e6a8d 100644
  
  X86_ADDITIONS = "chipsec python-codecs python-subprocess vmcore-dmesg bits \
 diff --git a/meta-luv/recipes-core/images/luv-live-image.bb b/meta-luv/recipes-core/images/luv-live-image.bb
-index 50cad08..03d2ec8 100644
+index 50cad08..8c5b75c 100644
 --- a/meta-luv/recipes-core/images/luv-live-image.bb
 +++ b/meta-luv/recipes-core/images/luv-live-image.bb
 @@ -26,7 +26,7 @@ COMMON_CMDLINE_x86 += "splash nomodeset crash_kexec_post_notifiers"
@@ -1344,7 +1348,7 @@ index 50cad08..03d2ec8 100644
  # Unlike the += operand, _append's do not insert a space between the current value
  # and the appended string. Thus, we add them.
 -CMDLINE_append_aarch64 = " acpi=on"
-+CMDLINE_append_aarch64 = " acpi=on crashkernel=256M earlycon uefi_debug"
++CMDLINE_append_aarch64 = " acpi=on crashkernel=256M earlycon uefi_debug ${ACS_CMDLINE_APPEND}"
  CMDLINE_append_x86 = "${COMMON_CMDLINE_x86}"
  CMDLINE_append_x86-64 = "${COMMON_CMDLINE_x86}"
  
