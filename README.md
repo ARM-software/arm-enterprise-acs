@@ -92,6 +92,8 @@ $ cd luv <br />
  #Build LuvOS and test binaries <br />
 $ ./build_luvos.sh
 
+Note: The build script provides the option to append kernel command line parameters, if needed. Just press enter to continue with default parameters.
+
 ## Build output
 The luv-live-image-gpt.img bootable image can be found in:
 &lt;work_dir&gt;/arm-enterprise-acs/luv/build/tmp/deploy/images/qemuarm64/luv-live-image-gpt.img<br />
