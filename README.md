@@ -201,6 +201,10 @@ Note: Here FS2: is assumed to be the 'luv-results' partition, and FS3: the 'boot
 The following commands only apply to the first time the image is executed to install the SCT tests)
 
 ### SBBR
+This is only available if the test suite is built with UEFI-SCT. (By Default, UEFI-SCT is not included in the test suite).
+As of now, source code for UEFI-SCT is accessible only for UEFI Foruum Members.
+If you are an UEFI Foruum Member, Please Select "no" for the option -
+"To continue without building UEFI-SCT .  Enter [yes(default)/no]: "
 
 - Shell>FS3:
 - FS3:>cd EFI\BOOT\sbbr
@@ -222,8 +226,7 @@ User can make a selection and run tests based on available choices. Refer to [SC
 
 You can choose to boot luvOS by entering the following commands:
 
-- Shell>FS3:
-- FS3:>EFI\BOOT\bootaa64.efi
+- Shell>exit
 
 This command loads the grub menu. You will see one boot option 'luv' to boot luvOS. Press enter to choose it. <br />
 That will boot luvOS, run FWTS tests and OS context SBSA tests automatically. <br />
