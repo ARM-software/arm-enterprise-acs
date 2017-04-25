@@ -77,7 +77,7 @@ A number of SBBR assertions are tested though FWTS.
 
 Before starting ACS build, make sure of the following: <br />
 a. Must use BASH shell.<br />
-b. Must be a member of https://github.com/UEFI/UEFI-SCT. if not, please request access by email: admin@uefi.org by providing GitHub account Id.<br />
+b. If UEFI SCT is to be built (not done by default), membership of https://github.com/UEFI/UEFI-SCT is necessary. If not a member, please request access by email: admin@uefi.org by providing GitHub account Id.<br />
 Note: These build steps only target AArch64. <br />
 
  #Create a directory that will be your workspace and `cd' into it. <br />
@@ -92,7 +92,10 @@ $ cd luv <br />
  #Build LuvOS and test binaries <br />
 $ ./build_luvos.sh
 
-Note: The build script provides the option to append kernel command line parameters, if needed. Just press enter to continue with default parameters.
+Note:<br />
+- The build script by default excludes UEFI SCT in the built images.<br />
+- If SCT needs to be included, enter "no" when prompted "To continue without building UEFI-SCT .  Enter [yes(default)/no]: ", and then enter Github details for the UEFI-SCT member account.<br />
+- The build script provides the option to append kernel command line parameters, if needed. Just press enter to continue with default parameters. <br />
 
 ## Build output
 The luv-live-image-gpt.img bootable image can be found in:
@@ -202,9 +205,6 @@ The following commands only apply to the first time the image is executed to ins
 
 ### SBBR
 This is only available if the test suite is built with UEFI-SCT. (By Default, UEFI-SCT is not included in the test suite).
-As of now, source code for UEFI-SCT is accessible only for UEFI Foruum Members.
-If you are an UEFI Foruum Member, Please Select "no" for the option -
-"To continue without building UEFI-SCT .  Enter [yes(default)/no]: "
 
 - Shell>FS3:
 - FS3:>cd EFI\BOOT\sbbr
@@ -257,7 +257,7 @@ a. Tests run on Juno Reference Platforms
 
          i. SBSA Tests. (UEFI Shell based tests)
         ii. SBSA Tests. (OS based tests built on top of Linux kernel)
-       iii. SBBR Tests. (UEFI Shell based tests built on top of UEFI-SCT Framework)
+       iii. SBBR Tests. (Optional UEFI Shell based tests built on top of UEFI-SCT Framework, excluded by default)
         iv. SBBR Tests. (OS based tests built on top of FWTS Framework)
 
 
