@@ -1,3 +1,41 @@
+From a1e0afae278ccaee867887da8fbaba8589f2ab28 Mon Sep 17 00:00:00 2001
+From: Sakar Arora <Sakar.Arora@arm.com>
+Date: Tue, 25 Apr 2017 15:15:50 +0530
+Subject: [PATCH] luvOS 4.10
+
+---
+ build_luvos.sh                                     |   113 +
+ meta-luv/classes/luv-efi.bbclass                   |    63 +-
+ meta-luv/conf/distro/luv.conf                      |     2 +-
+ meta-luv/recipes-bsp/sbbr/sbbr/README.md           |     2 +
+ meta-luv/recipes-bsp/sbbr/sbbr_v1.0.bb             |    97 +
+ meta-luv/recipes-bsp/sbsa/files/compile.sh         |    16 +
+ meta-luv/recipes-bsp/sbsa/sbsa.bb                  |   104 +
+ meta-luv/recipes-core/efivarfs/efivarfs-test.bb    |     1 -
+ meta-luv/recipes-core/fwts/fwts/sbbr.patch         | 11950 +++++++++++++++++++
+ meta-luv/recipes-core/fwts/fwts_git.bb             |     4 +-
+ .../images/core-image-efi-initramfs.bb             |     1 +
+ meta-luv/recipes-core/images/luv-live-image.bb     |     8 +-
+ meta-luv/recipes-core/images/luv-netboot-image.bb  |    10 +-
+ .../kernel_efi_warnings/kernel-efi-warnings_0.1.bb |     2 -
+ meta-luv/recipes-core/luv-test/luv-test.bb         |     6 +
+ .../luv-test/luv-test/luv-collect-results          |   209 +
+ .../recipes-core/luv-test/luv-test/luv-sbsa-test   |     5 +
+ .../luv-test/luv-test/luv-test-manager             |     5 +
+ .../linux/linux-yocto-efi-test_4.10.bb             |     3 +
+ meta/conf/bitbake.conf                             |     2 +-
+ sbsa_setup.sh                                      |    28 +
+ 21 files changed, 12613 insertions(+), 18 deletions(-)
+ create mode 100755 build_luvos.sh
+ create mode 100644 meta-luv/recipes-bsp/sbbr/sbbr/README.md
+ create mode 100644 meta-luv/recipes-bsp/sbbr/sbbr_v1.0.bb
+ create mode 100755 meta-luv/recipes-bsp/sbsa/files/compile.sh
+ create mode 100644 meta-luv/recipes-bsp/sbsa/sbsa.bb
+ create mode 100644 meta-luv/recipes-core/fwts/fwts/sbbr.patch
+ create mode 100644 meta-luv/recipes-core/luv-test/luv-test/luv-collect-results
+ create mode 100755 meta-luv/recipes-core/luv-test/luv-test/luv-sbsa-test
+ create mode 100755 sbsa_setup.sh
+
 diff --git a/build_luvos.sh b/build_luvos.sh
 new file mode 100755
 index 0000000..06cde48
@@ -118,7 +156,7 @@ index 0000000..06cde48
 +echo "Built image can be found at $OUTPUT_FILE"
 +exit
 diff --git a/meta-luv/classes/luv-efi.bbclass b/meta-luv/classes/luv-efi.bbclass
-index d23c33d..efb97fa 100644
+index d23c33d..2a1796b 100644
 --- a/meta-luv/classes/luv-efi.bbclass
 +++ b/meta-luv/classes/luv-efi.bbclass
 @@ -16,6 +16,13 @@ def get_bits_depends(bb, d):
@@ -180,7 +218,7 @@ index d23c33d..efb97fa 100644
 +efi_populate_sbsa() {
 +        DEST=$1
 +        cp -r ${DEPLOY_DIR_IMAGE}/sbsa ${DEST}${EFIDIR}/sbsa
-+        mv ${DEST}${EFIDIR}/sbsa/Shell.efi ${DEST}${EFIDIR}/Shell.efi
++        cp ${DEST}${EFIDIR}/sbsa/Shell.efi ${DEST}${EFIDIR}/Shell.efi
 +        echo "echo -off
 +              if not exist sbsa_results then
 +                mkdir sbsa_results
@@ -12890,3 +12928,6 @@ index 0000000..45899fd
 +
 +cd $TMPDIR/..
 +rm -rf $TMPDIR
+-- 
+2.7.4
+
