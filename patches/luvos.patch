@@ -1,41 +1,3 @@
-From 62907cede03a12b94d800b15707c1c1cdba126ed Mon Sep 17 00:00:00 2001
-From: Sakar Arora <Sakar.Arora@arm.com>
-Date: Tue, 25 Apr 2017 15:15:50 +0530
-Subject: [PATCH] luvOS 4.10
-
----
- build_luvos.sh                                     |   113 +
- meta-luv/classes/luv-efi.bbclass                   |    79 +-
- meta-luv/conf/distro/luv.conf                      |     2 +-
- meta-luv/recipes-bsp/sbbr/sbbr/README.md           |     2 +
- meta-luv/recipes-bsp/sbbr/sbbr_v1.0.bb             |    97 +
- meta-luv/recipes-bsp/sbsa/files/compile.sh         |    16 +
- meta-luv/recipes-bsp/sbsa/sbsa.bb                  |   104 +
- meta-luv/recipes-core/efivarfs/efivarfs-test.bb    |     1 -
- meta-luv/recipes-core/fwts/fwts/sbbr.patch         | 11950 +++++++++++++++++++
- meta-luv/recipes-core/fwts/fwts_git.bb             |     4 +-
- .../images/core-image-efi-initramfs.bb             |     1 +
- meta-luv/recipes-core/images/luv-live-image.bb     |     8 +-
- meta-luv/recipes-core/images/luv-netboot-image.bb  |    10 +-
- .../kernel_efi_warnings/kernel-efi-warnings_0.1.bb |     2 -
- meta-luv/recipes-core/luv-test/luv-test.bb         |     6 +
- .../luv-test/luv-test/luv-collect-results          |   209 +
- .../recipes-core/luv-test/luv-test/luv-sbsa-test   |     5 +
- .../luv-test/luv-test/luv-test-manager             |     5 +
- .../linux/linux-yocto-efi-test_4.10.bb             |     3 +
- meta/conf/bitbake.conf                             |     2 +-
- sbsa_setup.sh                                      |    28 +
- 21 files changed, 12629 insertions(+), 18 deletions(-)
- create mode 100755 build_luvos.sh
- create mode 100644 meta-luv/recipes-bsp/sbbr/sbbr/README.md
- create mode 100644 meta-luv/recipes-bsp/sbbr/sbbr_v1.0.bb
- create mode 100755 meta-luv/recipes-bsp/sbsa/files/compile.sh
- create mode 100644 meta-luv/recipes-bsp/sbsa/sbsa.bb
- create mode 100644 meta-luv/recipes-core/fwts/fwts/sbbr.patch
- create mode 100644 meta-luv/recipes-core/luv-test/luv-test/luv-collect-results
- create mode 100755 meta-luv/recipes-core/luv-test/luv-test/luv-sbsa-test
- create mode 100755 sbsa_setup.sh
-
 diff --git a/build_luvos.sh b/build_luvos.sh
 new file mode 100755
 index 0000000..06cde48
@@ -156,8 +118,7 @@ index 0000000..06cde48
 +echo "Built image can be found at $OUTPUT_FILE"
 +exit
 diff --git a/meta-luv/classes/luv-efi.bbclass b/meta-luv/classes/luv-efi.bbclass
-index d23c33d..7c44a2a 100644
-
+index d23c33d..efb97fa 100644
 --- a/meta-luv/classes/luv-efi.bbclass
 +++ b/meta-luv/classes/luv-efi.bbclass
 @@ -16,6 +16,13 @@ def get_bits_depends(bb, d):
@@ -174,7 +135,7 @@ index d23c33d..7c44a2a 100644
  # The x86 build is depends on grub-efi and AArch64 build depends on grub_git
  def get_grub_depends(bb, d):
           import re
-@@ -57,8 +64,15 @@ efi_populate() {
+@@ -57,8 +64,13 @@ efi_populate() {
  
      # Install grub2 in EFI directory
      if [ "${TARGET_ARCH}" = "aarch64" ]; then
@@ -183,8 +144,6 @@ index d23c33d..7c44a2a 100644
 +            if [ "${SCTOPTIONAL}" = "no" ]; then
 +                echo "Including UEFI-SCT"
 +                efi_populate_sbbr ${DEST}
-+            else
-+                efi_populate_startup ${DEST}
 +            fi
 +            echo "SCTOPTIONAL=${SCTOPTIONAL}"
 +            efi_populate_sbsa ${DEST}
@@ -192,7 +151,7 @@ index d23c33d..7c44a2a 100644
  
      # TODO: need conditional signing; e.g., if (DISTRO_FEATURES contains secure_boot)
      # shim bootloader does not seem to work with i386. Thus we don't use it for 32-bit
-@@ -82,7 +96,7 @@ efi_populate() {
+@@ -82,7 +94,7 @@ efi_populate() {
                  mv ${DEPLOY_DIR_IMAGE}/${EFI_LOADER_IMAGE} ${DEPLOY_DIR_IMAGE}/shim.efi
                  mv ${DEPLOY_DIR_IMAGE}/${EFI_LOADER_IMAGE}-unsigned ${DEPLOY_DIR_IMAGE}/${EFI_LOADER_IMAGE}
      else
@@ -201,7 +160,7 @@ index d23c33d..7c44a2a 100644
      fi
  
      if echo "${TARGET_ARCH}" | grep -q "i.86" || [ "${TARGET_ARCH}" = "x86_64" ]; then
-@@ -98,6 +112,55 @@ efi_populate() {
+@@ -98,6 +110,41 @@ efi_populate() {
      install -m 0644 ${LUV_CFG} ${DEST}
  }
  
@@ -219,45 +178,31 @@ index d23c33d..7c44a2a 100644
 +}
 +
 +efi_populate_sbsa() {
-+    DEST=$1
-+    cp -r ${DEPLOY_DIR_IMAGE}/sbsa ${DEST}${EFIDIR}/sbsa
-+    cp ${DEST}${EFIDIR}/sbsa/Shell.efi ${DEST}${EFIDIR}/Shell.efi
-+    echo "echo -off
-+          if not exist sbsa_results then
-+            mkdir sbsa_results
-+          endif
-+          cd sbsa_results
-+          if not exist uefi then
-+            mkdir uefi
-+          endif
-+          cd uefi
-+          for %i in 0 1 2 3 4 5 6 7 8 9 A B C D E F then
-+            if exist FS%i:\EFI\BOOT\sbsa\Sbsa.efi then
-+              FS%i:\EFI\BOOT\sbsa\Sbsa.efi -f SbsaResults.log
-+              goto Done
-+            endif
-+          endfor
-+          :Done" > ${DEST}${EFIDIR}/sbsa/sbsa.nsh
-+}
-+
-+efi_populate_startup() {
-+    DEST=$1
-+    echo "echo -off
-+           for %i in 0 1 2 3 4 5 6 7 8 9 A B C D E F then
-+            if exist FS%i:\EFI\BOOT\sbsa\Sbsa.efi then
-+              FS%i:\EFI\BOOT\sbsa\Sbsa.efi
-+              goto Done
-+            endif
-+          endfor
-+          :Done
-+          FS%i:
-+          vmlinuz initrd=\initrd ${CMDLINE}" > ${DEST}${EFIDIR}/startup.nsh
++        DEST=$1
++        cp -r ${DEPLOY_DIR_IMAGE}/sbsa ${DEST}${EFIDIR}/sbsa
++        mv ${DEST}${EFIDIR}/sbsa/Shell.efi ${DEST}${EFIDIR}/Shell.efi
++        echo "echo -off
++              if not exist sbsa_results then
++                mkdir sbsa_results
++              endif
++              cd sbsa_results
++              if not exist uefi then
++                mkdir uefi
++              endif
++              cd uefi
++              for %i in 0 1 2 3 4 5 6 7 8 9 A B C D E F then
++                if exist FS%i:\EFI\BOOT\sbsa\Sbsa.efi then
++                  FS%i:\EFI\BOOT\sbsa\Sbsa.efi -f SbsaResults.log
++                  goto Done
++                endif
++              endfor
++              :Done" > ${DEST}${EFIDIR}/sbsa/sbsa.nsh
 +}
 +
  efi_populate_bits() {
      DEST=$1
      # TODO: weird behavior here. When building luv-live-image,
-@@ -177,6 +240,11 @@ python build_efi_cfg() {
+@@ -177,6 +224,11 @@ python build_efi_cfg() {
         cfgfile.write('timeout=0\n')
         cfgfile.write('fallback=0\n')
  
@@ -269,8 +214,7 @@ index d23c33d..7c44a2a 100644
      cfgfile.write('menuentry \'luv\' {\n')
      cfgfile.write('linux /vmlinuz ')
  
-@@ -203,6 +271,11 @@ python build_efi_cfg() {
-
+@@ -203,6 +255,11 @@ python build_efi_cfg() {
         cfgfile.write('chainloader /EFI/BOOT/bits/%s\n' % loader)
         cfgfile.write('}\n')
  
@@ -11566,7 +11510,10 @@ index 0000000..07cb085
 ++		"_STA", NULL, 0, method_test_STA_return, "_STA");
 ++}
 ++
-++	return FWTS_OK;
+++static int sbbr_method_test_UID(fwts_framework *fw)
+++{
+++	return method_evaluate_method(fw, METHOD_MANDATORY,
+++		"_UID", NULL, 0, method_test_UID_return, NULL);
 ++}
 ++
 ++
@@ -12943,6 +12890,3 @@ index 0000000..45899fd
 +
 +cd $TMPDIR/..
 +rm -rf $TMPDIR
--- 
-2.7.4
-
