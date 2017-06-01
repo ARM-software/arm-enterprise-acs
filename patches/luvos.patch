@@ -11564,7 +11564,10 @@ index 0000000..07cb085
 ++		"_STA", NULL, 0, method_test_STA_return, "_STA");
 ++}
 ++
-++	return FWTS_OK;
+++static int sbbr_method_test_UID(fwts_framework *fw)
+++{
+++     return method_evaluate_method(fw, METHOD_MANDATORY,
+++             "_UID", NULL, 0, method_test_UID_return, NULL);
 ++}
 ++
 ++
