@@ -157,7 +157,6 @@ index 0000000..06cde48
 +exit
 diff --git a/meta-luv/classes/luv-efi.bbclass b/meta-luv/classes/luv-efi.bbclass
 index d23c33d..7c44a2a 100644
-
 --- a/meta-luv/classes/luv-efi.bbclass
 +++ b/meta-luv/classes/luv-efi.bbclass
 @@ -16,6 +16,13 @@ def get_bits_depends(bb, d):
@@ -270,7 +269,6 @@ index d23c33d..7c44a2a 100644
      cfgfile.write('linux /vmlinuz ')
  
 @@ -203,6 +271,11 @@ python build_efi_cfg() {
-
         cfgfile.write('chainloader /EFI/BOOT/bits/%s\n' % loader)
         cfgfile.write('}\n')
  
@@ -11566,7 +11564,10 @@ index 0000000..07cb085
 ++		"_STA", NULL, 0, method_test_STA_return, "_STA");
 ++}
 ++
-++	return FWTS_OK;
+++static int sbbr_method_test_UID(fwts_framework *fw)
+++{
+++	return method_evaluate_method(fw, METHOD_MANDATORY,
+++		"_UID", NULL, 0, method_test_UID_return, NULL);
 ++}
 ++
 ++
