@@ -194,7 +194,7 @@ The live image boots to UEFI Shell. The different test applications can be run i
 1. SBSA UEFI Shell application
 2. SBBR SCT tests
 3. LUV OS FWTS tests
-
+4. SBSA OS tests
 
 
 ### 1. SBSA UEFI Shell appplication
