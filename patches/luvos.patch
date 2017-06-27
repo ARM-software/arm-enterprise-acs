@@ -1,4 +1,4 @@
-From 62907cede03a12b94d800b15707c1c1cdba126ed Mon Sep 17 00:00:00 2001
+From e9f051d27f2cdb675b9556b6cb88f3c5e6ac7ead Mon Sep 17 00:00:00 2001
 From: Sakar Arora <Sakar.Arora@arm.com>
 Date: Tue, 25 Apr 2017 15:15:50 +0530
 Subject: [PATCH] luvOS 4.10
@@ -24,8 +24,8 @@ Subject: [PATCH] luvOS 4.10
  .../luv-test/luv-test/luv-test-manager             |     5 +
  .../linux/linux-yocto-efi-test_4.10.bb             |     3 +
  meta/conf/bitbake.conf                             |     2 +-
- sbsa_setup.sh                                      |    28 +
- 21 files changed, 12629 insertions(+), 18 deletions(-)
+ sbsa_setup.sh                                      |    29 +
+ 21 files changed, 12630 insertions(+), 18 deletions(-)
  create mode 100755 build_luvos.sh
  create mode 100644 meta-luv/recipes-bsp/sbbr/sbbr/README.md
  create mode 100644 meta-luv/recipes-bsp/sbbr/sbbr_v1.0.bb
@@ -425,7 +425,7 @@ index 0000000..a47251a
 +source AppPkg/Applications/sbsa-acs/tools/scripts/avsbuild.sh
 diff --git a/meta-luv/recipes-bsp/sbsa/sbsa.bb b/meta-luv/recipes-bsp/sbsa/sbsa.bb
 new file mode 100644
-index 0000000..ae3dc51
+index 0000000..07fd534
 --- /dev/null
 +++ b/meta-luv/recipes-bsp/sbsa/sbsa.bb
 @@ -0,0 +1,104 @@
@@ -445,7 +445,7 @@ index 0000000..ae3dc51
 +
 +# SCT files placed in ${WORKDIR}/git
 +# GCC files placed in ${WORKDIR}/gcc-linaro-5.3.1-2016.05-x86_64_aarch64-linux-gnu
-+SRC_URI = "git://github.com/ARM-software/sbsa-acs.git;protocol=https; \
++SRC_URI = "git://github.com/ARM-software/sbsa-acs.git;protocol=https;branch=release \
 +           https://releases.linaro.org/components/toolchain/binaries/5.3-2016.05/aarch64-linux-gnu/gcc-linaro-5.3.1-2016.05-x86_64_aarch64-linux-gnu.tar.xz \
 +           file://compile.sh"
 +
@@ -544,7 +544,7 @@ index 07760b2..c3eec9a 100644
 -LUV_TEST="efivarfs"
 diff --git a/meta-luv/recipes-core/fwts/fwts/sbbr.patch b/meta-luv/recipes-core/fwts/fwts/sbbr.patch
 new file mode 100644
-index 0000000..07cb085
+index 0000000..881d55d
 --- /dev/null
 +++ b/meta-luv/recipes-core/fwts/fwts/sbbr.patch
 @@ -0,0 +1,11950 @@
@@ -12912,10 +12912,10 @@ index 54a587f..b05fe94 100644
  MACHINE_TASK_PROVIDER ?= "${DEFAULT_TASK_PROVIDER}"
 diff --git a/sbsa_setup.sh b/sbsa_setup.sh
 new file mode 100755
-index 0000000..45899fd
+index 0000000..f5bcce8
 --- /dev/null
 +++ b/sbsa_setup.sh
-@@ -0,0 +1,28 @@
+@@ -0,0 +1,29 @@
 +#!/bin/bash
 +
 +#create tmp directory
@@ -12927,6 +12927,7 @@ index 0000000..45899fd
 +#clone linux-acs repo
 +git clone git://linux-arm.org/linux-acs.git
 +cd linux-acs
++git checkout -b v17.05_BETA1 v17.05_BETA1
 +#copy .bb and source files to relevant places
 +rm -rf $LUVDIR/meta-luv/recipes-core/sbsa-acs-drv
 +mv -f sbsa-acs-drv $LUVDIR/meta-luv/recipes-core/
