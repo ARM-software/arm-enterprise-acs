@@ -1,11 +1,11 @@
-From e9f051d27f2cdb675b9556b6cb88f3c5e6ac7ead Mon Sep 17 00:00:00 2001
+From cf3b3043254945f3503bc2d30dac93c0f19a9854 Mon Sep 17 00:00:00 2001
 From: Sakar Arora <Sakar.Arora@arm.com>
 Date: Tue, 25 Apr 2017 15:15:50 +0530
 Subject: [PATCH] luvOS 4.10
 
 ---
- build_luvos.sh                                     |   113 +
- meta-luv/classes/luv-efi.bbclass                   |    79 +-
+ build_luvos.sh                                     |   117 +
+ meta-luv/classes/luv-efi.bbclass                   |    84 +-
  meta-luv/conf/distro/luv.conf                      |     2 +-
  meta-luv/recipes-bsp/sbbr/sbbr/README.md           |     2 +
  meta-luv/recipes-bsp/sbbr/sbbr_v1.0.bb             |    97 +
@@ -15,7 +15,7 @@ Subject: [PATCH] luvOS 4.10
  meta-luv/recipes-core/fwts/fwts/sbbr.patch         | 11950 +++++++++++++++++++
  meta-luv/recipes-core/fwts/fwts_git.bb             |     4 +-
  .../images/core-image-efi-initramfs.bb             |     1 +
- meta-luv/recipes-core/images/luv-live-image.bb     |     8 +-
+ meta-luv/recipes-core/images/luv-live-image.bb     |    10 +-
  meta-luv/recipes-core/images/luv-netboot-image.bb  |    10 +-
  .../kernel_efi_warnings/kernel-efi-warnings_0.1.bb |     2 -
  meta-luv/recipes-core/luv-test/luv-test.bb         |     6 +
@@ -25,7 +25,7 @@ Subject: [PATCH] luvOS 4.10
  .../linux/linux-yocto-efi-test_4.10.bb             |     3 +
  meta/conf/bitbake.conf                             |     2 +-
  sbsa_setup.sh                                      |    29 +
- 21 files changed, 12630 insertions(+), 18 deletions(-)
+ 21 files changed, 12641 insertions(+), 18 deletions(-)
  create mode 100755 build_luvos.sh
  create mode 100644 meta-luv/recipes-bsp/sbbr/sbbr/README.md
  create mode 100644 meta-luv/recipes-bsp/sbbr/sbbr_v1.0.bb
@@ -38,10 +38,10 @@ Subject: [PATCH] luvOS 4.10
 
 diff --git a/build_luvos.sh b/build_luvos.sh
 new file mode 100755
-index 0000000..06cde48
+index 0000000..965a58c
 --- /dev/null
 +++ b/build_luvos.sh
-@@ -0,0 +1,113 @@
+@@ -0,0 +1,117 @@
 +#!/bin/bash
 +# The material contained herein is not a license, either
 +# expressly or impliedly, to any intellectual property owned
@@ -153,10 +153,14 @@ index 0000000..06cde48
 +unset SCTPASSWORD
 +unset SCTUSERNAME
 +unset ACS_CMDLINE_APPEND
-+echo "Built image can be found at $OUTPUT_FILE"
++if [ -f $OUTPUT_FILE ]; then
++	echo "Built image can be found at $OUTPUT_FILE"
++else
++	echo "Build failed..."
++fi
 +exit
 diff --git a/meta-luv/classes/luv-efi.bbclass b/meta-luv/classes/luv-efi.bbclass
-index d23c33d..7c44a2a 100644
+index d23c33d..eee08fb 100644
 --- a/meta-luv/classes/luv-efi.bbclass
 +++ b/meta-luv/classes/luv-efi.bbclass
 @@ -16,6 +16,13 @@ def get_bits_depends(bb, d):
@@ -200,7 +204,7 @@ index d23c33d..7c44a2a 100644
      fi
  
      if echo "${TARGET_ARCH}" | grep -q "i.86" || [ "${TARGET_ARCH}" = "x86_64" ]; then
-@@ -98,6 +112,55 @@ efi_populate() {
+@@ -98,6 +112,60 @@ efi_populate() {
      install -m 0644 ${LUV_CFG} ${DEST}
  }
  
@@ -222,32 +226,37 @@ index d23c33d..7c44a2a 100644
 +    cp -r ${DEPLOY_DIR_IMAGE}/sbsa ${DEST}${EFIDIR}/sbsa
 +    cp ${DEST}${EFIDIR}/sbsa/Shell.efi ${DEST}${EFIDIR}/Shell.efi
 +    echo "echo -off
-+          if not exist sbsa_results then
-+            mkdir sbsa_results
-+          endif
-+          cd sbsa_results
-+          if not exist uefi then
-+            mkdir uefi
-+          endif
-+          cd uefi
 +          for %i in 0 1 2 3 4 5 6 7 8 9 A B C D E F then
-+            if exist FS%i:\EFI\BOOT\sbsa\Sbsa.efi then
-+              FS%i:\EFI\BOOT\sbsa\Sbsa.efi -f SbsaResults.log
-+              goto Done
++            if exist FS%i:\sbsa_results then
++              FS%i:
++              cd sbsa_results
++              if not exist uefi then
++                mkdir uefi
++              endif
++              cd uefi
++              for %j in 0 1 2 3 4 5 6 7 8 9 A B C D E F then
++                if exist FS%j:\EFI\BOOT\sbsa\Sbsa.efi then
++                  FS%j:\EFI\BOOT\sbsa\Sbsa.efi -f SbsaResults.log
++                  goto Done
++                endif
++              endfor
++              echo \"Sbsa.efi not found\"
 +            endif
 +          endfor
++          echo \"LUV-RESULTS partition not found\"
 +          :Done" > ${DEST}${EFIDIR}/sbsa/sbsa.nsh
 +}
 +
 +efi_populate_startup() {
 +    DEST=$1
 +    echo "echo -off
-+           for %i in 0 1 2 3 4 5 6 7 8 9 A B C D E F then
-+            if exist FS%i:\EFI\BOOT\sbsa\Sbsa.efi then
-+              FS%i:\EFI\BOOT\sbsa\Sbsa.efi
++          for %i in 0 1 2 3 4 5 6 7 8 9 A B C D E F then
++            if exist FS%i:\EFI\BOOT\sbsa\sbsa.nsh then
++              FS%i:\EFI\BOOT\sbsa\sbsa.nsh
 +              goto Done
 +            endif
 +          endfor
++          echo \"sbsa.nsh not found\"
 +          :Done
 +          FS%i:
 +          vmlinuz initrd=\initrd ${CMDLINE}" > ${DEST}${EFIDIR}/startup.nsh
@@ -256,7 +265,7 @@ index d23c33d..7c44a2a 100644
  efi_populate_bits() {
      DEST=$1
      # TODO: weird behavior here. When building luv-live-image,
-@@ -177,6 +240,11 @@ python build_efi_cfg() {
+@@ -177,6 +245,11 @@ python build_efi_cfg() {
         cfgfile.write('timeout=0\n')
         cfgfile.write('fallback=0\n')
  
@@ -268,7 +277,7 @@ index d23c33d..7c44a2a 100644
      cfgfile.write('menuentry \'luv\' {\n')
      cfgfile.write('linux /vmlinuz ')
  
-@@ -203,6 +271,11 @@ python build_efi_cfg() {
+@@ -203,6 +276,11 @@ python build_efi_cfg() {
         cfgfile.write('chainloader /EFI/BOOT/bits/%s\n' % loader)
         cfgfile.write('}\n')
  
@@ -12533,7 +12542,7 @@ index 82a9cb8..b7e6a8d 100644
  
  X86_ADDITIONS = "chipsec python-codecs python-subprocess vmcore-dmesg bits \
 diff --git a/meta-luv/recipes-core/images/luv-live-image.bb b/meta-luv/recipes-core/images/luv-live-image.bb
-index 50cad08..8c5b75c 100644
+index 50cad08..2c3a5d7 100644
 --- a/meta-luv/recipes-core/images/luv-live-image.bb
 +++ b/meta-luv/recipes-core/images/luv-live-image.bb
 @@ -26,7 +26,7 @@ COMMON_CMDLINE_x86 += "splash nomodeset crash_kexec_post_notifiers"
@@ -12565,6 +12574,15 @@ index 50cad08..8c5b75c 100644
      VFAT_RESULTS_SPACE=$(expr $VFAT_RESULTS_SPACE_MiB \* $MiB)
      VFAT_RESULTS_BLOCKS=$(expr $VFAT_RESULTS_SPACE / 1024)
      # TODO: do we need to dynamically generate the UUID?
+@@ -86,6 +86,8 @@ build_img() {
+     mkdosfs -C ${VFAT_RESULTS} -S ${BYTES_PER_SECTOR} -i ${VFAT_RESULTS_UUID} \
+             -n ${VFAT_RESULTS_LABEL} $VFAT_RESULTS_BLOCKS
+ 
++    mmd -i ${VFAT_RESULTS} ::/sbsa_results
++
+     dd if=/dev/zero of=${IMG} bs=${BYTES_PER_SECTOR} count=1
+ 
+     # Now that we are calculating sizes in MiB make sure that the value
 diff --git a/meta-luv/recipes-core/images/luv-netboot-image.bb b/meta-luv/recipes-core/images/luv-netboot-image.bb
 index d8205ee..d3811fa 100644
 --- a/meta-luv/recipes-core/images/luv-netboot-image.bb
