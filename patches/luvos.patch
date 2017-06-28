@@ -4,7 +4,7 @@ Date: Tue, 25 Apr 2017 15:15:50 +0530
 Subject: [PATCH] luvOS 4.10
 
 ---
- build_luvos.sh                                     |   113 +
+ build_luvos.sh                                     |   117 +
  meta-luv/classes/luv-efi.bbclass                   |    79 +-
  meta-luv/conf/distro/luv.conf                      |     2 +-
  meta-luv/recipes-bsp/sbbr/sbbr/README.md           |     2 +
@@ -41,7 +41,7 @@ new file mode 100755
 index 0000000..06cde48
 --- /dev/null
 +++ b/build_luvos.sh
-@@ -0,0 +1,113 @@
+@@ -0,0 +1,117 @@
 +#!/bin/bash
 +# The material contained herein is not a license, either
 +# expressly or impliedly, to any intellectual property owned
@@ -153,7 +153,11 @@ index 0000000..06cde48
 +unset SCTPASSWORD
 +unset SCTUSERNAME
 +unset ACS_CMDLINE_APPEND
-+echo "Built image can be found at $OUTPUT_FILE"
++if [ -f $OUTPUT_FILE ]; then
++        echo "Built image can be found at $OUTPUT_FILE"
++else
++        echo "Build failed..."
++fi
 +exit
 diff --git a/meta-luv/classes/luv-efi.bbclass b/meta-luv/classes/luv-efi.bbclass
 index d23c33d..7c44a2a 100644
@@ -243,8 +247,8 @@ index d23c33d..7c44a2a 100644
 +    DEST=$1
 +    echo "echo -off
 +           for %i in 0 1 2 3 4 5 6 7 8 9 A B C D E F then
-+            if exist FS%i:\EFI\BOOT\sbsa\Sbsa.efi then
-+              FS%i:\EFI\BOOT\sbsa\Sbsa.efi
++            if exist FS%i:\EFI\BOOT\sbsa\sbsa.nsh then
++              FS%i:\EFI\BOOT\sbsa\sbsa.nsh
 +              goto Done
 +            endif
 +          endfor
