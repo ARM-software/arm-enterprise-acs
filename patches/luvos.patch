@@ -1,11 +1,11 @@
-From cf3b3043254945f3503bc2d30dac93c0f19a9854 Mon Sep 17 00:00:00 2001
+From cd17ec85e08be76db289c5fee55578a16f12eb30 Mon Sep 17 00:00:00 2001
 From: Sakar Arora <Sakar.Arora@arm.com>
 Date: Tue, 25 Apr 2017 15:15:50 +0530
 Subject: [PATCH] luvOS 4.10
 
 ---
  build_luvos.sh                                     |   117 +
- meta-luv/classes/luv-efi.bbclass                   |    84 +-
+ meta-luv/classes/luv-efi.bbclass                   |    75 +-
  meta-luv/conf/distro/luv.conf                      |     2 +-
  meta-luv/recipes-bsp/sbbr/sbbr/README.md           |     2 +
  meta-luv/recipes-bsp/sbbr/sbbr_v1.0.bb             |    97 +
@@ -25,7 +25,7 @@ Subject: [PATCH] luvOS 4.10
  .../linux/linux-yocto-efi-test_4.10.bb             |     3 +
  meta/conf/bitbake.conf                             |     2 +-
  sbsa_setup.sh                                      |    29 +
- 21 files changed, 12641 insertions(+), 18 deletions(-)
+ 21 files changed, 12632 insertions(+), 18 deletions(-)
  create mode 100755 build_luvos.sh
  create mode 100644 meta-luv/recipes-bsp/sbbr/sbbr/README.md
  create mode 100644 meta-luv/recipes-bsp/sbbr/sbbr_v1.0.bb
@@ -160,7 +160,7 @@ index 0000000..965a58c
 +fi
 +exit
 diff --git a/meta-luv/classes/luv-efi.bbclass b/meta-luv/classes/luv-efi.bbclass
-index d23c33d..eee08fb 100644
+index d23c33d..7f21f8e 100644
 --- a/meta-luv/classes/luv-efi.bbclass
 +++ b/meta-luv/classes/luv-efi.bbclass
 @@ -16,6 +16,13 @@ def get_bits_depends(bb, d):
@@ -177,7 +177,7 @@ index d23c33d..eee08fb 100644
  # The x86 build is depends on grub-efi and AArch64 build depends on grub_git
  def get_grub_depends(bb, d):
           import re
-@@ -57,8 +64,15 @@ efi_populate() {
+@@ -57,8 +64,14 @@ efi_populate() {
  
      # Install grub2 in EFI directory
      if [ "${TARGET_ARCH}" = "aarch64" ]; then
@@ -186,16 +186,15 @@ index d23c33d..eee08fb 100644
 +            if [ "${SCTOPTIONAL}" = "no" ]; then
 +                echo "Including UEFI-SCT"
 +                efi_populate_sbbr ${DEST}
-+            else
-+                efi_populate_startup ${DEST}
 +            fi
++            efi_populate_startup ${DEST}
 +            echo "SCTOPTIONAL=${SCTOPTIONAL}"
 +            efi_populate_sbsa ${DEST}
 +            install -m 0644 ${DEPLOY_DIR_IMAGE}/bootaa64.efi ${DEST}${EFIDIR}
  
      # TODO: need conditional signing; e.g., if (DISTRO_FEATURES contains secure_boot)
      # shim bootloader does not seem to work with i386. Thus we don't use it for 32-bit
-@@ -82,7 +96,7 @@ efi_populate() {
+@@ -82,7 +95,7 @@ efi_populate() {
                  mv ${DEPLOY_DIR_IMAGE}/${EFI_LOADER_IMAGE} ${DEPLOY_DIR_IMAGE}/shim.efi
                  mv ${DEPLOY_DIR_IMAGE}/${EFI_LOADER_IMAGE}-unsigned ${DEPLOY_DIR_IMAGE}/${EFI_LOADER_IMAGE}
      else
@@ -204,21 +203,13 @@ index d23c33d..eee08fb 100644
      fi
  
      if echo "${TARGET_ARCH}" | grep -q "i.86" || [ "${TARGET_ARCH}" = "x86_64" ]; then
-@@ -98,6 +112,60 @@ efi_populate() {
+@@ -98,6 +111,52 @@ efi_populate() {
      install -m 0644 ${LUV_CFG} ${DEST}
  }
  
 +efi_populate_sbbr() {
 +    DEST=$1
 +    cp -r ${DEPLOY_DIR_IMAGE}/sbbr ${DEST}${EFIDIR}/sbbr
-+    echo "echo -off
-+          for %i in 0 1 2 3 4 5 6 7 8 9 A B C D E F
-+            if exist FS%i:\SCT\Overall\Summary.log then
-+              bootaa64.efi
-+              goto Done
-+            endif
-+          endfor
-+          :Done" > ${DEST}${EFIDIR}/startup.nsh
 +}
 +
 +efi_populate_sbsa() {
@@ -265,7 +256,7 @@ index d23c33d..eee08fb 100644
  efi_populate_bits() {
      DEST=$1
      # TODO: weird behavior here. When building luv-live-image,
-@@ -177,6 +245,11 @@ python build_efi_cfg() {
+@@ -177,6 +236,11 @@ python build_efi_cfg() {
         cfgfile.write('timeout=0\n')
         cfgfile.write('fallback=0\n')
  
@@ -277,7 +268,7 @@ index d23c33d..eee08fb 100644
      cfgfile.write('menuentry \'luv\' {\n')
      cfgfile.write('linux /vmlinuz ')
  
-@@ -203,6 +276,11 @@ python build_efi_cfg() {
+@@ -203,6 +267,11 @@ python build_efi_cfg() {
         cfgfile.write('chainloader /EFI/BOOT/bits/%s\n' % loader)
         cfgfile.write('}\n')
  
