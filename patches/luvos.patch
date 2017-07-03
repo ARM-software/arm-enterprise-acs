@@ -1,4 +1,4 @@
-From cd17ec85e08be76db289c5fee55578a16f12eb30 Mon Sep 17 00:00:00 2001
+From 290406715c2e476821054c83187af366893c9d7e Mon Sep 17 00:00:00 2001
 From: Sakar Arora <Sakar.Arora@arm.com>
 Date: Tue, 25 Apr 2017 15:15:50 +0530
 Subject: [PATCH] luvOS 4.10
@@ -19,13 +19,13 @@ Subject: [PATCH] luvOS 4.10
  meta-luv/recipes-core/images/luv-netboot-image.bb  |    10 +-
  .../kernel_efi_warnings/kernel-efi-warnings_0.1.bb |     2 -
  meta-luv/recipes-core/luv-test/luv-test.bb         |     6 +
- .../luv-test/luv-test/luv-collect-results          |   209 +
+ .../luv-test/luv-test/luv-collect-results          |   168 +
  .../recipes-core/luv-test/luv-test/luv-sbsa-test   |     5 +
  .../luv-test/luv-test/luv-test-manager             |     5 +
  .../linux/linux-yocto-efi-test_4.10.bb             |     3 +
  meta/conf/bitbake.conf                             |     2 +-
  sbsa_setup.sh                                      |    29 +
- 21 files changed, 12632 insertions(+), 18 deletions(-)
+ 21 files changed, 12591 insertions(+), 18 deletions(-)
  create mode 100755 build_luvos.sh
  create mode 100644 meta-luv/recipes-bsp/sbbr/sbbr/README.md
  create mode 100644 meta-luv/recipes-bsp/sbbr/sbbr_v1.0.bb
@@ -12499,7 +12499,7 @@ index 0000000..881d55d
 ++
 ++#endif
 diff --git a/meta-luv/recipes-core/fwts/fwts_git.bb b/meta-luv/recipes-core/fwts/fwts_git.bb
-index fd8a8f8..62113f5 100644
+index fd8a8f8..2c061c5 100644
 --- a/meta-luv/recipes-core/fwts/fwts_git.bb
 +++ b/meta-luv/recipes-core/fwts/fwts_git.bb
 @@ -9,6 +9,7 @@ PV = "V17.03.00+git${SRCPV}"
@@ -12516,7 +12516,7 @@ index fd8a8f8..62113f5 100644
  LUV_TEST_LOG_PARSER="luv-parser-fwts"
 -LUV_TEST_ARGS="-r stdout -q --uefitests --log-format='%owner;%field ' \
 -	      --batch"
-+LUV_TEST_ARGS="-r stdout -q --log-format='%owner;%field ' --sbbr"
++LUV_TEST_ARGS="-r stdout -q --sbbr"
  
  FILES_${PN} += "${libdir}/fwts/lib*${SOLIBS}"
  FILES_${PN} += "/lib/modules/${KERNEL_VERSION}/extra/efi_runtime.ko"
@@ -12652,10 +12652,10 @@ index 7a94cc3..a35e2b9 100644
         install -m 0644 ${WORKDIR}/luv-test-manager.service ${D}${systemd_unitdir}/system
 diff --git a/meta-luv/recipes-core/luv-test/luv-test/luv-collect-results b/meta-luv/recipes-core/luv-test/luv-test/luv-collect-results
 new file mode 100644
-index 0000000..e6542e4
+index 0000000..1e6035a
 --- /dev/null
 +++ b/meta-luv/recipes-core/luv-test/luv-test/luv-collect-results
-@@ -0,0 +1,209 @@
+@@ -0,0 +1,168 @@
 +#!/usr/bin/env python
 +
 +import sys
@@ -12690,50 +12690,9 @@ index 0000000..e6542e4
 +
 +    # Printing .MD file header for FWTS results.
 +    outFile.write("# FWTS Test Results\n")
-+    outFile.write("| Category | Test Case | Passes | Skips | Failures |\n")
-+    outFile.write("| :--- | :--- | ---: | ---: | ---: |\n")
++    logs = fwtsRaw.read()
++    outFile.write(logs)
 +
-+    # Scraping FWTS output.
-+    while True:
-+        # Getting a line from file.
-+        line = fwtsRaw.readline()
-+        if line == "":
-+            if testCategory != "":
-+                outFile.write ("| %s | %s | %d | %d | %d |\n" % (testCategory, testName, testPasses, testSkips, testFails))
-+                outFile.write ("| Total |  | %d | %d | %d |\n" % (totalPasses, totalSkips, totalFails))
-+            return 0
-+        line = line.rstrip()
-+
-+        # Checking if line is the beginning of a new test results block.
-+        matchString = re.search(r"INF Test \d", line, re.M|re.I)
-+        if matchString:
-+            # Printing information for previous test before we move to next one.
-+            if testName != "":
-+                outFile.write ("| %s | %s | %d | %d | %d |\n" % (testCategory, testName, testPasses, testSkips, testFails))
-+                testCategory = ""
-+            currentTest = line.split()[2] + " " + line.split()[3]
-+            testCategory = line.split()[0]
-+            testName = line[(line.index(":") + 2):]
-+            testPasses = 0
-+            testFails = 0
-+            testSkips = 0
-+            testInfos = 0
-+            while testName[len(testName) - 1] != ".":
-+                line = fwtsRaw.readline().rstrip()
-+                if ";INF" not in line:
-+                    break
-+                testName = testName + " " + line[20:]
-+
-+        # Checking if line is a pass/fail/skip for currentTest.
-+        if "PASSED" in line and currentTest in line:
-+            testPasses = testPasses + 1
-+            totalPasses = totalPasses + 1
-+        if "SKIPPED" in line and currentTest in line:
-+            testSkips = testSkips + 1
-+            totalSkips = totalSkips + 1
-+        if "FAILED" in line and currentTest in line:
-+            testFails = testFails + 1
-+            totalFails = totalFails + 1
 +
 +def log_sbbr(d):
 +    testCategory = ""
