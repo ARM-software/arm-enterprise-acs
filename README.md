@@ -22,7 +22,7 @@ These tests are split between a UEFI application and a Linux driver that togethe
 and SBBR specifications. These tests are further described in detail.
 
 ## Release details
- - Code Quality: REL v1.0
+ - Code Quality: REL v1.0 staging
  - The result of a test should not be taken as a true indication of compliance. There is a possibility of false positives and false negatives.
  - For certification of ARM Enterprise ACS, ARM licensees can contact ARM directly through their partner managers.
 
@@ -245,7 +245,8 @@ For SBBR SCT,
 - bitbake sbbr -f -c compile
 - bitbake sbbr
 
-After this, run the following command to create an updated luv live image: bitbake luv-live-image
+After this, run the following command to create an updated luv live image: 
+- bitbake luv-live-image
 
 ## Baselines for Open Source Software in this release:
 
