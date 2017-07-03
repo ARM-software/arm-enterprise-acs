@@ -22,13 +22,13 @@ These tests are split between a UEFI application and a Linux driver that togethe
 and SBBR specifications. These tests are further described in detail.
 
 ## Release details
- - Code Quality : Beta
+ - Code Quality: REL v1.0
  - The result of a test should not be taken as a true indication of compliance. There is a possibility of false positives and false negatives.
- - There are gaps in the test coverage. For details, see [Test case checklist](docs/testcase-checklist.md).
+ - For certification of ARM Enterprise ACS, ARM licensees can contact ARM directly through their partner managers.
 
 ## GitHub branch
 - To pick up the release version of the code, checkout the release branch with the appropriate tag.
- - To get the latest version of the code with bug fixes and new features, use the master branch.
+- To get the latest version of the code with bug fixes and new features, use the master branch.
 
 
 ## Server Base System Architecture - Architecture Compliance Suite
@@ -137,57 +137,17 @@ same as those for running on Juno but with a few exceptions:
 - Follow the different instructions [here](https://community.arm.com/dev-platforms/b/documents/posts/using-linaros-deliverables-on-an-fvp) to install an EDK2 (UEFI) prebuilt configuration on your FVP.
 - Modify 'run_model.sh' to add a model command argument that
   loads 'luv-live-image-gpt.img' as a virtual disk image. For example,
-  if running on the AEMv8-A Base Platform FVP, find this section:
-
-cmd="$MODEL \ <br />
--C pctl.startup=0.0.0.0 \ <br />
--C bp.secure_memory=$SECURE_MEMORY \ <br />
-$cores \ <br />
--C cache_state_modelled=$CACHE_STATE_MODELLED \ <br />-C bp.pl011_uart0.untimed_fifos=1 \ <br />
--C bp.pl011_uart0.out_file=$UART0_LOG \ <br />
--C bp.pl011_uart1.out_file=$UART1_LOG \ <br />
--C bp.secureflashloader.fname=$BL1 \ <br />
--C bp.flashloader0.fname=$FIP \ <br />
-  $image_param \ <br />
-  $dtb_param \ <br />
-  $initrd_param \ <br />
-  -C bp.ve_sysregs.mmbSiteDefault=0 \ <br />
-  -C bp.ve_sysregs.exit_on_shutdown=1 \ <br />
-  $disk_param \ <br />
-  $VARS \ <br />
-  $net \ <br />
-  $arch_params <br />
-  "
-
-  And add `bp.virtioblockdevice.image path=&lt;work_dir&gt;/arm-enterprise-
-  acs/luv/build/tmp/deploy/images/qemuarm64/luv-live-image-gpt.img' towards
-  the end as shown:
-
-cmd="$MODEL \ <br />
--C pctl.startup=0.0.0.0 \ <br />
--C bp.secure_memory=$SECURE_MEMORY \ <br />
- $cores \ <br />
--C cache_state_modelled=$CACHE_STATE_MODELLED \ <br />
--C bp.pl011_uart0.untimed_fifos=1 \ <br />
--C bp.pl011_uart0.out_file=$UART0_LOG \ <br />
--C bp.pl011_uart1.out_file=$UART1_LOG \ <br />
--C bp.secureflashloader.fname=$BL1 \ <br />
--C bp.flashloader0.fname=$FIP \ <br />
-$image_param \ <br />
-$dtb_param \ <br />
-$initrd_param \ <br />
--C bp.ve_sysregs.mmbSiteDefault=0 \ <br />
--C bp.ve_sysregs.exit_on_shutdown=1 \ <br />
-$disk_param \ <br />
-$VARS \ <br />
-$net \ <br />
-$arch_params \ <br />
-bp.virtioblockdevice.image path=&lt;work_dir&gt;/arm-enterprise-acs/luv/
-build/tmp/deploy/images/qemuarm64/luv-live-image-gpt.img \
-"
+  if running on the AEMv8-A Base Platform FVP, add 
+`bp.virtioblockdevice.image path=<work_dir>/arm-enterprise- acs/luv/build/tmp/deploy/images/qemuarm64/luv-live-image-gpt.img' 
+to your model options. <br />
+Or, <br />
+To launch the FVP model with script ‘run_model.sh’ that supports -v option for virtual disk image, use the following command:
+$ ./run_model.sh -v <work_dir>/arm-enterprise-acs/luv/build/tmp/deploy/images/qemuarm64/luv-live-image-gpt.img
 
 ## Test suite execution
-The compliance suite execution varies depending on the test environment.
+The test suite execution can be automated or manual. Automated execution is the default execution method. <br />
+Note: SBBR SCT tests are not included as part of automation. For information about running these tests, see section ‘SBBR SCT tests’ in this document. <br />
+The execution varies depending on the test environment.
 The next set of commands are an example of our typical run of the test suites.
 Note that the File System Partition in your platform can vary. <br />
 
@@ -195,6 +155,7 @@ The live image boots to UEFI Shell. The different test applications can be run i
 1. SBSA UEFI Shell application
 2. SBBR SCT tests
 3. LUV OS FWTS tests
+4. SBSA OS tests
 
 
 ### 1. SBSA UEFI Shell appplication
@@ -244,6 +205,48 @@ Logs are stored into the "luv-results" partition, which can be viewed on any mac
    For more information, see [YOCTO documentation](https://www.yoctoproject.org/documentation), or [YOCTO source code](https://github.com/01org/luv-yocto) <br />
 
 
+### 4. SBSA OS tests
+On Linux shell, enter the following commands:
+#insmod /lib/modules/4.10.0-yocto-standard/extra/sbsa_acs.ko <br />
+#sbsa <br />
+
+
+## Debug Information
+SBSA and SBBR source directories can be found at the following paths:
+- SBBR FWTS source at /path/to/arm-enterprise-acs/luv/build/tmp/work/qemuarm64-oe-linux/fwts/V17.03.00+gitAUTOINC+e3e9d1442b-r0/git/ 
+- SBBR SCT source at /path/to/arm-enterprise-acs/luv/build/tmp/work/aarch64-oe-linux/sbbr/v1.0+gitAUTOINC+d38be6dae3-r0/git/ 
+- SBSA UEFI application source at /path/to/arm-enterprise-acs/tmp/work/aarch64-oe-linux/sbsa/1.0+gitAUTOINC+855051d821-r0/git/
+- SBSA Linux user application source at /path/to/arm-enterprise-acs/luv/meta-luv/recipes-utils/sbsa-acs-app/sbsa-acs-app/
+- SBSA Linux kernel module source at /path/to/arm-enterprise-acs/luv/meta-luv/recipes-core/sbsa-acs-drv/files/
+
+To compile and test changes in the above source code, follow these steps:
+- cd /path/to/arm-enterprise-acs/luv
+- source oe-init-build-env
+
+For SBSA UEFI application,
+- bitbake sbsa -f -c compile
+- bitbake sbsa
+
+For SBSA linux user application,
+- bitbake sbsa-acs-app -f -c compile
+- bitbake sbsa-acs-app
+
+For SBSA linux kernel module,
+- bitbake sbsa-acs-drv -f -c compile
+- bitbake sbsa-acs-drv
+
+For SBBR FWTS,
+- bitbake fwts -f -c compile
+- bitbake fwts
+
+For SBBR SCT,
+- export SCTOPTIONAL=”no”
+- export BB_ENV_EXTRAWHITE="BB_ENV_EXTRAWHITE SCTOPTIONAL"
+- bitbake sbbr -f -c compile
+- bitbake sbbr
+
+After this, run the following command to create an updated luv live image: bitbake luv-live-image
+
 ## Baselines for Open Source Software in this release:
 
 - [Linux UEFI Validation OS](https://github.com/01org/luv-yocto)
@@ -270,22 +273,8 @@ a. Tests run on Juno Reference Platforms
 
 
 b. Known issues
+SBBR (UEFI-SCT) Timer tests might hang. They can be recovered by resetting the system.
 
- - Running FWTS EFI Runtime Service monotonic counter tests on Juno
-          may cause a crash or hang during the subsequent boot due to
-          the destructive nature of the test. To work around this issue,
-          enter the following commands into the Juno's boot monitor before
-          booting the board again:
-
-         Cmd> flash
-         Flash> eraseall
-         Flash> quit
-         Cmd> reboot
-
- -  SBSA might hang on "Starting Power and Wakeup semantic tests".
-
- -  SBBR (UEFI-SCT) Timer tests might hang. They can be recovered by resetting the system.
- -  On Juno r2, running FWTS causes kernel panic at random times during test. Reset the system to restart the test.
 
 c. Planned enhancements
        Upstream SBBR code to open source repositories FWTS and UEFI-SCT.
@@ -296,7 +285,7 @@ c. Planned enhancements
 ARM Enterprise ACS is distributed under Apache v2.0 License.
 
 
-## Feedback, contributions and support
+## Feedback, contributions, and support
 
  - For feedback, use the GitHub Issue Tracker that is associated with this repository.
  - ARM licensees can contact ARM directly through their partner managers.
