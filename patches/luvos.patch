@@ -1,4 +1,4 @@
-From 290406715c2e476821054c83187af366893c9d7e Mon Sep 17 00:00:00 2001
+From 159f5a6d4245b20c81ffcdc90b75370110824fb4 Mon Sep 17 00:00:00 2001
 From: Sakar Arora <Sakar.Arora@arm.com>
 Date: Tue, 25 Apr 2017 15:15:50 +0530
 Subject: [PATCH] luvOS 4.10
@@ -425,7 +425,7 @@ index 0000000..a47251a
 +source AppPkg/Applications/sbsa-acs/tools/scripts/avsbuild.sh
 diff --git a/meta-luv/recipes-bsp/sbsa/sbsa.bb b/meta-luv/recipes-bsp/sbsa/sbsa.bb
 new file mode 100644
-index 0000000..07fd534
+index 0000000..c8158dd
 --- /dev/null
 +++ b/meta-luv/recipes-bsp/sbsa/sbsa.bb
 @@ -0,0 +1,104 @@
@@ -466,7 +466,7 @@ index 0000000..07fd534
 +    if [ ! -d ${WORKDIR}/edk2 ]
 +    then
 +        echo "do_configure: Cloning EDK2 repository."
-+        git clone https://github.com/tianocore/edk2.git
++        git clone -b UDK2017 https://github.com/tianocore/edk2.git
 +    fi
 +
 +    # Linking SBSA and EDK2.
