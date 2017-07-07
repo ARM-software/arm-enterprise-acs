@@ -1,4 +1,4 @@
-From 159f5a6d4245b20c81ffcdc90b75370110824fb4 Mon Sep 17 00:00:00 2001
+From 24ca10cc1e6128a0b7a3989652d316c735a59ce2 Mon Sep 17 00:00:00 2001
 From: Sakar Arora <Sakar.Arora@arm.com>
 Date: Tue, 25 Apr 2017 15:15:50 +0530
 Subject: [PATCH] luvOS 4.10
@@ -12880,7 +12880,7 @@ index 54a587f..b05fe94 100644
  MACHINE_TASK_PROVIDER ?= "${DEFAULT_TASK_PROVIDER}"
 diff --git a/sbsa_setup.sh b/sbsa_setup.sh
 new file mode 100755
-index 0000000..f5bcce8
+index 0000000..7b3f449
 --- /dev/null
 +++ b/sbsa_setup.sh
 @@ -0,0 +1,29 @@
@@ -12902,7 +12902,7 @@ index 0000000..f5bcce8
 +mv -f kernel/src/0001-SBSA-ACS-linux-4.10.patch $LUVDIR/meta-luv/recipes-kernel/linux/linux-yocto-efi-test/
 +
 +cd $TMPDIR
-+git clone https://github.com/ARM-software/sbsa-acs.git
++git clone -b release https://github.com/ARM-software/sbsa-acs.git
 +cd sbsa-acs
 +mv -f val $LUVDIR/meta-luv/recipes-core/sbsa-acs-drv/files/
 +mv -f test_pool $LUVDIR/meta-luv/recipes-core/sbsa-acs-drv/files/
