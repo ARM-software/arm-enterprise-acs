@@ -2,7 +2,7 @@
 # ARM Enterprise ACS - Architecture Compliance Suite
 
 ## Architecture Compliance Suite
-Architecture Compliance Suite (ACS) is used to ensure architectural compliance across different implementations of the architecture. ARM Enterprise ACS tests the compliance of an implementation against [SBSA](http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.den0029/index.html) and [SBBR](http://infocenter.arm.com/help/topic/com.arm.doc.den0044b/DEN0044B_Server_Base_Boot_Requirements.pdf) specifications. ACS is delivered with tests in source form along with a build script, the output of the build being a bootable Linux UEFI Validation (LUV) OS image that can run all Server Base System Architecture (SBSA) and Server Base Boot Requirements (SBBR) tests.
+Architecture Compliance Suite (ACS) is used to ensure architectural compliance across different implementations of the architecture. ARM Enterprise ACS includes a set of examples of the invariant behaviours that are provided by the [SBSA](http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.den0029/index.html) and [SBBR](http://infocenter.arm.com/help/topic/com.arm.doc.den0044b/DEN0044B_Server_Base_Boot_Requirements.pdf) specifications, so that implementers can verify if these behaviours have been interpreted correctly. ACS is delivered with tests in source form along with a build script, the output of the build being a bootable Linux UEFI Validation (LUV) OS image that can run all Server Base System Architecture (SBSA) and Server Base Boot Requirements (SBBR) tests.
 <br />
 <br />
 <center><img src="docs/ack-fig1.png"></img></center>
@@ -22,10 +22,12 @@ These tests are split between a UEFI application and a Linux driver that togethe
 and SBBR specifications. These tests are further described in detail.
 
 ## Release details
- - Code Quality: REL v1.0 staging
- - The result of a test should not be taken as a true indication of compliance. There is a possibility of false positives and false negatives.
- - For certification of ARM Enterprise ACS, ARM licensees can contact ARM directly through their partner managers.
-
+ - Code Quality: REL v1.0
+ - The SBSA tests are written for version 3.0 of the SBSA specification.
+ - The SBBR tests are written for version 1.0 of the SBBR specification.
+ - The compliance suite is not a substitute for design verification.
+ - To review the ACS logs, ARM licensees can contact ARM directly through their partner managers.
+  
 ## GitHub branch
 - To pick up the release version of the code, checkout the release branch with the appropriate tag.
 - To get the latest version of the code with bug fixes and new features, use the master branch.
@@ -289,5 +291,6 @@ ARM Enterprise ACS is distributed under Apache v2.0 License.
 ## Feedback, contributions, and support
 
  - For feedback, use the GitHub Issue Tracker that is associated with this repository.
+ - For support, please send an email to "support-enterprise-acs@arm.com" with details.
  - ARM licensees can contact ARM directly through their partner managers.
  - ARM welcomes code contributions through GitHub pull requests. For details, see "docs/Contributions.txt".
