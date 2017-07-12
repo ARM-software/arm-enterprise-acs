@@ -1,22 +1,17 @@
 #! /bin/bash
-############################################################################
-#                                                                          #
-# This software may be used only as authorized by a licensing              #
-# agreement from ARM Limited.                                              #
-#                                                                          #
-# (C) Copyright 2016 ARM Limited                                           #
-# The entire notice above must be reproduced on all authorized copies and  #
-# copies may only be made to the extent permitted by a licensing agreement #
-# from ARM Limited.                                                        #
-#                                                                          #
-# Version:       1.0                                                       #
-# Date:          2016.12.01                                                #
-# Description:   This script verifies dependencies are met to enable       #
-#                the download and build of Architecture Compliance         #
-#                Test Suite.                                               #
-#                                                                          #
-############################################################################
-
+# Copyright (c) 2017, ARM Limited or its affiliates. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#  http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 ############################################################################
 #                                                                          #
