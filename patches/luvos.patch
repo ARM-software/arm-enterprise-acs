@@ -1,16 +1,16 @@
-From 24ca10cc1e6128a0b7a3989652d316c735a59ce2 Mon Sep 17 00:00:00 2001
-From: Sakar Arora <Sakar.Arora@arm.com>
-Date: Tue, 25 Apr 2017 15:15:50 +0530
-Subject: [PATCH] luvOS 4.10
+From 9bb77c15c3b833b62e6ea23150a4a30a92c31a3b Mon Sep 17 00:00:00 2001
+From: sakaro01 <Sakar.Arora@arm.com>
+Date: Wed, 12 Jul 2017 16:14:41 +0530
+Subject: [PATCH] luvos
 
 ---
- build_luvos.sh                                     |   117 +
+ build_luvos.sh                                     |    88 +
  meta-luv/classes/luv-efi.bbclass                   |    75 +-
  meta-luv/conf/distro/luv.conf                      |     2 +-
  meta-luv/recipes-bsp/sbbr/sbbr/README.md           |     2 +
- meta-luv/recipes-bsp/sbbr/sbbr_v1.0.bb             |    97 +
- meta-luv/recipes-bsp/sbsa/files/compile.sh         |    16 +
- meta-luv/recipes-bsp/sbsa/sbsa.bb                  |   104 +
+ meta-luv/recipes-bsp/sbbr/sbbr_v1.0.bb             |   100 +
+ meta-luv/recipes-bsp/sbsa/files/compile.sh         |    28 +
+ meta-luv/recipes-bsp/sbsa/sbsa.bb                  |   107 +
  meta-luv/recipes-core/efivarfs/efivarfs-test.bb    |     1 -
  meta-luv/recipes-core/fwts/fwts/sbbr.patch         | 11950 +++++++++++++++++++
  meta-luv/recipes-core/fwts/fwts_git.bb             |     4 +-
@@ -19,13 +19,13 @@ Subject: [PATCH] luvOS 4.10
  meta-luv/recipes-core/images/luv-netboot-image.bb  |    10 +-
  .../kernel_efi_warnings/kernel-efi-warnings_0.1.bb |     2 -
  meta-luv/recipes-core/luv-test/luv-test.bb         |     6 +
- .../luv-test/luv-test/luv-collect-results          |   168 +
- .../recipes-core/luv-test/luv-test/luv-sbsa-test   |     5 +
+ .../luv-test/luv-test/luv-collect-results          |   181 +
+ .../recipes-core/luv-test/luv-test/luv-sbsa-test   |    18 +
  .../luv-test/luv-test/luv-test-manager             |     5 +
  .../linux/linux-yocto-efi-test_4.10.bb             |     3 +
  meta/conf/bitbake.conf                             |     2 +-
- sbsa_setup.sh                                      |    29 +
- 21 files changed, 12591 insertions(+), 18 deletions(-)
+ sbsa_setup.sh                                      |    42 +
+ 21 files changed, 12619 insertions(+), 18 deletions(-)
  create mode 100755 build_luvos.sh
  create mode 100644 meta-luv/recipes-bsp/sbbr/sbbr/README.md
  create mode 100644 meta-luv/recipes-bsp/sbbr/sbbr_v1.0.bb
@@ -38,54 +38,25 @@ Subject: [PATCH] luvOS 4.10
 
 diff --git a/build_luvos.sh b/build_luvos.sh
 new file mode 100755
-index 0000000..965a58c
+index 0000000..bc6b659
 --- /dev/null
 +++ b/build_luvos.sh
-@@ -0,0 +1,117 @@
+@@ -0,0 +1,88 @@
 +#!/bin/bash
-+# The material contained herein is not a license, either
-+# expressly or impliedly, to any intellectual property owned
-+# or controlled by any of the authors or developers of this
-+# material or to any contribution thereto. The material
-+# contained herein is provided on an "AS IS" basis and, to the
-+# maximum extent permitted by applicable law, this information
-+# is provided AS IS AND WITH ALL FAULTS, and the authors and
-+# developers of this material hereby disclaim all other
-+# warranties and conditions, either express, implied or
-+# statutory, including, but not limited to, any (if any)
-+# implied warranties, duties or conditions of merchantability,
-+# of fitness for a particular purpose, of accuracy or
-+# completeness of responses, of results, of workmanlike
-+# effort, of lack of viruses and of lack of negligence, all
-+# with regard to this material and any contribution thereto.
-+# Designers must not rely on the absence or characteristics of
-+# any features or instructions marked "reserved" or
-+# "undefined." The ARM, Inc. reserves any
-+# features or instructions so marked for future definition and
-+# shall have no responsibility whatsoever for conflicts or
-+# incompatibilities arising from future changes to them. ALSO,
-+# THERE IS NO WARRANTY OR CONDITION OF TITLE, QUIET ENJOYMENT,
-+# QUIET POSSESSION, CORRESPONDENCE TO DESCRIPTION OR
-+# NON-INFRINGEMENT WITH REGARD TO THE TEST SUITE AND ANY
-+# CONTRIBUTION THERETO.
++# Copyright (c) 2017, ARM Limited or its affiliates. All rights reserved.
 +#
-+# IN NO EVENT WILL ANY AUTHOR OR DEVELOPER OF THIS MATERIAL OR
-+# ANY CONTRIBUTION THERETO BE LIABLE TO ANY OTHER PARTY FOR
-+# THE COST OF PROCURING SUBSTITUTE GOODS OR SERVICES, LOST
-+# PROFITS, LOSS OF USE, LOSS OF DATA, OR ANY INCIDENTAL,
-+# CONSEQUENTIAL, DIRECT, INDIRECT, OR SPECIAL DAMAGES WHETHER
-+# UNDER CONTRACT, TORT, WARRANTY, OR OTHERWISE, ARISING IN ANY
-+# WAY OUT OF THIS OR ANY OTHER AGREEMENT RELATING TO THIS
-+# DOCUMENT, WHETHER OR NOT SUCH PARTY HAD ADVANCE NOTICE OF
-+# THE POSSIBILITY OF SUCH DAMAGES.
++# Licensed under the Apache License, Version 2.0 (the "License");
++# you may not use this file except in compliance with the License.
++# You may obtain a copy of the License at
 +#
-+# Copyright 2016 ARM, Inc. All
-+# Rights Reserved, subject to all existing rights in all
-+# matters included within this Test Suite, to which ARM, Inc.
-+# makes no claim of right.
++#  http://www.apache.org/licenses/LICENSE-2.0
 +#
-+# Copyright (c) 2016 ARM Ltd. All rights reserved.<BR>
-+#
++# Unless required by applicable law or agreed to in writing, software
++# distributed under the License is distributed on an "AS IS" BASIS,
++# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++# See the License for the specific language governing permissions and
++# limitations under the License.
++
 +TOPDIR=`pwd`
 +
 +METALUV="$TOPDIR/meta-luv \\\\"
@@ -300,21 +271,24 @@ index 0000000..06f0264
 +========
 diff --git a/meta-luv/recipes-bsp/sbbr/sbbr_v1.0.bb b/meta-luv/recipes-bsp/sbbr/sbbr_v1.0.bb
 new file mode 100644
-index 0000000..675aa55
+index 0000000..960ddf6
 --- /dev/null
 +++ b/meta-luv/recipes-bsp/sbbr/sbbr_v1.0.bb
-@@ -0,0 +1,97 @@
-+# Recipe created by recipetool
-+# This is the basis of a recipe and may need further editing in order to be fully functional.
-+# (Feel free to remove these comments when editing.)
+@@ -0,0 +1,100 @@
++# Copyright (c) 2017, ARM Limited or its affiliates. All rights reserved.
 +#
-+# Unable to find any files that looked like license statements. Check the accompanying
-+# documentation and source headers and set LICENSE and LIC_FILES_CHKSUM accordingly.
++# Licensed under the Apache License, Version 2.0 (the "License");
++# you may not use this file except in compliance with the License.
++# You may obtain a copy of the License at
 +#
-+# NOTE: LICENSE is being set to "CLOSED" to allow you to at least start building - if
-+# this is not accurate with respect to the licensing of the software being built (it
-+# will not be in most cases) you must specify the correct value before using this
-+# recipe for anything other than initial testing/development!
++#  http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing, software
++# distributed under the License is distributed on an "AS IS" BASIS,
++# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++# See the License for the specific language governing permissions and
++# limitations under the License.
++
 +SUMMARY = "SBBR is a test suite that runs Server Base Boot Requirements UEFI tests."
 +
 +DESCRIPTION = "This Server Base Boot Requirements (SBBR) test suite is intended \
@@ -403,12 +377,24 @@ index 0000000..675aa55
 +addtask deploy before do_build after do_install
 diff --git a/meta-luv/recipes-bsp/sbsa/files/compile.sh b/meta-luv/recipes-bsp/sbsa/files/compile.sh
 new file mode 100755
-index 0000000..a47251a
+index 0000000..fae365c
 --- /dev/null
 +++ b/meta-luv/recipes-bsp/sbsa/files/compile.sh
-@@ -0,0 +1,16 @@
+@@ -0,0 +1,28 @@
 +#!/usr/bin/env bash
-+
++# Copyright (c) 2017, ARM Limited or its affiliates. All rights reserved.
++#
++# Licensed under the Apache License, Version 2.0 (the "License");
++# you may not use this file except in compliance with the License.
++# You may obtain a copy of the License at
++#
++#  http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing, software
++# distributed under the License is distributed on an "AS IS" BASIS,
++# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++# See the License for the specific language governing permissions and
++# limitations under the License.
 +
 +cd ${1}/edk2
 +
@@ -425,21 +411,24 @@ index 0000000..a47251a
 +source AppPkg/Applications/sbsa-acs/tools/scripts/avsbuild.sh
 diff --git a/meta-luv/recipes-bsp/sbsa/sbsa.bb b/meta-luv/recipes-bsp/sbsa/sbsa.bb
 new file mode 100644
-index 0000000..c8158dd
+index 0000000..80d4db5
 --- /dev/null
 +++ b/meta-luv/recipes-bsp/sbsa/sbsa.bb
-@@ -0,0 +1,104 @@
-+# Recipe created by recipetool
-+# This is the basis of a recipe and may need further editing in order to be fully functional.
-+# (Feel free to remove these comments when editing.)
+@@ -0,0 +1,107 @@
++# Copyright (c) 2017, ARM Limited or its affiliates. All rights reserved.
 +#
-+# Unable to find any files that looked like license statements. Check the accompanying
-+# documentation and source headers and set LICENSE and LIC_FILES_CHKSUM accordingly.
++# Licensed under the Apache License, Version 2.0 (the "License");
++# you may not use this file except in compliance with the License.
++# You may obtain a copy of the License at
 +#
-+# NOTE: LICENSE is being set to "CLOSED" to allow you to at least start building - if
-+# this is not accurate with respect to the licensing of the software being built (it
-+# will not be in most cases) you must specify the correct value before using this
-+# recipe for anything other than initial testing/development!
++#  http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing, software
++# distributed under the License is distributed on an "AS IS" BASIS,
++# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++# See the License for the specific language governing permissions and
++# limitations under the License.
++
 +LICENSE = "CLOSED"
 +LIC_FILES_CHKSUM = ""
 +
@@ -12652,11 +12641,24 @@ index 7a94cc3..a35e2b9 100644
         install -m 0644 ${WORKDIR}/luv-test-manager.service ${D}${systemd_unitdir}/system
 diff --git a/meta-luv/recipes-core/luv-test/luv-test/luv-collect-results b/meta-luv/recipes-core/luv-test/luv-test/luv-collect-results
 new file mode 100644
-index 0000000..1e6035a
+index 0000000..6f4601a
 --- /dev/null
 +++ b/meta-luv/recipes-core/luv-test/luv-test/luv-collect-results
-@@ -0,0 +1,168 @@
+@@ -0,0 +1,181 @@
 +#!/usr/bin/env python
++# Copyright (c) 2017, ARM Limited or its affiliates. All rights reserved.
++#
++# Licensed under the Apache License, Version 2.0 (the "License");
++# you may not use this file except in compliance with the License.
++# You may obtain a copy of the License at
++#
++#  http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing, software
++# distributed under the License is distributed on an "AS IS" BASIS,
++# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++# See the License for the specific language governing permissions and
++# limitations under the License.
 +
 +import sys
 +import os
@@ -12826,11 +12828,24 @@ index 0000000..1e6035a
 +print "Done, test results can be found in \"%s\"" % arg_output
 diff --git a/meta-luv/recipes-core/luv-test/luv-test/luv-sbsa-test b/meta-luv/recipes-core/luv-test/luv-test/luv-sbsa-test
 new file mode 100755
-index 0000000..756bc02
+index 0000000..0764e1c
 --- /dev/null
 +++ b/meta-luv/recipes-core/luv-test/luv-test/luv-sbsa-test
-@@ -0,0 +1,5 @@
+@@ -0,0 +1,18 @@
 +#!/bin/bash
++# Copyright (c) 2017, ARM Limited or its affiliates. All rights reserved.
++#
++# Licensed under the Apache License, Version 2.0 (the "License");
++# you may not use this file except in compliance with the License.
++# You may obtain a copy of the License at
++#
++#  http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing, software
++# distributed under the License is distributed on an "AS IS" BASIS,
++# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++# See the License for the specific language governing permissions and
++# limitations under the License.
 +
 +insmod /lib/modules/4.10.0-yocto-standard/extra/sbsa_acs.ko
 +mkdir -p $1/sbsa_results/linux
@@ -12880,11 +12895,24 @@ index 54a587f..b05fe94 100644
  MACHINE_TASK_PROVIDER ?= "${DEFAULT_TASK_PROVIDER}"
 diff --git a/sbsa_setup.sh b/sbsa_setup.sh
 new file mode 100755
-index 0000000..7b3f449
+index 0000000..fd05907
 --- /dev/null
 +++ b/sbsa_setup.sh
-@@ -0,0 +1,29 @@
+@@ -0,0 +1,42 @@
 +#!/bin/bash
++# Copyright (c) 2017, ARM Limited or its affiliates. All rights reserved.
++#
++# Licensed under the Apache License, Version 2.0 (the "License");
++# you may not use this file except in compliance with the License.
++# You may obtain a copy of the License at
++#
++#  http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing, software
++# distributed under the License is distributed on an "AS IS" BASIS,
++# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++# See the License for the specific language governing permissions and
++# limitations under the License.
 +
 +#create tmp directory
 +TMPDIR=$PWD/tmp
