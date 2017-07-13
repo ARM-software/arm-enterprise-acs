@@ -1,4 +1,4 @@
-From e441cde2569210a86c53960727b6bb8ddd852d47 Mon Sep 17 00:00:00 2001
+From 8244cc6b81efaba00f6461846b4f5cbf0d0e15c7 Mon Sep 17 00:00:00 2001
 From: sakaro01 <Sakar.Arora@arm.com>
 Date: Wed, 12 Jul 2017 16:14:41 +0530
 Subject: [PATCH] luvos
@@ -24,8 +24,8 @@ Subject: [PATCH] luvos
  .../luv-test/luv-test/luv-test-manager             |     5 +
  .../linux/linux-yocto-efi-test_4.10.bb             |     3 +
  meta/conf/bitbake.conf                             |     2 +-
- sbsa_setup.sh                                      |    42 +
- 21 files changed, 12619 insertions(+), 18 deletions(-)
+ sbsa_setup.sh                                      |    41 +
+ 21 files changed, 12618 insertions(+), 18 deletions(-)
  create mode 100755 build_luvos.sh
  create mode 100644 meta-luv/recipes-bsp/sbbr/sbbr/README.md
  create mode 100644 meta-luv/recipes-bsp/sbbr/sbbr_v1.0.bb
@@ -411,7 +411,7 @@ index 0000000..fae365c
 +source AppPkg/Applications/sbsa-acs/tools/scripts/avsbuild.sh
 diff --git a/meta-luv/recipes-bsp/sbsa/sbsa.bb b/meta-luv/recipes-bsp/sbsa/sbsa.bb
 new file mode 100644
-index 0000000..80d4db5
+index 0000000..8b1af24
 --- /dev/null
 +++ b/meta-luv/recipes-bsp/sbsa/sbsa.bb
 @@ -0,0 +1,107 @@
@@ -434,7 +434,7 @@ index 0000000..80d4db5
 +
 +# SCT files placed in ${WORKDIR}/git
 +# GCC files placed in ${WORKDIR}/gcc-linaro-5.3.1-2016.05-x86_64_aarch64-linux-gnu
-+SRC_URI = "git://github.com/ARM-software/sbsa-acs.git;protocol=https;branch=release \
++SRC_URI = "git://github.com/ARM-software/sbsa-acs.git;protocol=https \
 +           https://releases.linaro.org/components/toolchain/binaries/5.3-2016.05/aarch64-linux-gnu/gcc-linaro-5.3.1-2016.05-x86_64_aarch64-linux-gnu.tar.xz \
 +           file://compile.sh"
 +
@@ -12895,10 +12895,10 @@ index 54a587f..b05fe94 100644
  MACHINE_TASK_PROVIDER ?= "${DEFAULT_TASK_PROVIDER}"
 diff --git a/sbsa_setup.sh b/sbsa_setup.sh
 new file mode 100755
-index 0000000..d31ad41
+index 0000000..d07fa3b
 --- /dev/null
 +++ b/sbsa_setup.sh
-@@ -0,0 +1,42 @@
+@@ -0,0 +1,41 @@
 +#!/bin/bash
 +# Copyright (c) 2017, ARM Limited or its affiliates. All rights reserved.
 +#
@@ -12923,14 +12923,13 @@ index 0000000..d31ad41
 +#clone linux-acs repo
 +git clone git://linux-arm.org/linux-acs.git
 +cd linux-acs
-+git checkout -b v17.07_REL1.0 v17.07_REL1.0
 +#copy .bb and source files to relevant places
 +rm -rf $LUVDIR/meta-luv/recipes-core/sbsa-acs-drv
 +mv -f sbsa-acs-drv $LUVDIR/meta-luv/recipes-core/
 +mv -f kernel/src/0001-SBSA-ACS-linux-4.10.patch $LUVDIR/meta-luv/recipes-kernel/linux/linux-yocto-efi-test/
 +
 +cd $TMPDIR
-+git clone -b release https://github.com/ARM-software/sbsa-acs.git
++git clone https://github.com/ARM-software/sbsa-acs.git
 +cd sbsa-acs
 +mv -f val $LUVDIR/meta-luv/recipes-core/sbsa-acs-drv/files/
 +mv -f test_pool $LUVDIR/meta-luv/recipes-core/sbsa-acs-drv/files/
