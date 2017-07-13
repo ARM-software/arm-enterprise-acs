@@ -1,4 +1,4 @@
-From 9bb77c15c3b833b62e6ea23150a4a30a92c31a3b Mon Sep 17 00:00:00 2001
+From e441cde2569210a86c53960727b6bb8ddd852d47 Mon Sep 17 00:00:00 2001
 From: sakaro01 <Sakar.Arora@arm.com>
 Date: Wed, 12 Jul 2017 16:14:41 +0530
 Subject: [PATCH] luvos
@@ -12895,7 +12895,7 @@ index 54a587f..b05fe94 100644
  MACHINE_TASK_PROVIDER ?= "${DEFAULT_TASK_PROVIDER}"
 diff --git a/sbsa_setup.sh b/sbsa_setup.sh
 new file mode 100755
-index 0000000..fd05907
+index 0000000..d31ad41
 --- /dev/null
 +++ b/sbsa_setup.sh
 @@ -0,0 +1,42 @@
@@ -12923,7 +12923,7 @@ index 0000000..fd05907
 +#clone linux-acs repo
 +git clone git://linux-arm.org/linux-acs.git
 +cd linux-acs
-+git checkout -b v17.05_BETA1 v17.05_BETA1
++git checkout -b v17.07_REL1.0 v17.07_REL1.0
 +#copy .bb and source files to relevant places
 +rm -rf $LUVDIR/meta-luv/recipes-core/sbsa-acs-drv
 +mv -f sbsa-acs-drv $LUVDIR/meta-luv/recipes-core/
