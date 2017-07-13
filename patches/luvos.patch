@@ -1,31 +1,31 @@
-From 62907cede03a12b94d800b15707c1c1cdba126ed Mon Sep 17 00:00:00 2001
-From: Sakar Arora <Sakar.Arora@arm.com>
-Date: Tue, 25 Apr 2017 15:15:50 +0530
-Subject: [PATCH] luvOS 4.10
+From e441cde2569210a86c53960727b6bb8ddd852d47 Mon Sep 17 00:00:00 2001
+From: sakaro01 <Sakar.Arora@arm.com>
+Date: Wed, 12 Jul 2017 16:14:41 +0530
+Subject: [PATCH] luvos
 
 ---
- build_luvos.sh                                     |   113 +
- meta-luv/classes/luv-efi.bbclass                   |    79 +-
+ build_luvos.sh                                     |    88 +
+ meta-luv/classes/luv-efi.bbclass                   |    75 +-
  meta-luv/conf/distro/luv.conf                      |     2 +-
  meta-luv/recipes-bsp/sbbr/sbbr/README.md           |     2 +
- meta-luv/recipes-bsp/sbbr/sbbr_v1.0.bb             |    97 +
- meta-luv/recipes-bsp/sbsa/files/compile.sh         |    16 +
- meta-luv/recipes-bsp/sbsa/sbsa.bb                  |   104 +
+ meta-luv/recipes-bsp/sbbr/sbbr_v1.0.bb             |   100 +
+ meta-luv/recipes-bsp/sbsa/files/compile.sh         |    28 +
+ meta-luv/recipes-bsp/sbsa/sbsa.bb                  |   107 +
  meta-luv/recipes-core/efivarfs/efivarfs-test.bb    |     1 -
  meta-luv/recipes-core/fwts/fwts/sbbr.patch         | 11950 +++++++++++++++++++
  meta-luv/recipes-core/fwts/fwts_git.bb             |     4 +-
  .../images/core-image-efi-initramfs.bb             |     1 +
- meta-luv/recipes-core/images/luv-live-image.bb     |     8 +-
+ meta-luv/recipes-core/images/luv-live-image.bb     |    10 +-
  meta-luv/recipes-core/images/luv-netboot-image.bb  |    10 +-
  .../kernel_efi_warnings/kernel-efi-warnings_0.1.bb |     2 -
  meta-luv/recipes-core/luv-test/luv-test.bb         |     6 +
- .../luv-test/luv-test/luv-collect-results          |   209 +
- .../recipes-core/luv-test/luv-test/luv-sbsa-test   |     5 +
+ .../luv-test/luv-test/luv-collect-results          |   181 +
+ .../recipes-core/luv-test/luv-test/luv-sbsa-test   |    18 +
  .../luv-test/luv-test/luv-test-manager             |     5 +
  .../linux/linux-yocto-efi-test_4.10.bb             |     3 +
  meta/conf/bitbake.conf                             |     2 +-
- sbsa_setup.sh                                      |    28 +
- 21 files changed, 12629 insertions(+), 18 deletions(-)
+ sbsa_setup.sh                                      |    42 +
+ 21 files changed, 12619 insertions(+), 18 deletions(-)
  create mode 100755 build_luvos.sh
  create mode 100644 meta-luv/recipes-bsp/sbbr/sbbr/README.md
  create mode 100644 meta-luv/recipes-bsp/sbbr/sbbr_v1.0.bb
@@ -38,54 +38,25 @@ Subject: [PATCH] luvOS 4.10
 
 diff --git a/build_luvos.sh b/build_luvos.sh
 new file mode 100755
-index 0000000..06cde48
+index 0000000..bc6b659
 --- /dev/null
 +++ b/build_luvos.sh
-@@ -0,0 +1,113 @@
+@@ -0,0 +1,88 @@
 +#!/bin/bash
-+# The material contained herein is not a license, either
-+# expressly or impliedly, to any intellectual property owned
-+# or controlled by any of the authors or developers of this
-+# material or to any contribution thereto. The material
-+# contained herein is provided on an "AS IS" basis and, to the
-+# maximum extent permitted by applicable law, this information
-+# is provided AS IS AND WITH ALL FAULTS, and the authors and
-+# developers of this material hereby disclaim all other
-+# warranties and conditions, either express, implied or
-+# statutory, including, but not limited to, any (if any)
-+# implied warranties, duties or conditions of merchantability,
-+# of fitness for a particular purpose, of accuracy or
-+# completeness of responses, of results, of workmanlike
-+# effort, of lack of viruses and of lack of negligence, all
-+# with regard to this material and any contribution thereto.
-+# Designers must not rely on the absence or characteristics of
-+# any features or instructions marked "reserved" or
-+# "undefined." The ARM, Inc. reserves any
-+# features or instructions so marked for future definition and
-+# shall have no responsibility whatsoever for conflicts or
-+# incompatibilities arising from future changes to them. ALSO,
-+# THERE IS NO WARRANTY OR CONDITION OF TITLE, QUIET ENJOYMENT,
-+# QUIET POSSESSION, CORRESPONDENCE TO DESCRIPTION OR
-+# NON-INFRINGEMENT WITH REGARD TO THE TEST SUITE AND ANY
-+# CONTRIBUTION THERETO.
++# Copyright (c) 2017, ARM Limited or its affiliates. All rights reserved.
 +#
-+# IN NO EVENT WILL ANY AUTHOR OR DEVELOPER OF THIS MATERIAL OR
-+# ANY CONTRIBUTION THERETO BE LIABLE TO ANY OTHER PARTY FOR
-+# THE COST OF PROCURING SUBSTITUTE GOODS OR SERVICES, LOST
-+# PROFITS, LOSS OF USE, LOSS OF DATA, OR ANY INCIDENTAL,
-+# CONSEQUENTIAL, DIRECT, INDIRECT, OR SPECIAL DAMAGES WHETHER
-+# UNDER CONTRACT, TORT, WARRANTY, OR OTHERWISE, ARISING IN ANY
-+# WAY OUT OF THIS OR ANY OTHER AGREEMENT RELATING TO THIS
-+# DOCUMENT, WHETHER OR NOT SUCH PARTY HAD ADVANCE NOTICE OF
-+# THE POSSIBILITY OF SUCH DAMAGES.
++# Licensed under the Apache License, Version 2.0 (the "License");
++# you may not use this file except in compliance with the License.
++# You may obtain a copy of the License at
 +#
-+# Copyright 2016 ARM, Inc. All
-+# Rights Reserved, subject to all existing rights in all
-+# matters included within this Test Suite, to which ARM, Inc.
-+# makes no claim of right.
++#  http://www.apache.org/licenses/LICENSE-2.0
 +#
-+# Copyright (c) 2016 ARM Ltd. All rights reserved.<BR>
-+#
++# Unless required by applicable law or agreed to in writing, software
++# distributed under the License is distributed on an "AS IS" BASIS,
++# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++# See the License for the specific language governing permissions and
++# limitations under the License.
++
 +TOPDIR=`pwd`
 +
 +METALUV="$TOPDIR/meta-luv \\\\"
@@ -153,10 +124,14 @@ index 0000000..06cde48
 +unset SCTPASSWORD
 +unset SCTUSERNAME
 +unset ACS_CMDLINE_APPEND
-+echo "Built image can be found at $OUTPUT_FILE"
++if [ -f $OUTPUT_FILE ]; then
++	echo "Built image can be found at $OUTPUT_FILE"
++else
++	echo "Build failed..."
++fi
 +exit
 diff --git a/meta-luv/classes/luv-efi.bbclass b/meta-luv/classes/luv-efi.bbclass
-index d23c33d..7c44a2a 100644
+index d23c33d..7f21f8e 100644
 --- a/meta-luv/classes/luv-efi.bbclass
 +++ b/meta-luv/classes/luv-efi.bbclass
 @@ -16,6 +16,13 @@ def get_bits_depends(bb, d):
@@ -173,7 +148,7 @@ index d23c33d..7c44a2a 100644
  # The x86 build is depends on grub-efi and AArch64 build depends on grub_git
  def get_grub_depends(bb, d):
           import re
-@@ -57,8 +64,15 @@ efi_populate() {
+@@ -57,8 +64,14 @@ efi_populate() {
  
      # Install grub2 in EFI directory
      if [ "${TARGET_ARCH}" = "aarch64" ]; then
@@ -182,16 +157,15 @@ index d23c33d..7c44a2a 100644
 +            if [ "${SCTOPTIONAL}" = "no" ]; then
 +                echo "Including UEFI-SCT"
 +                efi_populate_sbbr ${DEST}
-+            else
-+                efi_populate_startup ${DEST}
 +            fi
++            efi_populate_startup ${DEST}
 +            echo "SCTOPTIONAL=${SCTOPTIONAL}"
 +            efi_populate_sbsa ${DEST}
 +            install -m 0644 ${DEPLOY_DIR_IMAGE}/bootaa64.efi ${DEST}${EFIDIR}
  
      # TODO: need conditional signing; e.g., if (DISTRO_FEATURES contains secure_boot)
      # shim bootloader does not seem to work with i386. Thus we don't use it for 32-bit
-@@ -82,7 +96,7 @@ efi_populate() {
+@@ -82,7 +95,7 @@ efi_populate() {
                  mv ${DEPLOY_DIR_IMAGE}/${EFI_LOADER_IMAGE} ${DEPLOY_DIR_IMAGE}/shim.efi
                  mv ${DEPLOY_DIR_IMAGE}/${EFI_LOADER_IMAGE}-unsigned ${DEPLOY_DIR_IMAGE}/${EFI_LOADER_IMAGE}
      else
@@ -200,21 +174,13 @@ index d23c33d..7c44a2a 100644
      fi
  
      if echo "${TARGET_ARCH}" | grep -q "i.86" || [ "${TARGET_ARCH}" = "x86_64" ]; then
-@@ -98,6 +112,55 @@ efi_populate() {
+@@ -98,6 +111,52 @@ efi_populate() {
      install -m 0644 ${LUV_CFG} ${DEST}
  }
  
 +efi_populate_sbbr() {
 +    DEST=$1
 +    cp -r ${DEPLOY_DIR_IMAGE}/sbbr ${DEST}${EFIDIR}/sbbr
-+    echo "echo -off
-+          for %i in 0 1 2 3 4 5 6 7 8 9 A B C D E F
-+            if exist FS%i:\SCT\Overall\Summary.log then
-+              bootaa64.efi
-+              goto Done
-+            endif
-+          endfor
-+          :Done" > ${DEST}${EFIDIR}/startup.nsh
 +}
 +
 +efi_populate_sbsa() {
@@ -222,32 +188,37 @@ index d23c33d..7c44a2a 100644
 +    cp -r ${DEPLOY_DIR_IMAGE}/sbsa ${DEST}${EFIDIR}/sbsa
 +    cp ${DEST}${EFIDIR}/sbsa/Shell.efi ${DEST}${EFIDIR}/Shell.efi
 +    echo "echo -off
-+          if not exist sbsa_results then
-+            mkdir sbsa_results
-+          endif
-+          cd sbsa_results
-+          if not exist uefi then
-+            mkdir uefi
-+          endif
-+          cd uefi
 +          for %i in 0 1 2 3 4 5 6 7 8 9 A B C D E F then
-+            if exist FS%i:\EFI\BOOT\sbsa\Sbsa.efi then
-+              FS%i:\EFI\BOOT\sbsa\Sbsa.efi -f SbsaResults.log
-+              goto Done
++            if exist FS%i:\sbsa_results then
++              FS%i:
++              cd sbsa_results
++              if not exist uefi then
++                mkdir uefi
++              endif
++              cd uefi
++              for %j in 0 1 2 3 4 5 6 7 8 9 A B C D E F then
++                if exist FS%j:\EFI\BOOT\sbsa\Sbsa.efi then
++                  FS%j:\EFI\BOOT\sbsa\Sbsa.efi -f SbsaResults.log
++                  goto Done
++                endif
++              endfor
++              echo \"Sbsa.efi not found\"
 +            endif
 +          endfor
++          echo \"LUV-RESULTS partition not found\"
 +          :Done" > ${DEST}${EFIDIR}/sbsa/sbsa.nsh
 +}
 +
 +efi_populate_startup() {
 +    DEST=$1
 +    echo "echo -off
-+           for %i in 0 1 2 3 4 5 6 7 8 9 A B C D E F then
-+            if exist FS%i:\EFI\BOOT\sbsa\Sbsa.efi then
-+              FS%i:\EFI\BOOT\sbsa\Sbsa.efi
++          for %i in 0 1 2 3 4 5 6 7 8 9 A B C D E F then
++            if exist FS%i:\EFI\BOOT\sbsa\sbsa.nsh then
++              FS%i:\EFI\BOOT\sbsa\sbsa.nsh
 +              goto Done
 +            endif
 +          endfor
++          echo \"sbsa.nsh not found\"
 +          :Done
 +          FS%i:
 +          vmlinuz initrd=\initrd ${CMDLINE}" > ${DEST}${EFIDIR}/startup.nsh
@@ -256,7 +227,7 @@ index d23c33d..7c44a2a 100644
  efi_populate_bits() {
      DEST=$1
      # TODO: weird behavior here. When building luv-live-image,
-@@ -177,6 +240,11 @@ python build_efi_cfg() {
+@@ -177,6 +236,11 @@ python build_efi_cfg() {
         cfgfile.write('timeout=0\n')
         cfgfile.write('fallback=0\n')
  
@@ -268,7 +239,7 @@ index d23c33d..7c44a2a 100644
      cfgfile.write('menuentry \'luv\' {\n')
      cfgfile.write('linux /vmlinuz ')
  
-@@ -203,6 +271,11 @@ python build_efi_cfg() {
+@@ -203,6 +267,11 @@ python build_efi_cfg() {
         cfgfile.write('chainloader /EFI/BOOT/bits/%s\n' % loader)
         cfgfile.write('}\n')
  
@@ -300,21 +271,24 @@ index 0000000..06f0264
 +========
 diff --git a/meta-luv/recipes-bsp/sbbr/sbbr_v1.0.bb b/meta-luv/recipes-bsp/sbbr/sbbr_v1.0.bb
 new file mode 100644
-index 0000000..675aa55
+index 0000000..960ddf6
 --- /dev/null
 +++ b/meta-luv/recipes-bsp/sbbr/sbbr_v1.0.bb
-@@ -0,0 +1,97 @@
-+# Recipe created by recipetool
-+# This is the basis of a recipe and may need further editing in order to be fully functional.
-+# (Feel free to remove these comments when editing.)
+@@ -0,0 +1,100 @@
++# Copyright (c) 2017, ARM Limited or its affiliates. All rights reserved.
 +#
-+# Unable to find any files that looked like license statements. Check the accompanying
-+# documentation and source headers and set LICENSE and LIC_FILES_CHKSUM accordingly.
++# Licensed under the Apache License, Version 2.0 (the "License");
++# you may not use this file except in compliance with the License.
++# You may obtain a copy of the License at
 +#
-+# NOTE: LICENSE is being set to "CLOSED" to allow you to at least start building - if
-+# this is not accurate with respect to the licensing of the software being built (it
-+# will not be in most cases) you must specify the correct value before using this
-+# recipe for anything other than initial testing/development!
++#  http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing, software
++# distributed under the License is distributed on an "AS IS" BASIS,
++# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++# See the License for the specific language governing permissions and
++# limitations under the License.
++
 +SUMMARY = "SBBR is a test suite that runs Server Base Boot Requirements UEFI tests."
 +
 +DESCRIPTION = "This Server Base Boot Requirements (SBBR) test suite is intended \
@@ -403,12 +377,24 @@ index 0000000..675aa55
 +addtask deploy before do_build after do_install
 diff --git a/meta-luv/recipes-bsp/sbsa/files/compile.sh b/meta-luv/recipes-bsp/sbsa/files/compile.sh
 new file mode 100755
-index 0000000..a47251a
+index 0000000..fae365c
 --- /dev/null
 +++ b/meta-luv/recipes-bsp/sbsa/files/compile.sh
-@@ -0,0 +1,16 @@
+@@ -0,0 +1,28 @@
 +#!/usr/bin/env bash
-+
++# Copyright (c) 2017, ARM Limited or its affiliates. All rights reserved.
++#
++# Licensed under the Apache License, Version 2.0 (the "License");
++# you may not use this file except in compliance with the License.
++# You may obtain a copy of the License at
++#
++#  http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing, software
++# distributed under the License is distributed on an "AS IS" BASIS,
++# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++# See the License for the specific language governing permissions and
++# limitations under the License.
 +
 +cd ${1}/edk2
 +
@@ -425,27 +411,30 @@ index 0000000..a47251a
 +source AppPkg/Applications/sbsa-acs/tools/scripts/avsbuild.sh
 diff --git a/meta-luv/recipes-bsp/sbsa/sbsa.bb b/meta-luv/recipes-bsp/sbsa/sbsa.bb
 new file mode 100644
-index 0000000..ae3dc51
+index 0000000..80d4db5
 --- /dev/null
 +++ b/meta-luv/recipes-bsp/sbsa/sbsa.bb
-@@ -0,0 +1,104 @@
-+# Recipe created by recipetool
-+# This is the basis of a recipe and may need further editing in order to be fully functional.
-+# (Feel free to remove these comments when editing.)
+@@ -0,0 +1,107 @@
++# Copyright (c) 2017, ARM Limited or its affiliates. All rights reserved.
 +#
-+# Unable to find any files that looked like license statements. Check the accompanying
-+# documentation and source headers and set LICENSE and LIC_FILES_CHKSUM accordingly.
++# Licensed under the Apache License, Version 2.0 (the "License");
++# you may not use this file except in compliance with the License.
++# You may obtain a copy of the License at
 +#
-+# NOTE: LICENSE is being set to "CLOSED" to allow you to at least start building - if
-+# this is not accurate with respect to the licensing of the software being built (it
-+# will not be in most cases) you must specify the correct value before using this
-+# recipe for anything other than initial testing/development!
++#  http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing, software
++# distributed under the License is distributed on an "AS IS" BASIS,
++# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++# See the License for the specific language governing permissions and
++# limitations under the License.
++
 +LICENSE = "CLOSED"
 +LIC_FILES_CHKSUM = ""
 +
 +# SCT files placed in ${WORKDIR}/git
 +# GCC files placed in ${WORKDIR}/gcc-linaro-5.3.1-2016.05-x86_64_aarch64-linux-gnu
-+SRC_URI = "git://github.com/ARM-software/sbsa-acs.git;protocol=https; \
++SRC_URI = "git://github.com/ARM-software/sbsa-acs.git;protocol=https;branch=release \
 +           https://releases.linaro.org/components/toolchain/binaries/5.3-2016.05/aarch64-linux-gnu/gcc-linaro-5.3.1-2016.05-x86_64_aarch64-linux-gnu.tar.xz \
 +           file://compile.sh"
 +
@@ -466,7 +455,7 @@ index 0000000..ae3dc51
 +    if [ ! -d ${WORKDIR}/edk2 ]
 +    then
 +        echo "do_configure: Cloning EDK2 repository."
-+        git clone https://github.com/tianocore/edk2.git
++        git clone -b UDK2017 https://github.com/tianocore/edk2.git
 +    fi
 +
 +    # Linking SBSA and EDK2.
@@ -544,7 +533,7 @@ index 07760b2..c3eec9a 100644
 -LUV_TEST="efivarfs"
 diff --git a/meta-luv/recipes-core/fwts/fwts/sbbr.patch b/meta-luv/recipes-core/fwts/fwts/sbbr.patch
 new file mode 100644
-index 0000000..07cb085
+index 0000000..881d55d
 --- /dev/null
 +++ b/meta-luv/recipes-core/fwts/fwts/sbbr.patch
 @@ -0,0 +1,11950 @@
@@ -12499,7 +12488,7 @@ index 0000000..07cb085
 ++
 ++#endif
 diff --git a/meta-luv/recipes-core/fwts/fwts_git.bb b/meta-luv/recipes-core/fwts/fwts_git.bb
-index fd8a8f8..62113f5 100644
+index fd8a8f8..2c061c5 100644
 --- a/meta-luv/recipes-core/fwts/fwts_git.bb
 +++ b/meta-luv/recipes-core/fwts/fwts_git.bb
 @@ -9,6 +9,7 @@ PV = "V17.03.00+git${SRCPV}"
@@ -12516,7 +12505,7 @@ index fd8a8f8..62113f5 100644
  LUV_TEST_LOG_PARSER="luv-parser-fwts"
 -LUV_TEST_ARGS="-r stdout -q --uefitests --log-format='%owner;%field ' \
 -	      --batch"
-+LUV_TEST_ARGS="-r stdout -q --log-format='%owner;%field ' --sbbr"
++LUV_TEST_ARGS="-r stdout -q --sbbr"
  
  FILES_${PN} += "${libdir}/fwts/lib*${SOLIBS}"
  FILES_${PN} += "/lib/modules/${KERNEL_VERSION}/extra/efi_runtime.ko"
@@ -12533,7 +12522,7 @@ index 82a9cb8..b7e6a8d 100644
  
  X86_ADDITIONS = "chipsec python-codecs python-subprocess vmcore-dmesg bits \
 diff --git a/meta-luv/recipes-core/images/luv-live-image.bb b/meta-luv/recipes-core/images/luv-live-image.bb
-index 50cad08..8c5b75c 100644
+index 50cad08..2c3a5d7 100644
 --- a/meta-luv/recipes-core/images/luv-live-image.bb
 +++ b/meta-luv/recipes-core/images/luv-live-image.bb
 @@ -26,7 +26,7 @@ COMMON_CMDLINE_x86 += "splash nomodeset crash_kexec_post_notifiers"
@@ -12565,6 +12554,15 @@ index 50cad08..8c5b75c 100644
      VFAT_RESULTS_SPACE=$(expr $VFAT_RESULTS_SPACE_MiB \* $MiB)
      VFAT_RESULTS_BLOCKS=$(expr $VFAT_RESULTS_SPACE / 1024)
      # TODO: do we need to dynamically generate the UUID?
+@@ -86,6 +86,8 @@ build_img() {
+     mkdosfs -C ${VFAT_RESULTS} -S ${BYTES_PER_SECTOR} -i ${VFAT_RESULTS_UUID} \
+             -n ${VFAT_RESULTS_LABEL} $VFAT_RESULTS_BLOCKS
+ 
++    mmd -i ${VFAT_RESULTS} ::/sbsa_results
++
+     dd if=/dev/zero of=${IMG} bs=${BYTES_PER_SECTOR} count=1
+ 
+     # Now that we are calculating sizes in MiB make sure that the value
 diff --git a/meta-luv/recipes-core/images/luv-netboot-image.bb b/meta-luv/recipes-core/images/luv-netboot-image.bb
 index d8205ee..d3811fa 100644
 --- a/meta-luv/recipes-core/images/luv-netboot-image.bb
@@ -12643,11 +12641,24 @@ index 7a94cc3..a35e2b9 100644
         install -m 0644 ${WORKDIR}/luv-test-manager.service ${D}${systemd_unitdir}/system
 diff --git a/meta-luv/recipes-core/luv-test/luv-test/luv-collect-results b/meta-luv/recipes-core/luv-test/luv-test/luv-collect-results
 new file mode 100644
-index 0000000..e6542e4
+index 0000000..6f4601a
 --- /dev/null
 +++ b/meta-luv/recipes-core/luv-test/luv-test/luv-collect-results
-@@ -0,0 +1,209 @@
+@@ -0,0 +1,181 @@
 +#!/usr/bin/env python
++# Copyright (c) 2017, ARM Limited or its affiliates. All rights reserved.
++#
++# Licensed under the Apache License, Version 2.0 (the "License");
++# you may not use this file except in compliance with the License.
++# You may obtain a copy of the License at
++#
++#  http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing, software
++# distributed under the License is distributed on an "AS IS" BASIS,
++# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++# See the License for the specific language governing permissions and
++# limitations under the License.
 +
 +import sys
 +import os
@@ -12681,50 +12692,9 @@ index 0000000..e6542e4
 +
 +    # Printing .MD file header for FWTS results.
 +    outFile.write("# FWTS Test Results\n")
-+    outFile.write("| Category | Test Case | Passes | Skips | Failures |\n")
-+    outFile.write("| :--- | :--- | ---: | ---: | ---: |\n")
++    logs = fwtsRaw.read()
++    outFile.write(logs)
 +
-+    # Scraping FWTS output.
-+    while True:
-+        # Getting a line from file.
-+        line = fwtsRaw.readline()
-+        if line == "":
-+            if testCategory != "":
-+                outFile.write ("| %s | %s | %d | %d | %d |\n" % (testCategory, testName, testPasses, testSkips, testFails))
-+                outFile.write ("| Total |  | %d | %d | %d |\n" % (totalPasses, totalSkips, totalFails))
-+            return 0
-+        line = line.rstrip()
-+
-+        # Checking if line is the beginning of a new test results block.
-+        matchString = re.search(r"INF Test \d", line, re.M|re.I)
-+        if matchString:
-+            # Printing information for previous test before we move to next one.
-+            if testName != "":
-+                outFile.write ("| %s | %s | %d | %d | %d |\n" % (testCategory, testName, testPasses, testSkips, testFails))
-+                testCategory = ""
-+            currentTest = line.split()[2] + " " + line.split()[3]
-+            testCategory = line.split()[0]
-+            testName = line[(line.index(":") + 2):]
-+            testPasses = 0
-+            testFails = 0
-+            testSkips = 0
-+            testInfos = 0
-+            while testName[len(testName) - 1] != ".":
-+                line = fwtsRaw.readline().rstrip()
-+                if ";INF" not in line:
-+                    break
-+                testName = testName + " " + line[20:]
-+
-+        # Checking if line is a pass/fail/skip for currentTest.
-+        if "PASSED" in line and currentTest in line:
-+            testPasses = testPasses + 1
-+            totalPasses = totalPasses + 1
-+        if "SKIPPED" in line and currentTest in line:
-+            testSkips = testSkips + 1
-+            totalSkips = totalSkips + 1
-+        if "FAILED" in line and currentTest in line:
-+            testFails = testFails + 1
-+            totalFails = totalFails + 1
 +
 +def log_sbbr(d):
 +    testCategory = ""
@@ -12858,11 +12828,24 @@ index 0000000..e6542e4
 +print "Done, test results can be found in \"%s\"" % arg_output
 diff --git a/meta-luv/recipes-core/luv-test/luv-test/luv-sbsa-test b/meta-luv/recipes-core/luv-test/luv-test/luv-sbsa-test
 new file mode 100755
-index 0000000..756bc02
+index 0000000..0764e1c
 --- /dev/null
 +++ b/meta-luv/recipes-core/luv-test/luv-test/luv-sbsa-test
-@@ -0,0 +1,5 @@
+@@ -0,0 +1,18 @@
 +#!/bin/bash
++# Copyright (c) 2017, ARM Limited or its affiliates. All rights reserved.
++#
++# Licensed under the Apache License, Version 2.0 (the "License");
++# you may not use this file except in compliance with the License.
++# You may obtain a copy of the License at
++#
++#  http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing, software
++# distributed under the License is distributed on an "AS IS" BASIS,
++# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++# See the License for the specific language governing permissions and
++# limitations under the License.
 +
 +insmod /lib/modules/4.10.0-yocto-standard/extra/sbsa_acs.ko
 +mkdir -p $1/sbsa_results/linux
@@ -12912,11 +12895,24 @@ index 54a587f..b05fe94 100644
  MACHINE_TASK_PROVIDER ?= "${DEFAULT_TASK_PROVIDER}"
 diff --git a/sbsa_setup.sh b/sbsa_setup.sh
 new file mode 100755
-index 0000000..45899fd
+index 0000000..d31ad41
 --- /dev/null
 +++ b/sbsa_setup.sh
-@@ -0,0 +1,28 @@
+@@ -0,0 +1,42 @@
 +#!/bin/bash
++# Copyright (c) 2017, ARM Limited or its affiliates. All rights reserved.
++#
++# Licensed under the Apache License, Version 2.0 (the "License");
++# you may not use this file except in compliance with the License.
++# You may obtain a copy of the License at
++#
++#  http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing, software
++# distributed under the License is distributed on an "AS IS" BASIS,
++# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++# See the License for the specific language governing permissions and
++# limitations under the License.
 +
 +#create tmp directory
 +TMPDIR=$PWD/tmp
@@ -12927,13 +12923,14 @@ index 0000000..45899fd
 +#clone linux-acs repo
 +git clone git://linux-arm.org/linux-acs.git
 +cd linux-acs
++git checkout -b v17.07_REL1.0 v17.07_REL1.0
 +#copy .bb and source files to relevant places
 +rm -rf $LUVDIR/meta-luv/recipes-core/sbsa-acs-drv
 +mv -f sbsa-acs-drv $LUVDIR/meta-luv/recipes-core/
 +mv -f kernel/src/0001-SBSA-ACS-linux-4.10.patch $LUVDIR/meta-luv/recipes-kernel/linux/linux-yocto-efi-test/
 +
 +cd $TMPDIR
-+git clone https://github.com/ARM-software/sbsa-acs.git
++git clone -b release https://github.com/ARM-software/sbsa-acs.git
 +cd sbsa-acs
 +mv -f val $LUVDIR/meta-luv/recipes-core/sbsa-acs-drv/files/
 +mv -f test_pool $LUVDIR/meta-luv/recipes-core/sbsa-acs-drv/files/
