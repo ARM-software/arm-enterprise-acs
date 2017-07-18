@@ -73,6 +73,13 @@ Several SBBR assertions are tested though FWTS.
 
 
 ## ACS build steps
+
+### Prebuilt images
+ - Prebuilt images for each release are available in the prebuilt_images folder of the release branch. You can choose to use these images or build your own image by following the steps below.
+- Note:The prebuilt image does not include tests based on UEFI-SCT framework.
+- If you choose to use the prebuilt image, skip the build steps and jump to the test suite execution section below.
+
+### Prerequisites
 Before starting the ACS build, ensure that the following requirements are met:
  - Ubuntu 16.04 LTS with at least 64GB of free disk space.
  - Must use Bash shell.
