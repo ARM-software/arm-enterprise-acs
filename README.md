@@ -76,7 +76,6 @@ Several SBBR assertions are tested though FWTS.
 
 ### Prebuilt images
  - Prebuilt images for each release are available in the prebuilt_images folder of the release branch. You can choose to use these images or build your own image by following the steps below.
-- Note:The prebuilt image does not include tests based on UEFI-SCT framework.
 - If you choose to use the prebuilt image, skip the build steps and jump to the test suite execution section below.
 
 ### Prerequisites
@@ -154,8 +153,8 @@ Or, <br />
 To launch the FVP model with script ‘run_model.sh’ that supports -v option for virtual disk image, use the following command:
 $ ./run_model.sh -v <work_dir>/arm-enterprise-acs/luv/build/tmp/deploy/images/qemuarm64/luv-live-image-gpt.img
 
-### Automated v/s Manual
-The test suite execution can be automated or manual. Automated execution is the default execution method. <br />
+### Automation
+The test suite execution can be automated or manual. Automated execution is the default execution method when no key is pressed during boot. <br />
 Note: SBBR SCT tests are not included as part of automation. For information about running these tests, see section ‘SBBR SCT tests’ in this document. <br />
 The execution varies depending on the test environment.
 The next set of commands are an example of our typical run of the test suites.
