@@ -1,4 +1,4 @@
-From 5634ee977d05c893aeb80657eb2597f1361c5496 Mon Sep 17 00:00:00 2001
+From 2b86a8a2553412bed969ca60ddd679885ab5c3c7 Mon Sep 17 00:00:00 2001
 From: sakaro01 <Sakar.Arora@arm.com>
 Date: Wed, 12 Jul 2017 16:14:41 +0530
 Subject: [PATCH] luvos
@@ -36,7 +36,7 @@ Subject: [PATCH] luvos
 
 diff --git a/build_luvos.sh b/build_luvos.sh
 new file mode 100755
-index 0000000000..bc6b65971a
+index 0000000..bc6b659
 --- /dev/null
 +++ b/build_luvos.sh
 @@ -0,0 +1,88 @@
@@ -129,7 +129,7 @@ index 0000000000..bc6b65971a
 +fi
 +exit
 diff --git a/meta-luv/classes/luv-efi.bbclass b/meta-luv/classes/luv-efi.bbclass
-index d23c33df94..7f21f8ecf3 100644
+index d23c33d..7f21f8e 100644
 --- a/meta-luv/classes/luv-efi.bbclass
 +++ b/meta-luv/classes/luv-efi.bbclass
 @@ -16,6 +16,13 @@ def get_bits_depends(bb, d):
@@ -250,7 +250,7 @@ index d23c33df94..7f21f8ecf3 100644
  }
  
 diff --git a/meta-luv/conf/distro/luv.conf b/meta-luv/conf/distro/luv.conf
-index 1676a0ee46..a36d97c75a 100644
+index 1676a0e..a36d97c 100644
 --- a/meta-luv/conf/distro/luv.conf
 +++ b/meta-luv/conf/distro/luv.conf
 @@ -17,4 +17,4 @@ VIRTUAL-RUNTIME_init_manager = "systemd"
@@ -261,7 +261,7 @@ index 1676a0ee46..a36d97c75a 100644
 +INITRAMFS_MAXSIZE = "400000"
 diff --git a/meta-luv/recipes-bsp/sbbr/sbbr/README.md b/meta-luv/recipes-bsp/sbbr/sbbr/README.md
 new file mode 100644
-index 0000000000..06f0264005
+index 0000000..06f0264
 --- /dev/null
 +++ b/meta-luv/recipes-bsp/sbbr/sbbr/README.md
 @@ -0,0 +1,2 @@
@@ -269,7 +269,7 @@ index 0000000000..06f0264005
 +========
 diff --git a/meta-luv/recipes-bsp/sbbr/sbbr_v1.0.bb b/meta-luv/recipes-bsp/sbbr/sbbr_v1.0.bb
 new file mode 100644
-index 0000000000..960ddf66ec
+index 0000000..960ddf6
 --- /dev/null
 +++ b/meta-luv/recipes-bsp/sbbr/sbbr_v1.0.bb
 @@ -0,0 +1,100 @@
@@ -375,7 +375,7 @@ index 0000000000..960ddf66ec
 +addtask deploy before do_build after do_install
 diff --git a/meta-luv/recipes-bsp/sbsa/files/compile.sh b/meta-luv/recipes-bsp/sbsa/files/compile.sh
 new file mode 100755
-index 0000000000..fae365c3df
+index 0000000..fae365c
 --- /dev/null
 +++ b/meta-luv/recipes-bsp/sbsa/files/compile.sh
 @@ -0,0 +1,28 @@
@@ -409,7 +409,7 @@ index 0000000000..fae365c3df
 +source AppPkg/Applications/sbsa-acs/tools/scripts/avsbuild.sh
 diff --git a/meta-luv/recipes-bsp/sbsa/sbsa.bb b/meta-luv/recipes-bsp/sbsa/sbsa.bb
 new file mode 100644
-index 0000000000..8b1af24e99
+index 0000000..8b1af24
 --- /dev/null
 +++ b/meta-luv/recipes-bsp/sbsa/sbsa.bb
 @@ -0,0 +1,107 @@
@@ -521,7 +521,7 @@ index 0000000000..8b1af24e99
 +
 +addtask deploy before do_build after do_install
 diff --git a/meta-luv/recipes-core/efivarfs/efivarfs-test.bb b/meta-luv/recipes-core/efivarfs/efivarfs-test.bb
-index 07760b2159..c3eec9a1b0 100644
+index 07760b2..c3eec9a 100644
 --- a/meta-luv/recipes-core/efivarfs/efivarfs-test.bb
 +++ b/meta-luv/recipes-core/efivarfs/efivarfs-test.bb
 @@ -72,4 +72,3 @@ do_install() {
@@ -530,7 +530,7 @@ index 07760b2159..c3eec9a1b0 100644
  LUV_TEST_LOG_PARSER="luv-parser-efivarfs"
 -LUV_TEST="efivarfs"
 diff --git a/meta-luv/recipes-core/fwts/fwts_git.bb b/meta-luv/recipes-core/fwts/fwts_git.bb
-index fd8a8f882f..5222ab84dc 100644
+index fd8a8f8..a5c2f7e 100644
 --- a/meta-luv/recipes-core/fwts/fwts_git.bb
 +++ b/meta-luv/recipes-core/fwts/fwts_git.bb
 @@ -6,7 +6,7 @@ LIC_FILES_CHKSUM = "file://src/main.c;beginline=1;endline=16;md5=31da590f3e9f3bd
@@ -538,7 +538,7 @@ index fd8a8f882f..5222ab84dc 100644
  PV = "V17.03.00+git${SRCPV}"
  
 -SRCREV = "e3e9d1442b4cc70f5b30199f584cec8e25aeaad4"
-+SRCREV = "fcc5f1e9fbc73dc7576d871f910a254b6b652468"
++SRCREV = "6995735cb1246f2f03406484aea4409c2c849a86"
  SRC_URI = "git://kernel.ubuntu.com/hwe/fwts.git \
             file://luv-parser-fwts \
            "
@@ -553,7 +553,7 @@ index fd8a8f882f..5222ab84dc 100644
  FILES_${PN} += "${libdir}/fwts/lib*${SOLIBS}"
  FILES_${PN} += "/lib/modules/${KERNEL_VERSION}/extra/efi_runtime.ko"
 diff --git a/meta-luv/recipes-core/images/core-image-efi-initramfs.bb b/meta-luv/recipes-core/images/core-image-efi-initramfs.bb
-index 82a9cb881c..b7e6a8d546 100644
+index 82a9cb8..b7e6a8d 100644
 --- a/meta-luv/recipes-core/images/core-image-efi-initramfs.bb
 +++ b/meta-luv/recipes-core/images/core-image-efi-initramfs.bb
 @@ -9,6 +9,7 @@ IMAGE_INSTALL = "\
@@ -565,7 +565,7 @@ index 82a9cb881c..b7e6a8d546 100644
  
  X86_ADDITIONS = "chipsec python-codecs python-subprocess vmcore-dmesg bits \
 diff --git a/meta-luv/recipes-core/images/luv-live-image.bb b/meta-luv/recipes-core/images/luv-live-image.bb
-index 50cad08ee9..2c3a5d7a95 100644
+index 50cad08..2c3a5d7 100644
 --- a/meta-luv/recipes-core/images/luv-live-image.bb
 +++ b/meta-luv/recipes-core/images/luv-live-image.bb
 @@ -26,7 +26,7 @@ COMMON_CMDLINE_x86 += "splash nomodeset crash_kexec_post_notifiers"
@@ -607,7 +607,7 @@ index 50cad08ee9..2c3a5d7a95 100644
  
      # Now that we are calculating sizes in MiB make sure that the value
 diff --git a/meta-luv/recipes-core/images/luv-netboot-image.bb b/meta-luv/recipes-core/images/luv-netboot-image.bb
-index d8205eeb7e..d3811fad5c 100644
+index d8205ee..d3811fa 100644
 --- a/meta-luv/recipes-core/images/luv-netboot-image.bb
 +++ b/meta-luv/recipes-core/images/luv-netboot-image.bb
 @@ -1,7 +1,7 @@
@@ -649,7 +649,7 @@ index d8205eeb7e..d3811fad5c 100644
  	fi
  	install -m 0644 ${GRUBCFG} ${HDDDIR}${EFIDIR}
 diff --git a/meta-luv/recipes-core/kernel_efi_warnings/kernel-efi-warnings_0.1.bb b/meta-luv/recipes-core/kernel_efi_warnings/kernel-efi-warnings_0.1.bb
-index a0fde3c30b..85eec505de 100644
+index a0fde3c..85eec50 100644
 --- a/meta-luv/recipes-core/kernel_efi_warnings/kernel-efi-warnings_0.1.bb
 +++ b/meta-luv/recipes-core/kernel_efi_warnings/kernel-efi-warnings_0.1.bb
 @@ -20,5 +20,3 @@ do_install() {
@@ -659,7 +659,7 @@ index a0fde3c30b..85eec505de 100644
 -LUV_TEST="kernel-efi-warnings"
 -LUV_TEST_ARGS=""
 diff --git a/meta-luv/recipes-core/luv-test/luv-test.bb b/meta-luv/recipes-core/luv-test/luv-test.bb
-index 7a94cc3019..a35e2b914c 100644
+index 7a94cc3..a35e2b9 100644
 --- a/meta-luv/recipes-core/luv-test/luv-test.bb
 +++ b/meta-luv/recipes-core/luv-test/luv-test.bb
 @@ -32,6 +32,8 @@ SRC_URI += "file://luv-test-manager file://luv-test-parser \
@@ -684,7 +684,7 @@ index 7a94cc3019..a35e2b914c 100644
         install -m 0644 ${WORKDIR}/luv-test-manager.service ${D}${systemd_unitdir}/system
 diff --git a/meta-luv/recipes-core/luv-test/luv-test/luv-collect-results b/meta-luv/recipes-core/luv-test/luv-test/luv-collect-results
 new file mode 100644
-index 0000000000..6f4601aad5
+index 0000000..6f4601a
 --- /dev/null
 +++ b/meta-luv/recipes-core/luv-test/luv-test/luv-collect-results
 @@ -0,0 +1,181 @@
@@ -871,7 +871,7 @@ index 0000000000..6f4601aad5
 +print "Done, test results can be found in \"%s\"" % arg_output
 diff --git a/meta-luv/recipes-core/luv-test/luv-test/luv-sbsa-test b/meta-luv/recipes-core/luv-test/luv-test/luv-sbsa-test
 new file mode 100755
-index 0000000000..0764e1c031
+index 0000000..0764e1c
 --- /dev/null
 +++ b/meta-luv/recipes-core/luv-test/luv-test/luv-sbsa-test
 @@ -0,0 +1,18 @@
@@ -894,7 +894,7 @@ index 0000000000..0764e1c031
 +mkdir -p $1/sbsa_results/linux
 +sbsa > $1/sbsa_results/linux/SbsaResults.log
 diff --git a/meta-luv/recipes-core/luv-test/luv-test/luv-test-manager b/meta-luv/recipes-core/luv-test/luv-test/luv-test-manager
-index 38aa116004..0197db9281 100644
+index 38aa116..0197db9 100644
 --- a/meta-luv/recipes-core/luv-test/luv-test/luv-test-manager
 +++ b/meta-luv/recipes-core/luv-test/luv-test/luv-test-manager
 @@ -256,6 +256,11 @@ done | awk '/\[\+/  { units += 1 }
@@ -910,7 +910,7 @@ index 38aa116004..0197db9281 100644
  plymouth_write "$result"
  sleep 2
 diff --git a/meta-luv/recipes-kernel/linux/linux-yocto-efi-test_4.10.bb b/meta-luv/recipes-kernel/linux/linux-yocto-efi-test_4.10.bb
-index 916cc71bd4..cc504a3d0f 100644
+index 916cc71..cc504a3 100644
 --- a/meta-luv/recipes-kernel/linux/linux-yocto-efi-test_4.10.bb
 +++ b/meta-luv/recipes-kernel/linux/linux-yocto-efi-test_4.10.bb
 @@ -78,6 +78,9 @@ SRC_URI += "file://0001-x86-efi-Move-efi_bgrt_init-to-early-stage.patch \
@@ -924,7 +924,7 @@ index 916cc71bd4..cc504a3d0f 100644
                     file://qemux86/modules.cfg \
                     file://qemux86/display.cfg \
 diff --git a/meta/conf/bitbake.conf b/meta/conf/bitbake.conf
-index 54a587f1b4..b05fe94e90 100644
+index 54a587f..b05fe94 100644
 --- a/meta/conf/bitbake.conf
 +++ b/meta/conf/bitbake.conf
 @@ -728,7 +728,7 @@ INITRAMFS_FSTYPES ?= "cpio.gz"
@@ -938,7 +938,7 @@ index 54a587f1b4..b05fe94e90 100644
  MACHINE_TASK_PROVIDER ?= "${DEFAULT_TASK_PROVIDER}"
 diff --git a/sbsa_setup.sh b/sbsa_setup.sh
 new file mode 100755
-index 0000000000..d07fa3b59d
+index 0000000..d07fa3b
 --- /dev/null
 +++ b/sbsa_setup.sh
 @@ -0,0 +1,41 @@
@@ -984,5 +984,5 @@ index 0000000000..d07fa3b59d
 +cd $TMPDIR/..
 +rm -rf $TMPDIR
 -- 
-2.13.0
+2.7.4
 
