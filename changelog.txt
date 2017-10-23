@@ -1,0 +1,5 @@
+v17.10_REL1.1
+
+* Remove sbbr changes in fwts from luvOS patch, since those have been upstreamed in fwts repository.
+* Update checkout commit ids for fwts code in sbbr bitbake script, because of above mentioned changes.
+* Update setup scripts to checkout REL1.1 tags of sbsa-acs and linux-acs repositories.

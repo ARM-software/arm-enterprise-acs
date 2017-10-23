@@ -1,4 +1,4 @@
-From 96b4e66bd56ac27820ddc5158cd4d69d13ab5130 Mon Sep 17 00:00:00 2001
+From ba72b2337627e2e834210be60651bd01c46a3787 Mon Sep 17 00:00:00 2001
 From: Sakar Arora <sakar.arora@arm.com>
 Date: Mon, 23 Oct 2017 16:06:23 +0530
 Subject: [PATCH] luvos
@@ -938,7 +938,7 @@ index 54a587f1b4..b05fe94e90 100644
  MACHINE_TASK_PROVIDER ?= "${DEFAULT_TASK_PROVIDER}"
 diff --git a/sbsa_setup.sh b/sbsa_setup.sh
 new file mode 100755
-index 0000000000..34cc490091
+index 0000000000..fe7fc31cf9
 --- /dev/null
 +++ b/sbsa_setup.sh
 @@ -0,0 +1,43 @@
@@ -966,7 +966,7 @@ index 0000000000..34cc490091
 +#clone linux-acs repo
 +git clone git://linux-arm.org/linux-acs.git
 +cd linux-acs
-+git checkout -b v17.07_REL1.0 v17.07_REL1.0
++git checkout -b v17.10_REL1.1 v17.10_REL1.1
 +#copy .bb and source files to relevant places
 +rm -rf $LUVDIR/meta-luv/recipes-core/sbsa-acs-drv
 +mv -f sbsa-acs-drv $LUVDIR/meta-luv/recipes-core/
@@ -975,7 +975,7 @@ index 0000000000..34cc490091
 +cd $TMPDIR
 +git clone -b release https://github.com/ARM-software/sbsa-acs.git
 +cd sbsa-acs
-+git checkout -b v17.07_REL1.0 v17.07_REL1.0
++git checkout -b v17.10_REL1.1 v17.10_REL1.1
 +mv -f val $LUVDIR/meta-luv/recipes-core/sbsa-acs-drv/files/
 +mv -f test_pool $LUVDIR/meta-luv/recipes-core/sbsa-acs-drv/files/
 +
