@@ -22,11 +22,12 @@ These tests are split between a UEFI application and a Linux driver that togethe
 and SBBR specifications. These tests are further described in detail.
 
 ## Release details
- - Code Quality: REL v1.0
+ - Code Quality: REL v1.1
  - The SBSA tests are written for version 3.0 of the SBSA specification.
  - The SBBR tests are written for version 1.0 of the SBBR specification.
  - The compliance suite is not a substitute for design verification.
  - To review the ACS logs, ARM licensees can contact ARM directly through their partner managers.
+ - Refer to changelog.txt, to know about changes.
   
 ## GitHub branch
 - To pick up the release version of the code, checkout the release branch with the appropriate tag.
