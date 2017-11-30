@@ -1,4 +1,4 @@
-From 2b86a8a2553412bed969ca60ddd679885ab5c3c7 Mon Sep 17 00:00:00 2001
+From a2f542d2a18308e3e72fddc268da55dde9aa6cdf Mon Sep 17 00:00:00 2001
 From: sakaro01 <Sakar.Arora@arm.com>
 Date: Wed, 12 Jul 2017 16:14:41 +0530
 Subject: [PATCH] luvos
@@ -12,7 +12,7 @@ Subject: [PATCH] luvos
  meta-luv/recipes-bsp/sbsa/files/compile.sh         |  28 ++++
  meta-luv/recipes-bsp/sbsa/sbsa.bb                  | 107 ++++++++++++
  meta-luv/recipes-core/efivarfs/efivarfs-test.bb    |   1 -
- meta-luv/recipes-core/fwts/fwts_git.bb             |   5 +-
+ meta-luv/recipes-core/fwts/fwts_git.bb             |   7 +-
  .../images/core-image-efi-initramfs.bb             |   1 +
  meta-luv/recipes-core/images/luv-live-image.bb     |  10 +-
  meta-luv/recipes-core/images/luv-netboot-image.bb  |  10 +-
@@ -24,7 +24,7 @@ Subject: [PATCH] luvos
  .../linux/linux-yocto-efi-test_4.10.bb             |   3 +
  meta/conf/bitbake.conf                             |   2 +-
  sbsa_setup.sh                                      |  41 +++++
- 20 files changed, 668 insertions(+), 19 deletions(-)
+ 20 files changed, 669 insertions(+), 20 deletions(-)
  create mode 100755 build_luvos.sh
  create mode 100644 meta-luv/recipes-bsp/sbbr/sbbr/README.md
  create mode 100644 meta-luv/recipes-bsp/sbbr/sbbr_v1.0.bb
@@ -530,15 +530,18 @@ index 07760b2..c3eec9a 100644
  LUV_TEST_LOG_PARSER="luv-parser-efivarfs"
 -LUV_TEST="efivarfs"
 diff --git a/meta-luv/recipes-core/fwts/fwts_git.bb b/meta-luv/recipes-core/fwts/fwts_git.bb
-index fd8a8f8..a5c2f7e 100644
+index fd8a8f8..855ab7f 100644
 --- a/meta-luv/recipes-core/fwts/fwts_git.bb
 +++ b/meta-luv/recipes-core/fwts/fwts_git.bb
-@@ -6,7 +6,7 @@ LIC_FILES_CHKSUM = "file://src/main.c;beginline=1;endline=16;md5=31da590f3e9f3bd
+@@ -4,9 +4,9 @@ HOMEPAGE = "https://wiki.ubuntu.com/Kernel/Reference/fwts"
+ LICENSE = "GPLv2+"
+ LIC_FILES_CHKSUM = "file://src/main.c;beginline=1;endline=16;md5=31da590f3e9f3bd34dcdb9e4db568519"
  
- PV = "V17.03.00+git${SRCPV}"
+-PV = "V17.03.00+git${SRCPV}"
++PV = "V17.11.00+git${SRCPV}"
  
 -SRCREV = "e3e9d1442b4cc70f5b30199f584cec8e25aeaad4"
-+SRCREV = "6995735cb1246f2f03406484aea4409c2c849a86"
++SRCREV = "d606dff6031a7742967981a1bd5d22138dfe2718"
  SRC_URI = "git://kernel.ubuntu.com/hwe/fwts.git \
             file://luv-parser-fwts \
            "
