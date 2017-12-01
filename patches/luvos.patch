@@ -1,4 +1,4 @@
-From a2f542d2a18308e3e72fddc268da55dde9aa6cdf Mon Sep 17 00:00:00 2001
+From ae0bad1e8873140263ae2e4a232088a12cb29a23 Mon Sep 17 00:00:00 2001
 From: sakaro01 <Sakar.Arora@arm.com>
 Date: Wed, 12 Jul 2017 16:14:41 +0530
 Subject: [PATCH] luvos
@@ -269,7 +269,7 @@ index 0000000..06f0264
 +========
 diff --git a/meta-luv/recipes-bsp/sbbr/sbbr_v1.0.bb b/meta-luv/recipes-bsp/sbbr/sbbr_v1.0.bb
 new file mode 100644
-index 0000000..960ddf6
+index 0000000..e6f70d7
 --- /dev/null
 +++ b/meta-luv/recipes-bsp/sbbr/sbbr_v1.0.bb
 @@ -0,0 +1,100 @@
@@ -310,7 +310,7 @@ index 0000000..960ddf6
 +inherit deploy
 +
 +# No information for SRC_URI yet (only an external source tree was specified)
-+SRCREV  = "d38be6dae3e7f67bdf52595288906d6832e0d893"
++SRCREV  = "1ff61591f11a1b92518f2273ffeacaa90e474e5e"
 +SRC_URI = "git://github.com/UEFI/UEFI-SCT.git;protocol=https;branch=sbbr;user="${SCTUSERNAME}":"${SCTPASSWORD}" \
 +          "
 +
