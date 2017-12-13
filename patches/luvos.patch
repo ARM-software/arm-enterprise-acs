@@ -1,37 +1,41 @@
-From ae0bad1e8873140263ae2e4a232088a12cb29a23 Mon Sep 17 00:00:00 2001
-From: sakaro01 <Sakar.Arora@arm.com>
-Date: Wed, 12 Jul 2017 16:14:41 +0530
-Subject: [PATCH] luvos
+From 9378ccee62f935461353e9c165638c206084500d Mon Sep 17 00:00:00 2001
+From: Sakar Arora <sakar.arora@arm.com>
+Date: Wed, 13 Dec 2017 11:35:42 +0530
+Subject: [PATCH] luvOS
 
 ---
- build_luvos.sh                                     |  88 ++++++++++
- meta-luv/classes/luv-efi.bbclass                   |  75 ++++++++-
+ build_luvos.sh                                     |  88 +++++++
+ meta-luv/classes/luv-efi.bbclass                   |  71 +++++-
  meta-luv/conf/distro/luv.conf                      |   2 +-
  meta-luv/recipes-bsp/sbbr/sbbr/README.md           |   2 +
- meta-luv/recipes-bsp/sbbr/sbbr_v1.0.bb             | 100 ++++++++++++
- meta-luv/recipes-bsp/sbsa/files/compile.sh         |  28 ++++
- meta-luv/recipes-bsp/sbsa/sbsa.bb                  | 107 ++++++++++++
+ meta-luv/recipes-bsp/sbbr/sbbr/sbbr-sct.patch      |  87 +++++++
+ meta-luv/recipes-bsp/sbbr/sbbr_v1.0.bb             | 101 ++++++++
+ meta-luv/recipes-bsp/sbsa/files/compile.sh         |  28 +++
+ meta-luv/recipes-bsp/sbsa/sbsa.bb                  | 107 +++++++++
  meta-luv/recipes-core/efivarfs/efivarfs-test.bb    |   1 -
- meta-luv/recipes-core/fwts/fwts_git.bb             |   7 +-
+ meta-luv/recipes-core/fwts/fwts/sbbr-fwts.patch    | 261 +++++++++++++++++++++
+ meta-luv/recipes-core/fwts/fwts_git.bb             |   8 +-
  .../images/core-image-efi-initramfs.bb             |   1 +
  meta-luv/recipes-core/images/luv-live-image.bb     |  10 +-
- meta-luv/recipes-core/images/luv-netboot-image.bb  |  10 +-
+ meta-luv/recipes-core/images/luv-netboot-image.bb  |   8 +-
  .../kernel_efi_warnings/kernel-efi-warnings_0.1.bb |   2 -
  meta-luv/recipes-core/luv-test/luv-test.bb         |   6 +
- .../luv-test/luv-test/luv-collect-results          | 181 +++++++++++++++++++++
+ .../luv-test/luv-test/luv-collect-results          | 181 ++++++++++++++
  .../recipes-core/luv-test/luv-test/luv-sbsa-test   |  18 ++
  .../luv-test/luv-test/luv-test-manager             |   5 +
- .../linux/linux-yocto-efi-test_4.10.bb             |   3 +
+ .../linux/linux-yocto-efi-test_4.13.bb             |   3 +-
  meta/conf/bitbake.conf                             |   2 +-
- sbsa_setup.sh                                      |  41 +++++
- 20 files changed, 669 insertions(+), 20 deletions(-)
+ sbsa_setup.sh                                      |  41 ++++
+ 22 files changed, 1016 insertions(+), 17 deletions(-)
  create mode 100755 build_luvos.sh
  create mode 100644 meta-luv/recipes-bsp/sbbr/sbbr/README.md
+ create mode 100644 meta-luv/recipes-bsp/sbbr/sbbr/sbbr-sct.patch
  create mode 100644 meta-luv/recipes-bsp/sbbr/sbbr_v1.0.bb
  create mode 100755 meta-luv/recipes-bsp/sbsa/files/compile.sh
  create mode 100644 meta-luv/recipes-bsp/sbsa/sbsa.bb
+ create mode 100644 meta-luv/recipes-core/fwts/fwts/sbbr-fwts.patch
  create mode 100644 meta-luv/recipes-core/luv-test/luv-test/luv-collect-results
- create mode 100755 meta-luv/recipes-core/luv-test/luv-test/luv-sbsa-test
+ create mode 100644 meta-luv/recipes-core/luv-test/luv-test/luv-sbsa-test
  create mode 100755 sbsa_setup.sh
 
 diff --git a/build_luvos.sh b/build_luvos.sh
@@ -129,29 +133,28 @@ index 0000000..bc6b659
 +fi
 +exit
 diff --git a/meta-luv/classes/luv-efi.bbclass b/meta-luv/classes/luv-efi.bbclass
-index d23c33d..7f21f8e 100644
+index 0caa5a8..4cdf56e 100644
 --- a/meta-luv/classes/luv-efi.bbclass
 +++ b/meta-luv/classes/luv-efi.bbclass
-@@ -16,6 +16,13 @@ def get_bits_depends(bb, d):
+@@ -16,6 +16,13 @@ def get_bits_depends(d):
                   return ""
- _BITSDEPENDS = "${@get_bits_depends(bb, d)}"
+ _BITSDEPENDS = "${@get_bits_depends(d)}"
  
-+def get_sbbr_depends(bb, d):
++def get_sbbr_depends(d):
 +         import re
-+         deps = bb.data.getVar('TARGET_PREFIX', d, True)
++         deps = d.getVar('TARGET_PREFIX', True)
 +         if re.search("aarch64",deps):
 +                 return "sbbr:do_deploy"
-+_SBBRDEPENDS = "${@get_sbbr_depends(bb, d)}"
++_SBBRDEPENDS = "${@get_sbbr_depends(d)}"
 +
  # The x86 build is depends on grub-efi and AArch64 build depends on grub_git
- def get_grub_depends(bb, d):
+ def get_grub_depends(d):
           import re
-@@ -57,8 +64,14 @@ efi_populate() {
- 
+@@ -65,7 +72,13 @@ efi_populate() {
      # Install grub2 in EFI directory
      if [ "${TARGET_ARCH}" = "aarch64" ]; then
--		install -m 0644 ${DEPLOY_DIR_IMAGE}/bootaa64.efi ${DEST}${EFIDIR}
--                echo "bootaa64.efi" > ${DEST}${EFIDIR}/startup.nsh
+ 		install -m 0644 ${DEPLOY_DIR_IMAGE}/${GRUB_EFI_LOADER_IMAGE} ${DEST}${EFIDIR}/${DEST_EFI_LOADER_IMAGE}
+-                echo "${DEST_EFI_LOADER_IMAGE}" > ${DEST}${EFIDIR}/startup.nsh
 +            if [ "${SCTOPTIONAL}" = "no" ]; then
 +                echo "Including UEFI-SCT"
 +                efi_populate_sbbr ${DEST}
@@ -159,20 +162,10 @@ index d23c33d..7f21f8e 100644
 +            efi_populate_startup ${DEST}
 +            echo "SCTOPTIONAL=${SCTOPTIONAL}"
 +            efi_populate_sbsa ${DEST}
-+            install -m 0644 ${DEPLOY_DIR_IMAGE}/bootaa64.efi ${DEST}${EFIDIR}
  
      # TODO: need conditional signing; e.g., if (DISTRO_FEATURES contains secure_boot)
      # shim bootloader does not seem to work with i386. Thus we don't use it for 32-bit
-@@ -82,7 +95,7 @@ efi_populate() {
-                 mv ${DEPLOY_DIR_IMAGE}/${EFI_LOADER_IMAGE} ${DEPLOY_DIR_IMAGE}/shim.efi
-                 mv ${DEPLOY_DIR_IMAGE}/${EFI_LOADER_IMAGE}-unsigned ${DEPLOY_DIR_IMAGE}/${EFI_LOADER_IMAGE}
-     else
--		install -m 0644 ${DEPLOY_DIR_IMAGE}/${EFI_LOADER_IMAGE} ${DEST}${EFIDIR}
-+                install -m 0644 ${DEPLOY_DIR_IMAGE}/${EFI_LOADER_IMAGE} ${DEST}${EFIDIR}
-     fi
- 
-     if echo "${TARGET_ARCH}" | grep -q "i.86" || [ "${TARGET_ARCH}" = "x86_64" ]; then
-@@ -98,6 +111,52 @@ efi_populate() {
+@@ -102,6 +115,52 @@ efi_populate() {
      install -m 0644 ${LUV_CFG} ${DEST}
  }
  
@@ -222,11 +215,11 @@ index d23c33d..7f21f8e 100644
 +          vmlinuz initrd=\initrd ${CMDLINE}" > ${DEST}${EFIDIR}/startup.nsh
 +}
 +
+ BITS_EFI_LOADER_IMAGE = "${DEST_EFI_LOADER_IMAGE}"
  efi_populate_bits() {
      DEST=$1
-     # TODO: weird behavior here. When building luv-live-image,
-@@ -177,6 +236,11 @@ python build_efi_cfg() {
-        cfgfile.write('timeout=0\n')
+@@ -182,6 +241,11 @@ python build_efi_cfg() {
+        cfgfile.write('default=bits\n')
         cfgfile.write('fallback=0\n')
  
 +    if re.search("aarch64", target):
@@ -237,7 +230,7 @@ index d23c33d..7f21f8e 100644
      cfgfile.write('menuentry \'luv\' {\n')
      cfgfile.write('linux /vmlinuz ')
  
-@@ -203,6 +267,11 @@ python build_efi_cfg() {
+@@ -208,6 +272,11 @@ python build_efi_cfg() {
         cfgfile.write('chainloader /EFI/BOOT/bits/%s\n' % loader)
         cfgfile.write('}\n')
  
@@ -250,7 +243,7 @@ index d23c33d..7f21f8e 100644
  }
  
 diff --git a/meta-luv/conf/distro/luv.conf b/meta-luv/conf/distro/luv.conf
-index 1676a0e..a36d97c 100644
+index d846d00..50ff3dc 100644
 --- a/meta-luv/conf/distro/luv.conf
 +++ b/meta-luv/conf/distro/luv.conf
 @@ -17,4 +17,4 @@ VIRTUAL-RUNTIME_init_manager = "systemd"
@@ -267,12 +260,105 @@ index 0000000..06f0264
 @@ -0,0 +1,2 @@
 +UEFI-SCT
 +========
+diff --git a/meta-luv/recipes-bsp/sbbr/sbbr/sbbr-sct.patch b/meta-luv/recipes-bsp/sbbr/sbbr/sbbr-sct.patch
+new file mode 100644
+index 0000000..dc678e4
+--- /dev/null
++++ b/meta-luv/recipes-bsp/sbbr/sbbr/sbbr-sct.patch
+@@ -0,0 +1,87 @@
++diff --git a/SctPkg/TestCase/UEFI/EFI/BootServices/SbbrBootServices/BlackBoxTest/SbbrBootServicesBBTestFunction.c b/SctPkg/TestCase/UEFI/EFI/BootServices/SbbrBootServices/BlackBoxTest/SbbrBootServicesBBTestFunction.c
++index c88d60b..6fbd11a 100644
++--- a/SctPkg/TestCase/UEFI/EFI/BootServices/SbbrBootServices/BlackBoxTest/SbbrBootServicesBBTestFunction.c
+++++ b/SctPkg/TestCase/UEFI/EFI/BootServices/SbbrBootServices/BlackBoxTest/SbbrBootServicesBBTestFunction.c
++@@ -235,6 +235,7 @@ BBTestMemoryMapTest (
++     //
++     // Checking for 64KB alignment
++     //
+++	/*
++     if (MemoryMapDescriptor->PhysicalStart & (SIZE_64KB - 1)) {
++       StandardLib->RecordAssertion (
++                   StandardLib,
++@@ -248,6 +249,7 @@ BBTestMemoryMapTest (
++                   );
++       error = TRUE;
++     }
+++	*/
++ 
++     //
++     // No issues found
++diff --git a/SctPkg/TestCase/UEFI/EFI/Generic/EfiCompliant/BlackBoxTest/Dependency/Config/EfiCompliant.ini b/SctPkg/TestCase/UEFI/EFI/Generic/EfiCompliant/BlackBoxTest/Dependency/Config/EfiCompliant.ini
++index 72e959d..e37a8d6 100644
++--- a/SctPkg/TestCase/UEFI/EFI/Generic/EfiCompliant/BlackBoxTest/Dependency/Config/EfiCompliant.ini
+++++ b/SctPkg/TestCase/UEFI/EFI/Generic/EfiCompliant/BlackBoxTest/Dependency/Config/EfiCompliant.ini
++@@ -124,33 +124,33 @@
++ [Platform Specific]
++ ConsoleDevices            = yes
++ HiiConfigSupport          = yes
++-HiiFontSupport            = yes
++-GraphicalConsoleDevices   = yes
++-PointerDevices            = yes
++-BootFromDiskDevices       = yes
++-BootFromNetworkDevices    = yes
++-ValidateBootImageThruNet  = yes
++-UartDevices               = yes
++-PciBusSupport             = yes
++-UsbBusSupport             = yes
++-NVMExpressPassThru        = yes
++-BootFromNVMe              = yes
++-ExtScsiPassThru           = yes
++-DebugSupport              = yes
++-PlatformDriverOverride    = yes
++-AtaPassThru               = yes
++-UEFIIPv4Support           = yes
++-BootFromScsi              = yes
++-ExtScsiPassThruSupport    = yes
++-BootFromIScsi             = yes
++-EBCSupport                = yes
++-UEFIIPv6Support           = yes
++-VLANSupport               = yes
++-DNS4Support               = yes
++-DNS6Support               = yes
++-TLSSupport                = yes
++-HTTPSupport               = yes
++-EAPSupport                = yes
++-BlueToothSupport          = yes
++-IPSecSupport              = yes
+++HiiFontSupport            = no
+++GraphicalConsoleDevices   = no
+++PointerDevices            = no
+++BootFromDiskDevices       = no
+++BootFromNetworkDevices    = no
+++ValidateBootImageThruNet  = no
+++UartDevices               = no
+++PciBusSupport             = no
+++UsbBusSupport             = no
+++NVMExpressPassThru        = no
+++BootFromNVMe              = no
+++ExtScsiPassThru           = no
+++DebugSupport              = no
+++PlatformDriverOverride    = no
+++AtaPassThru               = no
+++UEFIIPv4Support           = no
+++BootFromScsi              = no
+++ExtScsiPassThruSupport    = no
+++BootFromIScsi             = no
+++EBCSupport                = no
+++UEFIIPv6Support           = no
+++VLANSupport               = no
+++DNS4Support               = no
+++DNS6Support               = no
+++TLSSupport                = no
+++HTTPSupport               = no
+++EAPSupport                = no
+++BlueToothSupport          = no
+++IPSecSupport              = no
++ 
 diff --git a/meta-luv/recipes-bsp/sbbr/sbbr_v1.0.bb b/meta-luv/recipes-bsp/sbbr/sbbr_v1.0.bb
 new file mode 100644
-index 0000000..e6f70d7
+index 0000000..9d4b4b3
 --- /dev/null
 +++ b/meta-luv/recipes-bsp/sbbr/sbbr_v1.0.bb
-@@ -0,0 +1,100 @@
+@@ -0,0 +1,101 @@
 +# Copyright (c) 2017, ARM Limited or its affiliates. All rights reserved.
 +#
 +# Licensed under the Apache License, Version 2.0 (the "License");
@@ -312,6 +398,7 @@ index 0000000..e6f70d7
 +# No information for SRC_URI yet (only an external source tree was specified)
 +SRCREV  = "1ff61591f11a1b92518f2273ffeacaa90e474e5e"
 +SRC_URI = "git://github.com/UEFI/UEFI-SCT.git;protocol=https;branch=sbbr;user="${SCTUSERNAME}":"${SCTPASSWORD}" \
++           file://sbbr-sct.patch \
 +          "
 +
 +# NOTE: no Makefile found, unable to determine what needs to be done
@@ -529,23 +616,293 @@ index 07760b2..c3eec9a 100644
  
  LUV_TEST_LOG_PARSER="luv-parser-efivarfs"
 -LUV_TEST="efivarfs"
+diff --git a/meta-luv/recipes-core/fwts/fwts/sbbr-fwts.patch b/meta-luv/recipes-core/fwts/fwts/sbbr-fwts.patch
+new file mode 100644
+index 0000000..58f1a61
+--- /dev/null
++++ b/meta-luv/recipes-core/fwts/fwts/sbbr-fwts.patch
+@@ -0,0 +1,261 @@
++From ff0f8837b3572d84b7d3a5360d6a739f398760f3 Mon Sep 17 00:00:00 2001
++From: Sakar Arora <sakar.arora@arm.com>
++Date: Mon, 11 Dec 2017 15:34:01 +0530
++Subject: [PATCH] acpi: sbbr: relax a few test pass conditions
++
++DBG2: Allow PL011 UART
++SPCR: Allow IO-APIC interrupt type
++_CRS: Relax failures to warnings for mif/maf tests
++
++Signed-off-by: Sakar Arora <sakar.arora@arm.com>
++---
++ src/acpi/dbg2/dbg2.c                |   8 +-
++ src/acpi/spcr/spcr.c                |   6 +-
++ src/lib/src/fwts_acpi_object_eval.c | 149 ++++++++++++++++++++++++------------
++ 3 files changed, 111 insertions(+), 52 deletions(-)
++
++diff --git a/src/acpi/dbg2/dbg2.c b/src/acpi/dbg2/dbg2.c
++index b826c27..f1301de 100644
++--- a/src/acpi/dbg2/dbg2.c
+++++ b/src/acpi/dbg2/dbg2.c
++@@ -28,8 +28,9 @@
++ 
++ #include "fwts_acpi_object_eval.h"
++ 
++-#define SBBR_DBG2_PORT_SERIAL   0x8000
++-#define SBBR_DBG2_ARM_SBSA_UART 0x000E
+++#define SBBR_DBG2_PORT_SERIAL     0x8000
+++#define SBBR_DBG2_ARM_SBSA_UART   0x000E
+++#define SBBR_DBG2_ARM_PL011_UART  0x0003
++ 
++ static fwts_acpi_table_info *table;
++ 
++@@ -72,7 +73,8 @@ static int dbg2_test2(fwts_framework *fw)
++ 		if (((uint8_t*)info + info->length) >= ((uint8_t*)table + table->length))
++ 			break;
++ 		if ((info->port_type == SBBR_DBG2_PORT_SERIAL) &&
++-		(info->port_subtype == SBBR_DBG2_ARM_SBSA_UART)) {
+++			(info->port_subtype == SBBR_DBG2_ARM_SBSA_UART ||
+++			info->port_subtype == SBBR_DBG2_ARM_PL011_UART)) {
++ 			fwts_passed(fw,
++ 				"DBG2 provides a standard serial debug "
++ 				"port and describes ARM SBSA Generic UART");
++diff --git a/src/acpi/spcr/spcr.c b/src/acpi/spcr/spcr.c
++index 2f37e3f..6a9ac3a 100644
++--- a/src/acpi/spcr/spcr.c
+++++ b/src/acpi/spcr/spcr.c
++@@ -74,9 +74,11 @@ static int spcr_sbbr_gsiv_test(fwts_framework *fw)
++ {
++ 	if (fw->flags & FWTS_FLAG_TEST_SBBR) {
++ 		const uint8_t ARMH_GIC_INTR_MASK = 0x08;
+++		const uint8_t IO_APIC_INTR_MASK = 0x02;
++ 
++-		if ( (spcr->interrupt_type == ARMH_GIC_INTR_MASK) &&
++-		     (spcr->gsi            != 0x0000000000000000)    )
+++		if ((spcr->interrupt_type == ARMH_GIC_INTR_MASK ||
+++			spcr->interrupt_type == IO_APIC_INTR_MASK) &&
+++		    spcr->gsi != 0x0000000000000000)
++ 			fwts_passed(fw, "SPCR appears to be populated with correct GSIV interrupt"
++ 						"routing information for ARM PL011 UART Device");
++ 		else
++diff --git a/src/lib/src/fwts_acpi_object_eval.c b/src/lib/src/fwts_acpi_object_eval.c
++index b356441..b3537b0 100644
++--- a/src/lib/src/fwts_acpi_object_eval.c
+++++ b/src/lib/src/fwts_acpi_object_eval.c
++@@ -1270,32 +1270,51 @@ static void method_test_CRS_mif_maf(
++ 	if (len == 0) {
++ 		if ((mif == 1) && (maf == 1)) {
++ 			snprintf(tmp, sizeof(tmp), "Method%s%sMifMafBothOne", objname, tag);
++-			fwts_failed(fw, LOG_LEVEL_MEDIUM,
++-				tmp,
++-				"%s %s _MIF and _MAF flags are both "
++-				"set to one which is invalid when "
++-				"the length field is 0.",
++-				name, type);
+++			if (fw->flags & FWTS_FLAG_TEST_SBBR)
+++				fwts_warning(fw, tmp,
+++					"%s %s _MIF and _MAF flags are both "
+++					"set to one which is invalid when "
+++					"the length field is 0.",
+++					name, type);
+++			else
+++				fwts_failed(fw, LOG_LEVEL_MEDIUM,
+++					tmp,
+++					"%s %s _MIF and _MAF flags are both "
+++					"set to one which is invalid when "
+++					"the length field is 0.",
+++					name, type);
++ 			fwts_advice(fw, "%s", mif_maf_advice);
++ 			*passed = false;
++ 		}
++ 		if ((mif == 1) && (min % (granularity + 1) != 0)) {
++ 			snprintf(tmp, sizeof(tmp), "Method%s%sMinNotMultipleOfGran", objname, tag);
++-			fwts_failed(fw, LOG_LEVEL_MEDIUM,
++-				tmp,
++-				"%s %s _MIN address is not a multiple "
++-				"of the granularity when _MIF is 1.",
++-				name, type);
+++			if (fw->flags & FWTS_FLAG_TEST_SBBR)
+++				fwts_warning(fw, tmp,
+++					"%s %s _MIN address is not a multiple "
+++					"of the granularity when _MIF is 1.",
+++					name, type);
+++			else
+++				fwts_failed(fw, LOG_LEVEL_MEDIUM,
+++					tmp,
+++					"%s %s _MIN address is not a multiple "
+++					"of the granularity when _MIF is 1.",
+++					name, type);
++ 			fwts_advice(fw, "%s", mif_maf_advice);
++ 			*passed = false;
++ 		}
++ 		if ((maf == 1) && (max % (granularity - 1) != 0)) {
++ 			snprintf(tmp, sizeof(tmp), "Method%s%sMaxNotMultipleOfGran", objname, tag);
++-			fwts_failed(fw, LOG_LEVEL_MEDIUM,
++-				tmp,
++-				"%s %s _MAX address is not a multiple "
++-				"of the granularity when _MAF is 1.",
++-				name, type);
+++			if (fw->flags & FWTS_FLAG_TEST_SBBR)
+++				fwts_warning(fw, tmp,
+++					"%s %s _MAX address is not a multiple "
+++					"of the granularity when _MAF is 1.",
+++					name, type);
+++			else
+++				fwts_failed(fw, LOG_LEVEL_MEDIUM,
+++					tmp,
+++					"%s %s _MAX address is not a multiple "
+++					"of the granularity when _MAF is 1.",
+++					name, type);
++ 			fwts_advice(fw, "%s", mif_maf_advice);
++ 			*passed = false;
++ 		}
++@@ -1303,58 +1322,94 @@ static void method_test_CRS_mif_maf(
++ 		if ((mif == 0) && (maf == 0) &&
++ 		    (len % (granularity + 1) != 0)) {
++ 			snprintf(tmp, sizeof(tmp), "Method%s%sLenNotMultipleOfGran", objname, tag);
++-			fwts_failed(fw, LOG_LEVEL_MEDIUM,
++-				tmp,
++-				"%s %s length is not a multiple "
++-				"of the granularity when _MIF "
++-				"and _MIF are 0.",
++-				name, type);
+++			if (fw->flags & FWTS_FLAG_TEST_SBBR)
+++				fwts_warning(fw, tmp,
+++					"%s %s length is not a multiple "
+++					"of the granularity when _MIF "
+++					"and _MIF are 0.",
+++					name, type);
+++			else
+++				fwts_failed(fw, LOG_LEVEL_MEDIUM,
+++					tmp,
+++					"%s %s length is not a multiple "
+++					"of the granularity when _MIF "
+++					"and _MIF are 0.",
+++					name, type);
++ 			fwts_advice(fw, "%s", mif_maf_advice);
++ 			*passed = false;
++ 		}
++ 		if (((mif == 0) && (maf == 1)) || ((mif == 1) && (maf == 0))) {
++ 			snprintf(tmp, sizeof(tmp), "Method%s%sMifMafInvalid", objname, tag);
++-			fwts_failed(fw, LOG_LEVEL_MEDIUM,
++-				tmp,
++-				"%s %s _MIF and _MAF flags are either "
++-				"0 and 1 or 1 and 0 which is invalid when "
++-				"the length field is non-zero.",
++-				name, type);
+++			if (fw->flags & FWTS_FLAG_TEST_SBBR)
+++				fwts_warning(fw, tmp,
+++					"%s %s _MIF and _MAF flags are either "
+++					"0 and 1 or 1 and 0 which is invalid when "
+++					"the length field is non-zero.",
+++					name, type);
+++			else
+++				fwts_failed(fw, LOG_LEVEL_MEDIUM,
+++					tmp,
+++					"%s %s _MIF and _MAF flags are either "
+++					"0 and 1 or 1 and 0 which is invalid when "
+++					"the length field is non-zero.",
+++					name, type);
++ 			fwts_advice(fw, "%s", mif_maf_advice);
++ 			*passed = false;
++ 		}
++ 		if ((mif == 1) && (maf == 1)) {
++ 			if (granularity != 0) {
++ 				snprintf(tmp, sizeof(tmp), "Method%s%sGranularityNotZero", objname, tag);
++-				fwts_failed(fw, LOG_LEVEL_MEDIUM,
++-					tmp,
++-					"%s %s granularity 0x%" PRIx64
++-					" is not zero as expected when "
++-					"_MIF and _MAF are both 1.",
++-					name, type, granularity);
+++				if (fw->flags & FWTS_FLAG_TEST_SBBR)
+++					fwts_warning(fw, tmp,
+++						"%s %s granularity 0x%" PRIx64
+++						" is not zero as expected when "
+++						"_MIF and _MAF are both 1.",
+++						name, type, granularity);
+++				else
+++					fwts_failed(fw, LOG_LEVEL_MEDIUM,
+++						tmp,
+++						"%s %s granularity 0x%" PRIx64
+++						" is not zero as expected when "
+++						"_MIF and _MAF are both 1.",
+++						name, type, granularity);
++ 				fwts_advice(fw, "%s", mif_maf_advice);
++ 				*passed = false;
++ 			}
++ 			if (min > max) {
++ 				snprintf(tmp, sizeof(tmp), "Method%s%sMaxLessThanMin", objname, tag);
++-				fwts_failed(fw, LOG_LEVEL_MEDIUM,
++-					tmp,
++-					"%s %s minimum address range 0x%" PRIx64
++-					" is greater than the maximum address "
++-					"range 0x%" PRIx64 ".",
++-					name, type, min, max);
+++				if (fw->flags & FWTS_FLAG_TEST_SBBR)
+++					fwts_warning(fw, tmp,
+++						"%s %s minimum address range 0x%" PRIx64
+++						" is greater than the maximum address "
+++						"range 0x%" PRIx64 ".",
+++						name, type, min, max);
+++				else
+++					fwts_failed(fw, LOG_LEVEL_MEDIUM,
+++						tmp,
+++						"%s %s minimum address range 0x%" PRIx64
+++						" is greater than the maximum address "
+++						"range 0x%" PRIx64 ".",
+++						name, type, min, max);
++ 				fwts_advice(fw, "%s", mif_maf_advice);
++ 				*passed = false;
++ 			}
++ 			if (max - min + 1 != len) {
++ 				snprintf(tmp, sizeof(tmp), "Method%s%sLengthInvalid", objname, tag);
++-				fwts_failed(fw, LOG_LEVEL_MEDIUM,
++-					tmp,
++-					"%s %s length 0x%" PRIx64
++-					" does not match the difference between "
++-					"the minimum and maximum address ranges "
++-					"0x%" PRIx64 "-0x%" PRIx64 ".",
++-					name, type, len, min, max);
+++				if (fw->flags & FWTS_FLAG_TEST_SBBR)
+++					fwts_warning(fw, tmp,
+++						"%s %s length 0x%" PRIx64
+++						" does not match the difference between "
+++						"the minimum and maximum address ranges "
+++						"0x%" PRIx64 "-0x%" PRIx64 ".",
+++						name, type, len, min, max);
+++				else
+++					fwts_failed(fw, LOG_LEVEL_MEDIUM,
+++						tmp,
+++						"%s %s length 0x%" PRIx64
+++						" does not match the difference between "
+++						"the minimum and maximum address ranges "
+++						"0x%" PRIx64 "-0x%" PRIx64 ".",
+++						name, type, len, min, max);
++ 				fwts_advice(fw, "%s", mif_maf_advice);
++ 				*passed = false;
++ 			}
++-- 
++2.7.4
++
 diff --git a/meta-luv/recipes-core/fwts/fwts_git.bb b/meta-luv/recipes-core/fwts/fwts_git.bb
-index fd8a8f8..855ab7f 100644
+index 122f9b9..89027e0 100644
 --- a/meta-luv/recipes-core/fwts/fwts_git.bb
 +++ b/meta-luv/recipes-core/fwts/fwts_git.bb
-@@ -4,9 +4,9 @@ HOMEPAGE = "https://wiki.ubuntu.com/Kernel/Reference/fwts"
+@@ -4,11 +4,12 @@ HOMEPAGE = "https://wiki.ubuntu.com/Kernel/Reference/fwts"
  LICENSE = "GPLv2+"
  LIC_FILES_CHKSUM = "file://src/main.c;beginline=1;endline=16;md5=31da590f3e9f3bd34dcdb9e4db568519"
  
--PV = "V17.03.00+git${SRCPV}"
+-PV = "V17.09.00+git${SRCPV}"
 +PV = "V17.11.00+git${SRCPV}"
  
--SRCREV = "e3e9d1442b4cc70f5b30199f584cec8e25aeaad4"
+-SRCREV = "7cc5c0823ec56859b0c8d91607befd8a151ec7f1"
 +SRCREV = "d606dff6031a7742967981a1bd5d22138dfe2718"
  SRC_URI = "git://kernel.ubuntu.com/hwe/fwts.git \
             file://luv-parser-fwts \
++           file://sbbr-fwts.patch \
            "
-@@ -50,8 +50,7 @@ do_install_append() {
+ 
+ S = "${WORKDIR}/git"
+@@ -52,8 +53,7 @@ do_install_append() {
  }
  
  LUV_TEST_LOG_PARSER="luv-parser-fwts"
@@ -556,22 +913,22 @@ index fd8a8f8..855ab7f 100644
  FILES_${PN} += "${libdir}/fwts/lib*${SOLIBS}"
  FILES_${PN} += "/lib/modules/${KERNEL_VERSION}/extra/efi_runtime.ko"
 diff --git a/meta-luv/recipes-core/images/core-image-efi-initramfs.bb b/meta-luv/recipes-core/images/core-image-efi-initramfs.bb
-index 82a9cb8..b7e6a8d 100644
+index d733b61..b7736ff 100644
 --- a/meta-luv/recipes-core/images/core-image-efi-initramfs.bb
 +++ b/meta-luv/recipes-core/images/core-image-efi-initramfs.bb
 @@ -9,6 +9,7 @@ IMAGE_INSTALL = "\
      util-linux-mount util-linux-umount kmod sed tar net-tools \
-     shadow util-linux procps efivarfs-test \
+     shadow util-linux procps efivarfs-test pstore-test \
      plymouth plymouth-set-default-theme kernel-efi-warnings linux-firmware kexec \
 +    sbsa-acs-drv sbsa-acs-app \
      "
  
  X86_ADDITIONS = "chipsec python-codecs python-subprocess vmcore-dmesg bits \
 diff --git a/meta-luv/recipes-core/images/luv-live-image.bb b/meta-luv/recipes-core/images/luv-live-image.bb
-index 50cad08..2c3a5d7 100644
+index 142d71c..9ed38ab 100644
 --- a/meta-luv/recipes-core/images/luv-live-image.bb
 +++ b/meta-luv/recipes-core/images/luv-live-image.bb
-@@ -26,7 +26,7 @@ COMMON_CMDLINE_x86 += "splash nomodeset crash_kexec_post_notifiers"
+@@ -28,7 +28,7 @@ COMMON_CMDLINE_x86 += "splash nomodeset crash_kexec_post_notifiers"
  
  # Unlike the += operand, _append's do not insert a space between the current value
  # and the appended string. Thus, we add them.
@@ -580,7 +937,7 @@ index 50cad08..2c3a5d7 100644
  CMDLINE_append_x86 = "${COMMON_CMDLINE_x86}"
  CMDLINE_append_x86-64 = "${COMMON_CMDLINE_x86}"
  
-@@ -42,7 +42,7 @@ python() {
+@@ -44,7 +44,7 @@ python() {
  
  SPLASH_IMAGE = "blue-luv.jpg"
  
@@ -589,7 +946,7 @@ index 50cad08..2c3a5d7 100644
  
  inherit image-live
  
-@@ -66,8 +66,8 @@ build_img() {
+@@ -68,8 +68,8 @@ build_img() {
      BYTES_PER_SECTOR=512
      MiB=$(expr 1024 \* 1024)
      VFAT_RESULTS=${DEPLOY_DIR_IMAGE}/${PN}-results.hddimg
@@ -600,7 +957,7 @@ index 50cad08..2c3a5d7 100644
      VFAT_RESULTS_SPACE=$(expr $VFAT_RESULTS_SPACE_MiB \* $MiB)
      VFAT_RESULTS_BLOCKS=$(expr $VFAT_RESULTS_SPACE / 1024)
      # TODO: do we need to dynamically generate the UUID?
-@@ -86,6 +86,8 @@ build_img() {
+@@ -88,6 +88,8 @@ build_img() {
      mkdosfs -C ${VFAT_RESULTS} -S ${BYTES_PER_SECTOR} -i ${VFAT_RESULTS_UUID} \
              -n ${VFAT_RESULTS_LABEL} $VFAT_RESULTS_BLOCKS
  
@@ -610,19 +967,18 @@ index 50cad08..2c3a5d7 100644
  
      # Now that we are calculating sizes in MiB make sure that the value
 diff --git a/meta-luv/recipes-core/images/luv-netboot-image.bb b/meta-luv/recipes-core/images/luv-netboot-image.bb
-index d8205ee..d3811fa 100644
+index facb24a..e8602a1 100644
 --- a/meta-luv/recipes-core/images/luv-netboot-image.bb
 +++ b/meta-luv/recipes-core/images/luv-netboot-image.bb
-@@ -1,7 +1,7 @@
- LICENSE = "MIT"
- LIC_FILES_CHKSUM = "file://${COREBASE}/LICENSE;md5=4d92cd373abda3937c2bc47fbc49d690"
+@@ -3,6 +3,7 @@ LIC_FILES_CHKSUM = "file://${COREBASE}/LICENSE;md5=4d92cd373abda3937c2bc47fbc49d
  
--DEPENDS_${PN} = "bits"
+ DEPENDS_append_x86 = " bits"
+ DEPENDS_append_x86-64 = " bits"
 +DEPENDS_${PN} = "bits sbbr"
  
  INITRD_IMAGE_LIVE = "core-image-efi-initramfs"
  IMGDEPLOYDIR = "${DEPLOY_DIR_IMAGE}"
-@@ -28,7 +28,7 @@ COMMON_CMDLINE_x86 += "splash nomodeset crash_kexec_post_notifiers"
+@@ -29,7 +30,7 @@ COMMON_CMDLINE_x86 += "splash nomodeset crash_kexec_post_notifiers"
  
  # Unlike the += operand, _append's do not insert a space between the current value
  # and the appended string. Thus, we add them.
@@ -631,7 +987,7 @@ index d8205ee..d3811fa 100644
  CMDLINE_append_x86 = "${COMMON_CMDLINE_x86}"
  CMDLINE_append_x86-64 = "${COMMON_CMDLINE_x86}"
  
-@@ -59,7 +59,8 @@ do_mkimage[depends] += "dosfstools-native:do_populate_sysroot \
+@@ -68,7 +69,8 @@ do_mkimage[depends] += "dosfstools-native:do_populate_sysroot \
                          mtools-native:do_populate_sysroot \
                          cdrtools-native:do_populate_sysroot \
                          virtual/kernel:do_deploy \
@@ -641,14 +997,13 @@ index d8205ee..d3811fa 100644
  
  do_bootimg[noexec] = "1"
  
-@@ -68,7 +69,8 @@ do_populate_image() {
- 	if [ "${TARGET_ARCH}" != "aarch64" ]; then
+@@ -78,6 +80,8 @@ do_populate_image() {
  		efi_populate_bits ${HDDDIR}
  	else
--		echo "bootaa64.efi" > ${HDDDIR}${EFIDIR}/startup.nsh
+ 		echo "${DEST_EFI_LOADER_IMAGE}" > ${HDDDIR}${EFIDIR}/startup.nsh
 +		efi_populate_sbbr ${HDDDIR}
 +		efi_populate_sbsa ${HDDDIR}
- 		install -m 0644 ${DEPLOY_DIR_IMAGE}/bootaa64.efi ${HDDDIR}${EFIDIR}
+ 		install -m 0644 ${DEPLOY_DIR_IMAGE}/${GRUB_EFI_LOADER_IMAGE} ${HDDDIR}${EFIDIR}/${DEST_EFI_LOADER_IMAGE}
  	fi
  	install -m 0644 ${GRUBCFG} ${HDDDIR}${EFIDIR}
 diff --git a/meta-luv/recipes-core/kernel_efi_warnings/kernel-efi-warnings_0.1.bb b/meta-luv/recipes-core/kernel_efi_warnings/kernel-efi-warnings_0.1.bb
@@ -662,19 +1017,19 @@ index a0fde3c..85eec50 100644
 -LUV_TEST="kernel-efi-warnings"
 -LUV_TEST_ARGS=""
 diff --git a/meta-luv/recipes-core/luv-test/luv-test.bb b/meta-luv/recipes-core/luv-test/luv-test.bb
-index 7a94cc3..a35e2b9 100644
+index 36421dd..6f2f1d2 100644
 --- a/meta-luv/recipes-core/luv-test/luv-test.bb
 +++ b/meta-luv/recipes-core/luv-test/luv-test.bb
-@@ -32,6 +32,8 @@ SRC_URI += "file://luv-test-manager file://luv-test-parser \
-             file://luv-test-manager.service \
+@@ -33,6 +33,8 @@ SRC_URI += "file://luv-test-manager file://luv-test-parser \
              file://luv-crash-handler.service \
              file://luv-netconsole.service \
+             file://luv-dmesg-acpi-tables-dump \
 +            file://luv-collect-results \
 +            file://luv-sbsa-test \
            "
  
  RDEPENDS_${PN}-netconsole+= "kernel-modules curl iputils iproute2 bash init-ifupdown dhcp-client"
-@@ -67,6 +69,10 @@ do_install_append() {
+@@ -68,6 +70,10 @@ do_install_append() {
         install -m 0644 ${WORKDIR}/luv-scripts ${D}${datadir}/luv/html
         install -m 0644 ${WORKDIR}/luv-css-styles ${D}${datadir}/luv/html
  
@@ -873,8 +1228,8 @@ index 0000000..6f4601a
 +
 +print "Done, test results can be found in \"%s\"" % arg_output
 diff --git a/meta-luv/recipes-core/luv-test/luv-test/luv-sbsa-test b/meta-luv/recipes-core/luv-test/luv-test/luv-sbsa-test
-new file mode 100755
-index 0000000..0764e1c
+new file mode 100644
+index 0000000..a9b6863
 --- /dev/null
 +++ b/meta-luv/recipes-core/luv-test/luv-test/luv-sbsa-test
 @@ -0,0 +1,18 @@
@@ -893,14 +1248,14 @@ index 0000000..0764e1c
 +# See the License for the specific language governing permissions and
 +# limitations under the License.
 +
-+insmod /lib/modules/4.10.0-yocto-standard/extra/sbsa_acs.ko
++insmod /lib/modules/4.13.0-yocto-standard/extra/sbsa_acs.ko
 +mkdir -p $1/sbsa_results/linux
 +sbsa > $1/sbsa_results/linux/SbsaResults.log
 diff --git a/meta-luv/recipes-core/luv-test/luv-test/luv-test-manager b/meta-luv/recipes-core/luv-test/luv-test/luv-test-manager
-index 38aa116..0197db9 100644
+index 6f3a120..fcb02df 100644
 --- a/meta-luv/recipes-core/luv-test/luv-test/luv-test-manager
 +++ b/meta-luv/recipes-core/luv-test/luv-test/luv-test-manager
-@@ -256,6 +256,11 @@ done | awk '/\[\+/  { units += 1 }
+@@ -295,6 +295,11 @@ cat ${LUV_SAVE_RESULTS_DIR}/luv.results | awk '/\[\+/  { units += 1 }
  cat /tmp/testsuites | html_inline ${LUV_HTML_REPORT} | tee -a /dev/kmsg /tmp/luv.results \
           ${LUV_SAVE_RESULTS_DIR}/luv.results
  
@@ -912,25 +1267,32 @@ index 38aa116..0197db9 100644
  result=$(cat /tmp/testsuites)
  plymouth_write "$result"
  sleep 2
-diff --git a/meta-luv/recipes-kernel/linux/linux-yocto-efi-test_4.10.bb b/meta-luv/recipes-kernel/linux/linux-yocto-efi-test_4.10.bb
-index 916cc71..cc504a3 100644
---- a/meta-luv/recipes-kernel/linux/linux-yocto-efi-test_4.10.bb
-+++ b/meta-luv/recipes-kernel/linux/linux-yocto-efi-test_4.10.bb
-@@ -78,6 +78,9 @@ SRC_URI += "file://0001-x86-efi-Move-efi_bgrt_init-to-early-stage.patch \
+diff --git a/meta-luv/recipes-kernel/linux/linux-yocto-efi-test_4.13.bb b/meta-luv/recipes-kernel/linux/linux-yocto-efi-test_4.13.bb
+index a60e59a..450954f 100644
+--- a/meta-luv/recipes-kernel/linux/linux-yocto-efi-test_4.13.bb
++++ b/meta-luv/recipes-kernel/linux/linux-yocto-efi-test_4.13.bb
+@@ -59,7 +59,7 @@ KERNEL_FEATURES_remove= " features/debug/printk.scc"
+ 
+ # Override SRC_URI in a bbappend file to point at a different source
+ # tree if you do not want to build from Linus' tree.
+-SRC_URI = "git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git;protocol=git;branch=${KBRANCH};name=machine"
++SRC_URI = "git://kernel.googlesource.com/pub/scm/linux/kernel/git/torvalds/linux;protocol=https;branch=${KBRANCH};name=machine"
+ 
+ # These patches are under discussion on ML
  SRC_URI += "file://0001-serial-SPCR-check-bit-width-for-the-16550-UART.patch  \
+@@ -79,6 +79,7 @@ SRC_URI += "file://0001-PCI-Vulcan-AHCI-PCI-bar-fix-for-Broadcom-Vulcan-earl.pat
+             file://0008-x86-efi-Introduce-EFI_WARN_ON_ILLEGAL_ACCESSES.patch \
+             file://0001-selftests-change-reboot-flag-location.patch \
+             file://0001-pstore-test-remove-log-directory.patch \
++            file://0001-SBSA-ACS-linux-v4.13.patch \
             "
  
-+SRC_URI += "file://0001-SBSA-ACS-linux-4.10.patch \
-+           "
-+
- COMMON_CFG_x86 = " file://${MACHINE}/defconfig \
-                    file://qemux86/modules.cfg \
-                    file://qemux86/display.cfg \
+ COMMON_CFG_x86 = " file://qemux86/modules.cfg \
 diff --git a/meta/conf/bitbake.conf b/meta/conf/bitbake.conf
-index 54a587f..b05fe94 100644
+index 2dac3a1..7833e05 100644
 --- a/meta/conf/bitbake.conf
 +++ b/meta/conf/bitbake.conf
-@@ -728,7 +728,7 @@ INITRAMFS_FSTYPES ?= "cpio.gz"
+@@ -754,7 +754,7 @@ INITRAMFS_FSTYPES ?= "cpio.gz"
  # The maximum size in Kbytes for the generated initramfs image size.
  # Usually, it should be less than 1/2 of ram size, or you may fail to
  # boot it.
@@ -941,7 +1303,7 @@ index 54a587f..b05fe94 100644
  MACHINE_TASK_PROVIDER ?= "${DEFAULT_TASK_PROVIDER}"
 diff --git a/sbsa_setup.sh b/sbsa_setup.sh
 new file mode 100755
-index 0000000..d07fa3b
+index 0000000..24135fc
 --- /dev/null
 +++ b/sbsa_setup.sh
 @@ -0,0 +1,41 @@
@@ -972,7 +1334,7 @@ index 0000000..d07fa3b
 +#copy .bb and source files to relevant places
 +rm -rf $LUVDIR/meta-luv/recipes-core/sbsa-acs-drv
 +mv -f sbsa-acs-drv $LUVDIR/meta-luv/recipes-core/
-+mv -f kernel/src/0001-SBSA-ACS-linux-4.10.patch $LUVDIR/meta-luv/recipes-kernel/linux/linux-yocto-efi-test/
++mv -f kernel/src/0001-SBSA-ACS-linux-v4.13.patch $LUVDIR/meta-luv/recipes-kernel/linux/linux-yocto-efi-test/
 +
 +cd $TMPDIR
 +git clone https://github.com/ARM-software/sbsa-acs.git
