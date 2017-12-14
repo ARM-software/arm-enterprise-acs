@@ -1,3 +1,9 @@
+v17.12_REL1.2
+
+* LUVOS: Moved to luv-yocto tag v2.2-rc1, which supports linux kernel v4.13.
+* SCT: Added dependancy files required for some tests. Skipped 64KB alignment test in MemoryMap.
+* FWTS: Added more passing scenarios in SPCR, DBG2 tests. Relaxed failures to warnings for some _CRS tests.
+
 v17.10_REL1.1
 
 * Remove sbbr changes in fwts from luvOS patch, since those have been upstreamed in fwts repository.

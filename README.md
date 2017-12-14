@@ -22,7 +22,7 @@ These tests are split between a UEFI application and a Linux driver that togethe
 and SBBR specifications. These tests are further described in detail.
 
 ## Release details
- - Code Quality: REL v1.1
+ - Code Quality: REL v1.2
  - The SBSA tests are written for version 3.0 of the SBSA specification.
  - The SBBR tests are written for version 1.0 of the SBBR specification.
  - The compliance suite is not a substitute for design verification.
