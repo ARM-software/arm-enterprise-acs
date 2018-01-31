@@ -1,4 +1,4 @@
-From 9378ccee62f935461353e9c165638c206084500d Mon Sep 17 00:00:00 2001
+From 2b5cd4fcd6e9ea7c8c47d5da655477225a570da2 Mon Sep 17 00:00:00 2001
 From: Sakar Arora <sakar.arora@arm.com>
 Date: Wed, 13 Dec 2017 11:35:42 +0530
 Subject: [PATCH] luvOS
@@ -8,7 +8,7 @@ Subject: [PATCH] luvOS
  meta-luv/classes/luv-efi.bbclass                   |  71 +++++-
  meta-luv/conf/distro/luv.conf                      |   2 +-
  meta-luv/recipes-bsp/sbbr/sbbr/README.md           |   2 +
- meta-luv/recipes-bsp/sbbr/sbbr/sbbr-sct.patch      |  87 +++++++
+ meta-luv/recipes-bsp/sbbr/sbbr/sbbr-sct.patch      | 136 +++++++++++
  meta-luv/recipes-bsp/sbbr/sbbr_v1.0.bb             | 101 ++++++++
  meta-luv/recipes-bsp/sbsa/files/compile.sh         |  28 +++
  meta-luv/recipes-bsp/sbsa/sbsa.bb                  | 107 +++++++++
@@ -26,7 +26,7 @@ Subject: [PATCH] luvOS
  .../linux/linux-yocto-efi-test_4.13.bb             |   3 +-
  meta/conf/bitbake.conf                             |   2 +-
  sbsa_setup.sh                                      |  41 ++++
- 22 files changed, 1016 insertions(+), 17 deletions(-)
+ 22 files changed, 1065 insertions(+), 17 deletions(-)
  create mode 100755 build_luvos.sh
  create mode 100644 meta-luv/recipes-bsp/sbbr/sbbr/README.md
  create mode 100644 meta-luv/recipes-bsp/sbbr/sbbr/sbbr-sct.patch
@@ -262,10 +262,26 @@ index 0000000..06f0264
 +========
 diff --git a/meta-luv/recipes-bsp/sbbr/sbbr/sbbr-sct.patch b/meta-luv/recipes-bsp/sbbr/sbbr/sbbr-sct.patch
 new file mode 100644
-index 0000000..dc678e4
+index 0000000..8954968
 --- /dev/null
 +++ b/meta-luv/recipes-bsp/sbbr/sbbr/sbbr-sct.patch
-@@ -0,0 +1,87 @@
+@@ -0,0 +1,136 @@
++diff --git a/SctPkg/TestCase/UEFI/EFI/BootServices/ImageServices/BlackBoxTest/ImageBBTestFunction.c b/SctPkg/TestCase/UEFI/EFI/BootServices/ImageServices/BlackBoxTest/ImageBBTestFunction.c
++index d0af10d..632c8df 100644
++--- a/SctPkg/TestCase/UEFI/EFI/BootServices/ImageServices/BlackBoxTest/ImageBBTestFunction.c
+++++ b/SctPkg/TestCase/UEFI/EFI/BootServices/ImageServices/BlackBoxTest/ImageBBTestFunction.c
++@@ -192,9 +192,9 @@ BBTestLoadImageInterfaceTest (
++   //Checkpoint 8:
++   //4.1.2.8  Call LoadImage to load image for HII protocol
++   //
++-  BBTestLoadImageInterfaceTestCheckPoint8(StandardLib);
+++  //BBTestLoadImageInterfaceTestCheckPoint8(StandardLib);
++ 
++-  BBTestLoadImageInterfaceTestCheckPoint9(StandardLib);
+++  //BBTestLoadImageInterfaceTestCheckPoint9(StandardLib);
++ #endif  
++   return EFI_SUCCESS;
++ }
 +diff --git a/SctPkg/TestCase/UEFI/EFI/BootServices/SbbrBootServices/BlackBoxTest/SbbrBootServicesBBTestFunction.c b/SctPkg/TestCase/UEFI/EFI/BootServices/SbbrBootServices/BlackBoxTest/SbbrBootServicesBBTestFunction.c
 +index c88d60b..6fbd11a 100644
 +--- a/SctPkg/TestCase/UEFI/EFI/BootServices/SbbrBootServices/BlackBoxTest/SbbrBootServicesBBTestFunction.c
@@ -352,6 +368,39 @@ index 0000000..dc678e4
 ++EAPSupport                = no
 ++BlueToothSupport          = no
 ++IPSecSupport              = no
++ 
++diff --git a/SctPkg/TestCase/UEFI/EFI/Generic/SbbrRequiredUefiProtocols/BlackBoxTest/RequiredUefiProtocolsBBTestFunction.c b/SctPkg/TestCase/UEFI/EFI/Generic/SbbrRequiredUefiProtocols/BlackBoxTest/RequiredUefiProtocolsBBTestFunction.c
++index 6b149ee..448193b 100644
++--- a/SctPkg/TestCase/UEFI/EFI/Generic/SbbrRequiredUefiProtocols/BlackBoxTest/RequiredUefiProtocolsBBTestFunction.c
+++++ b/SctPkg/TestCase/UEFI/EFI/Generic/SbbrRequiredUefiProtocols/BlackBoxTest/RequiredUefiProtocolsBBTestFunction.c
++@@ -85,7 +85,6 @@ BBTestMediaIoProtocolsTest (
++   UINTN                               NumberOfHandles;
++   SBBR_REQUIRED_PROTOCOL             Protocol[] = {
++                                         {EFI_LOAD_FILE_PROTOCOL_GUID, L"EFI_LOAD_FILE_PROTOCOL"},
++-                                        {EFI_LOAD_FILE2_PROTOCOL_GUID, L"EFI_LOAD_FILE2_PROTOCOL"},
++                                         {gEfiNullGuid, 0}
++                                       };
++   UINT32                              i;
++diff --git a/SctPkg/TestCase/UEFI/EFI/Generic/SbbrSysEnvConfig/BlackBoxTest/SysEnvConfigBBTestMain.c b/SctPkg/TestCase/UEFI/EFI/Generic/SbbrSysEnvConfig/BlackBoxTest/SysEnvConfigBBTestMain.c
++index 9ed7cf8..dcccd7c 100644
++--- a/SctPkg/TestCase/UEFI/EFI/Generic/SbbrSysEnvConfig/BlackBoxTest/SysEnvConfigBBTestMain.c
+++++ b/SctPkg/TestCase/UEFI/EFI/Generic/SbbrSysEnvConfig/BlackBoxTest/SysEnvConfigBBTestMain.c
++@@ -99,15 +99,7 @@ EFI_BB_TEST_ENTRY_FIELD gBBTestEntryField[] = {
++     EFI_TEST_CASE_AUTO,
++     BBTestOsDiskFormatTest
++   },
++-  {
++-    SYSENVCONFIG_EBC_INTERPRETER_PRESENT_GUID,
++-    L"EbcInterfacePresent",
++-    L"Checking that an EBC interpreter is present in the system.",
++-    EFI_TEST_LEVEL_DEFAULT,
++-    gSupportProtocolGuid,
++-    EFI_TEST_CASE_AUTO,
++-    BBTestEbcInterfacePresentTest
++-  },
+++ 
++   EFI_NULL_GUID
++ };
 + 
 diff --git a/meta-luv/recipes-bsp/sbbr/sbbr_v1.0.bb b/meta-luv/recipes-bsp/sbbr/sbbr_v1.0.bb
 new file mode 100644
