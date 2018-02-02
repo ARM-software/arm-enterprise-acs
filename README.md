@@ -22,7 +22,7 @@ These tests are split between a UEFI application and a Linux driver that togethe
 and SBBR specifications. These tests are further described in detail.
 
 ## Release details
- - Code Quality: REL v1.2
+ - Code Quality: REL v1.3
  - The SBSA tests are written for version 3.0 of the SBSA specification.
  - The SBBR tests are written for version 1.0 of the SBBR specification.
  - The compliance suite is not a substitute for design verification.
@@ -74,6 +74,12 @@ Several SBBR assertions are tested though FWTS.
 
 
 ## ACS build steps
+
+### Prebuilt images
+ - Prebuilt images for each release are available in the prebuilt_images folder of the release branch. You can choose to use these images or build your own image by following the steps below.
+- If you choose to use the prebuilt image, skip the build steps and jump to the test suite execution section below.
+
+### Prerequisites
 Before starting the ACS build, ensure that the following requirements are met:
  - Ubuntu 16.04 LTS with at least 64GB of free disk space.
  - Must use Bash shell.
@@ -114,8 +120,9 @@ This image comprises of two FAT file system partitions recognized by UEFI: <br /
 
 For more information, see [Yocto Project](https://www.yoctoproject.org/documentation) and [LuvOS](https://github.com/01org/luv-yocto). <br />
 
+## Test Suite Execution
 
-## Juno Reference Platform
+### Juno Reference Platform
 
 Follow the instructions [here](https://community.arm.com/docs/DOC-10804) to install an EDK2 (UEFI) prebuilt configuration on your Juno board.
 For additional information, see the FAQs and tutorials [here](https://community.arm.com/groups/arm-development-platforms) or contact [juno-support@arm.com](mailto:juno-support@arm.com).
@@ -132,7 +139,7 @@ Note: Replace '/dev/sdX' with the handle corresponding to your
 2. Insert the USB stick into one of the Juno's rear USB ports.
 3. Power cycle the Juno.
 
-## Fixed Virtual Platform (FVP) environment
+### Fixed Virtual Platform (FVP) environment
 
 The steps for running the ARM Enterprise ACS on an FVP are the
 same as those for running on Juno but with a few exceptions:
@@ -147,8 +154,8 @@ Or, <br />
 To launch the FVP model with script ‘run_model.sh’ that supports -v option for virtual disk image, use the following command:
 $ ./run_model.sh -v <work_dir>/arm-enterprise-acs/luv/build/tmp/deploy/images/qemuarm64/luv-live-image-gpt.img
 
-## Test suite execution
-The test suite execution can be automated or manual. Automated execution is the default execution method. <br />
+### Automation
+The test suite execution can be automated or manual. Automated execution is the default execution method when no key is pressed during boot. <br />
 Note: SBBR SCT tests are not included as part of automation. For information about running these tests, see section ‘SBBR SCT tests’ in this document. <br />
 The execution varies depending on the test environment.
 The next set of commands are an example of our typical run of the test suites.
