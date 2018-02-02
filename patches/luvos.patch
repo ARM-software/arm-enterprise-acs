@@ -1,32 +1,32 @@
-From 2b5cd4fcd6e9ea7c8c47d5da655477225a570da2 Mon Sep 17 00:00:00 2001
+From 6caa2ddff6893116d307ea1fe1e04a295c62042c Mon Sep 17 00:00:00 2001
 From: Sakar Arora <sakar.arora@arm.com>
 Date: Wed, 13 Dec 2017 11:35:42 +0530
 Subject: [PATCH] luvOS
 
 ---
- build_luvos.sh                                     |  88 +++++++
- meta-luv/classes/luv-efi.bbclass                   |  71 +++++-
+ build_luvos.sh                                     |  88 ++++++++++
+ meta-luv/classes/luv-efi.bbclass                   |  71 +++++++-
  meta-luv/conf/distro/luv.conf                      |   2 +-
  meta-luv/recipes-bsp/sbbr/sbbr/README.md           |   2 +
- meta-luv/recipes-bsp/sbbr/sbbr/sbbr-sct.patch      | 136 +++++++++++
- meta-luv/recipes-bsp/sbbr/sbbr_v1.0.bb             | 101 ++++++++
- meta-luv/recipes-bsp/sbsa/files/compile.sh         |  28 +++
- meta-luv/recipes-bsp/sbsa/sbsa.bb                  | 107 +++++++++
+ meta-luv/recipes-bsp/sbbr/sbbr/sbbr-sct.patch      | 136 ++++++++++++++++
+ meta-luv/recipes-bsp/sbbr/sbbr_v1.0.bb             | 101 ++++++++++++
+ meta-luv/recipes-bsp/sbsa/files/compile.sh         |  28 ++++
+ meta-luv/recipes-bsp/sbsa/sbsa.bb                  | 107 ++++++++++++
  meta-luv/recipes-core/efivarfs/efivarfs-test.bb    |   1 -
- meta-luv/recipes-core/fwts/fwts/sbbr-fwts.patch    | 261 +++++++++++++++++++++
+ meta-luv/recipes-core/fwts/fwts/sbbr-fwts.patch    |  17 ++
  meta-luv/recipes-core/fwts/fwts_git.bb             |   8 +-
  .../images/core-image-efi-initramfs.bb             |   1 +
  meta-luv/recipes-core/images/luv-live-image.bb     |  10 +-
  meta-luv/recipes-core/images/luv-netboot-image.bb  |   8 +-
  .../kernel_efi_warnings/kernel-efi-warnings_0.1.bb |   2 -
  meta-luv/recipes-core/luv-test/luv-test.bb         |   6 +
- .../luv-test/luv-test/luv-collect-results          | 181 ++++++++++++++
+ .../luv-test/luv-test/luv-collect-results          | 181 +++++++++++++++++++++
  .../recipes-core/luv-test/luv-test/luv-sbsa-test   |  18 ++
  .../luv-test/luv-test/luv-test-manager             |   5 +
  .../linux/linux-yocto-efi-test_4.13.bb             |   3 +-
  meta/conf/bitbake.conf                             |   2 +-
- sbsa_setup.sh                                      |  41 ++++
- 22 files changed, 1065 insertions(+), 17 deletions(-)
+ sbsa_setup.sh                                      |  41 +++++
+ 22 files changed, 821 insertions(+), 17 deletions(-)
  create mode 100755 build_luvos.sh
  create mode 100644 meta-luv/recipes-bsp/sbbr/sbbr/README.md
  create mode 100644 meta-luv/recipes-bsp/sbbr/sbbr/sbbr-sct.patch
@@ -667,273 +667,29 @@ index 07760b2..c3eec9a 100644
 -LUV_TEST="efivarfs"
 diff --git a/meta-luv/recipes-core/fwts/fwts/sbbr-fwts.patch b/meta-luv/recipes-core/fwts/fwts/sbbr-fwts.patch
 new file mode 100644
-index 0000000..58f1a61
+index 0000000..69e92fe
 --- /dev/null
 +++ b/meta-luv/recipes-core/fwts/fwts/sbbr-fwts.patch
-@@ -0,0 +1,261 @@
-+From ff0f8837b3572d84b7d3a5360d6a739f398760f3 Mon Sep 17 00:00:00 2001
-+From: Sakar Arora <sakar.arora@arm.com>
-+Date: Mon, 11 Dec 2017 15:34:01 +0530
-+Subject: [PATCH] acpi: sbbr: relax a few test pass conditions
-+
-+DBG2: Allow PL011 UART
-+SPCR: Allow IO-APIC interrupt type
-+_CRS: Relax failures to warnings for mif/maf tests
-+
-+Signed-off-by: Sakar Arora <sakar.arora@arm.com>
-+---
-+ src/acpi/dbg2/dbg2.c                |   8 +-
-+ src/acpi/spcr/spcr.c                |   6 +-
-+ src/lib/src/fwts_acpi_object_eval.c | 149 ++++++++++++++++++++++++------------
-+ 3 files changed, 111 insertions(+), 52 deletions(-)
-+
-+diff --git a/src/acpi/dbg2/dbg2.c b/src/acpi/dbg2/dbg2.c
-+index b826c27..f1301de 100644
-+--- a/src/acpi/dbg2/dbg2.c
-++++ b/src/acpi/dbg2/dbg2.c
-+@@ -28,8 +28,9 @@
+@@ -0,0 +1,17 @@
++diff --git a/src/acpi/method/method.c b/src/acpi/method/method.c
++index 1715a39..a325b8a 100644
++--- a/src/acpi/method/method.c
+++++ b/src/acpi/method/method.c
++@@ -573,11 +573,7 @@ static void method_test_AEI_return(
 + 
-+ #include "fwts_acpi_object_eval.h"
-+ 
-+-#define SBBR_DBG2_PORT_SERIAL   0x8000
-+-#define SBBR_DBG2_ARM_SBSA_UART 0x000E
-++#define SBBR_DBG2_PORT_SERIAL     0x8000
-++#define SBBR_DBG2_ARM_SBSA_UART   0x000E
-++#define SBBR_DBG2_ARM_PL011_UART  0x0003
-+ 
-+ static fwts_acpi_table_info *table;
-+ 
-+@@ -72,7 +73,8 @@ static int dbg2_test2(fwts_framework *fw)
-+ 		if (((uint8_t*)info + info->length) >= ((uint8_t*)table + table->length))
-+ 			break;
-+ 		if ((info->port_type == SBBR_DBG2_PORT_SERIAL) &&
-+-		(info->port_subtype == SBBR_DBG2_ARM_SBSA_UART)) {
-++			(info->port_subtype == SBBR_DBG2_ARM_SBSA_UART ||
-++			info->port_subtype == SBBR_DBG2_ARM_PL011_UART)) {
-+ 			fwts_passed(fw,
-+ 				"DBG2 provides a standard serial debug "
-+ 				"port and describes ARM SBSA Generic UART");
-+diff --git a/src/acpi/spcr/spcr.c b/src/acpi/spcr/spcr.c
-+index 2f37e3f..6a9ac3a 100644
-+--- a/src/acpi/spcr/spcr.c
-++++ b/src/acpi/spcr/spcr.c
-+@@ -74,9 +74,11 @@ static int spcr_sbbr_gsiv_test(fwts_framework *fw)
++ static int method_test_AEI(fwts_framework *fw)
 + {
-+ 	if (fw->flags & FWTS_FLAG_TEST_SBBR) {
-+ 		const uint8_t ARMH_GIC_INTR_MASK = 0x08;
-++		const uint8_t IO_APIC_INTR_MASK = 0x02;
++-	if (fw->flags & FWTS_FLAG_TEST_SBBR)
++-		return method_evaluate_method(fw, METHOD_MANDATORY,
++-			"_AEI", NULL, 0, method_test_AEI_return, NULL);
++-	else
++-		return method_evaluate_method(fw, METHOD_OPTIONAL,
+++	return method_evaluate_method(fw, METHOD_OPTIONAL,
++ 			"_AEI", NULL, 0, method_test_AEI_return, NULL);
++ }
 + 
-+-		if ( (spcr->interrupt_type == ARMH_GIC_INTR_MASK) &&
-+-		     (spcr->gsi            != 0x0000000000000000)    )
-++		if ((spcr->interrupt_type == ARMH_GIC_INTR_MASK ||
-++			spcr->interrupt_type == IO_APIC_INTR_MASK) &&
-++		    spcr->gsi != 0x0000000000000000)
-+ 			fwts_passed(fw, "SPCR appears to be populated with correct GSIV interrupt"
-+ 						"routing information for ARM PL011 UART Device");
-+ 		else
-+diff --git a/src/lib/src/fwts_acpi_object_eval.c b/src/lib/src/fwts_acpi_object_eval.c
-+index b356441..b3537b0 100644
-+--- a/src/lib/src/fwts_acpi_object_eval.c
-++++ b/src/lib/src/fwts_acpi_object_eval.c
-+@@ -1270,32 +1270,51 @@ static void method_test_CRS_mif_maf(
-+ 	if (len == 0) {
-+ 		if ((mif == 1) && (maf == 1)) {
-+ 			snprintf(tmp, sizeof(tmp), "Method%s%sMifMafBothOne", objname, tag);
-+-			fwts_failed(fw, LOG_LEVEL_MEDIUM,
-+-				tmp,
-+-				"%s %s _MIF and _MAF flags are both "
-+-				"set to one which is invalid when "
-+-				"the length field is 0.",
-+-				name, type);
-++			if (fw->flags & FWTS_FLAG_TEST_SBBR)
-++				fwts_warning(fw, tmp,
-++					"%s %s _MIF and _MAF flags are both "
-++					"set to one which is invalid when "
-++					"the length field is 0.",
-++					name, type);
-++			else
-++				fwts_failed(fw, LOG_LEVEL_MEDIUM,
-++					tmp,
-++					"%s %s _MIF and _MAF flags are both "
-++					"set to one which is invalid when "
-++					"the length field is 0.",
-++					name, type);
-+ 			fwts_advice(fw, "%s", mif_maf_advice);
-+ 			*passed = false;
-+ 		}
-+ 		if ((mif == 1) && (min % (granularity + 1) != 0)) {
-+ 			snprintf(tmp, sizeof(tmp), "Method%s%sMinNotMultipleOfGran", objname, tag);
-+-			fwts_failed(fw, LOG_LEVEL_MEDIUM,
-+-				tmp,
-+-				"%s %s _MIN address is not a multiple "
-+-				"of the granularity when _MIF is 1.",
-+-				name, type);
-++			if (fw->flags & FWTS_FLAG_TEST_SBBR)
-++				fwts_warning(fw, tmp,
-++					"%s %s _MIN address is not a multiple "
-++					"of the granularity when _MIF is 1.",
-++					name, type);
-++			else
-++				fwts_failed(fw, LOG_LEVEL_MEDIUM,
-++					tmp,
-++					"%s %s _MIN address is not a multiple "
-++					"of the granularity when _MIF is 1.",
-++					name, type);
-+ 			fwts_advice(fw, "%s", mif_maf_advice);
-+ 			*passed = false;
-+ 		}
-+ 		if ((maf == 1) && (max % (granularity - 1) != 0)) {
-+ 			snprintf(tmp, sizeof(tmp), "Method%s%sMaxNotMultipleOfGran", objname, tag);
-+-			fwts_failed(fw, LOG_LEVEL_MEDIUM,
-+-				tmp,
-+-				"%s %s _MAX address is not a multiple "
-+-				"of the granularity when _MAF is 1.",
-+-				name, type);
-++			if (fw->flags & FWTS_FLAG_TEST_SBBR)
-++				fwts_warning(fw, tmp,
-++					"%s %s _MAX address is not a multiple "
-++					"of the granularity when _MAF is 1.",
-++					name, type);
-++			else
-++				fwts_failed(fw, LOG_LEVEL_MEDIUM,
-++					tmp,
-++					"%s %s _MAX address is not a multiple "
-++					"of the granularity when _MAF is 1.",
-++					name, type);
-+ 			fwts_advice(fw, "%s", mif_maf_advice);
-+ 			*passed = false;
-+ 		}
-+@@ -1303,58 +1322,94 @@ static void method_test_CRS_mif_maf(
-+ 		if ((mif == 0) && (maf == 0) &&
-+ 		    (len % (granularity + 1) != 0)) {
-+ 			snprintf(tmp, sizeof(tmp), "Method%s%sLenNotMultipleOfGran", objname, tag);
-+-			fwts_failed(fw, LOG_LEVEL_MEDIUM,
-+-				tmp,
-+-				"%s %s length is not a multiple "
-+-				"of the granularity when _MIF "
-+-				"and _MIF are 0.",
-+-				name, type);
-++			if (fw->flags & FWTS_FLAG_TEST_SBBR)
-++				fwts_warning(fw, tmp,
-++					"%s %s length is not a multiple "
-++					"of the granularity when _MIF "
-++					"and _MIF are 0.",
-++					name, type);
-++			else
-++				fwts_failed(fw, LOG_LEVEL_MEDIUM,
-++					tmp,
-++					"%s %s length is not a multiple "
-++					"of the granularity when _MIF "
-++					"and _MIF are 0.",
-++					name, type);
-+ 			fwts_advice(fw, "%s", mif_maf_advice);
-+ 			*passed = false;
-+ 		}
-+ 		if (((mif == 0) && (maf == 1)) || ((mif == 1) && (maf == 0))) {
-+ 			snprintf(tmp, sizeof(tmp), "Method%s%sMifMafInvalid", objname, tag);
-+-			fwts_failed(fw, LOG_LEVEL_MEDIUM,
-+-				tmp,
-+-				"%s %s _MIF and _MAF flags are either "
-+-				"0 and 1 or 1 and 0 which is invalid when "
-+-				"the length field is non-zero.",
-+-				name, type);
-++			if (fw->flags & FWTS_FLAG_TEST_SBBR)
-++				fwts_warning(fw, tmp,
-++					"%s %s _MIF and _MAF flags are either "
-++					"0 and 1 or 1 and 0 which is invalid when "
-++					"the length field is non-zero.",
-++					name, type);
-++			else
-++				fwts_failed(fw, LOG_LEVEL_MEDIUM,
-++					tmp,
-++					"%s %s _MIF and _MAF flags are either "
-++					"0 and 1 or 1 and 0 which is invalid when "
-++					"the length field is non-zero.",
-++					name, type);
-+ 			fwts_advice(fw, "%s", mif_maf_advice);
-+ 			*passed = false;
-+ 		}
-+ 		if ((mif == 1) && (maf == 1)) {
-+ 			if (granularity != 0) {
-+ 				snprintf(tmp, sizeof(tmp), "Method%s%sGranularityNotZero", objname, tag);
-+-				fwts_failed(fw, LOG_LEVEL_MEDIUM,
-+-					tmp,
-+-					"%s %s granularity 0x%" PRIx64
-+-					" is not zero as expected when "
-+-					"_MIF and _MAF are both 1.",
-+-					name, type, granularity);
-++				if (fw->flags & FWTS_FLAG_TEST_SBBR)
-++					fwts_warning(fw, tmp,
-++						"%s %s granularity 0x%" PRIx64
-++						" is not zero as expected when "
-++						"_MIF and _MAF are both 1.",
-++						name, type, granularity);
-++				else
-++					fwts_failed(fw, LOG_LEVEL_MEDIUM,
-++						tmp,
-++						"%s %s granularity 0x%" PRIx64
-++						" is not zero as expected when "
-++						"_MIF and _MAF are both 1.",
-++						name, type, granularity);
-+ 				fwts_advice(fw, "%s", mif_maf_advice);
-+ 				*passed = false;
-+ 			}
-+ 			if (min > max) {
-+ 				snprintf(tmp, sizeof(tmp), "Method%s%sMaxLessThanMin", objname, tag);
-+-				fwts_failed(fw, LOG_LEVEL_MEDIUM,
-+-					tmp,
-+-					"%s %s minimum address range 0x%" PRIx64
-+-					" is greater than the maximum address "
-+-					"range 0x%" PRIx64 ".",
-+-					name, type, min, max);
-++				if (fw->flags & FWTS_FLAG_TEST_SBBR)
-++					fwts_warning(fw, tmp,
-++						"%s %s minimum address range 0x%" PRIx64
-++						" is greater than the maximum address "
-++						"range 0x%" PRIx64 ".",
-++						name, type, min, max);
-++				else
-++					fwts_failed(fw, LOG_LEVEL_MEDIUM,
-++						tmp,
-++						"%s %s minimum address range 0x%" PRIx64
-++						" is greater than the maximum address "
-++						"range 0x%" PRIx64 ".",
-++						name, type, min, max);
-+ 				fwts_advice(fw, "%s", mif_maf_advice);
-+ 				*passed = false;
-+ 			}
-+ 			if (max - min + 1 != len) {
-+ 				snprintf(tmp, sizeof(tmp), "Method%s%sLengthInvalid", objname, tag);
-+-				fwts_failed(fw, LOG_LEVEL_MEDIUM,
-+-					tmp,
-+-					"%s %s length 0x%" PRIx64
-+-					" does not match the difference between "
-+-					"the minimum and maximum address ranges "
-+-					"0x%" PRIx64 "-0x%" PRIx64 ".",
-+-					name, type, len, min, max);
-++				if (fw->flags & FWTS_FLAG_TEST_SBBR)
-++					fwts_warning(fw, tmp,
-++						"%s %s length 0x%" PRIx64
-++						" does not match the difference between "
-++						"the minimum and maximum address ranges "
-++						"0x%" PRIx64 "-0x%" PRIx64 ".",
-++						name, type, len, min, max);
-++				else
-++					fwts_failed(fw, LOG_LEVEL_MEDIUM,
-++						tmp,
-++						"%s %s length 0x%" PRIx64
-++						" does not match the difference between "
-++						"the minimum and maximum address ranges "
-++						"0x%" PRIx64 "-0x%" PRIx64 ".",
-++						name, type, len, min, max);
-+ 				fwts_advice(fw, "%s", mif_maf_advice);
-+ 				*passed = false;
-+ 			}
-+-- 
-+2.7.4
-+
 diff --git a/meta-luv/recipes-core/fwts/fwts_git.bb b/meta-luv/recipes-core/fwts/fwts_git.bb
-index 122f9b9..89027e0 100644
+index 122f9b9..9baa534 100644
 --- a/meta-luv/recipes-core/fwts/fwts_git.bb
 +++ b/meta-luv/recipes-core/fwts/fwts_git.bb
 @@ -4,11 +4,12 @@ HOMEPAGE = "https://wiki.ubuntu.com/Kernel/Reference/fwts"
@@ -941,10 +697,10 @@ index 122f9b9..89027e0 100644
  LIC_FILES_CHKSUM = "file://src/main.c;beginline=1;endline=16;md5=31da590f3e9f3bd34dcdb9e4db568519"
  
 -PV = "V17.09.00+git${SRCPV}"
-+PV = "V17.11.00+git${SRCPV}"
++PV = "V17.12.00+git${SRCPV}"
  
 -SRCREV = "7cc5c0823ec56859b0c8d91607befd8a151ec7f1"
-+SRCREV = "d606dff6031a7742967981a1bd5d22138dfe2718"
++SRCREV = "df2784c6fbff02288c736f85354b22f46dc193f4"
  SRC_URI = "git://kernel.ubuntu.com/hwe/fwts.git \
             file://luv-parser-fwts \
 +           file://sbbr-fwts.patch \
