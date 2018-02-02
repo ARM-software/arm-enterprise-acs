@@ -1,3 +1,9 @@
+v18.02_REL1.3
+
+* SCT: Remove tests that are optional, like EBC interface test, EFI_LOAD_FILE2_PROTOCOL, etc.
+* FWTS: Make _AEI method optional, since there are alternative ways to present ACPI events v6.1 onwards.
+* SBSA: Update tag/commit information to include latest bug fixes in sbsa-acs.
+
 v17.12_REL1.2
 
 * LUVOS: Moved to luv-yocto tag v2.2-rc1, which supports linux kernel v4.13.
