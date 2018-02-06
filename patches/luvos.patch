@@ -1,7 +1,7 @@
-From 6caa2ddff6893116d307ea1fe1e04a295c62042c Mon Sep 17 00:00:00 2001
-From: Sakar Arora <sakar.arora@arm.com>
-Date: Wed, 13 Dec 2017 11:35:42 +0530
-Subject: [PATCH] luvOS
+From cf02daace191ddef79052ef631371b802f9a5256 Mon Sep 17 00:00:00 2001
+From: Sakar Arora <Sakar.Arora@arm.com>
+Date: Tue, 6 Feb 2018 14:19:21 +0530
+Subject: [PATCH] luvos
 
 ---
  build_luvos.sh                                     |  88 ++++++++++
@@ -14,19 +14,20 @@ Subject: [PATCH] luvOS
  meta-luv/recipes-bsp/sbsa/sbsa.bb                  | 107 ++++++++++++
  meta-luv/recipes-core/efivarfs/efivarfs-test.bb    |   1 -
  meta-luv/recipes-core/fwts/fwts/sbbr-fwts.patch    |  17 ++
- meta-luv/recipes-core/fwts/fwts_git.bb             |   8 +-
- .../images/core-image-efi-initramfs.bb             |   1 +
- meta-luv/recipes-core/images/luv-live-image.bb     |  10 +-
- meta-luv/recipes-core/images/luv-netboot-image.bb  |   8 +-
+ meta-luv/recipes-core/fwts/fwts_git.bb             |   4 +-
+ .../images/core-image-efi-initramfs.bb             |   2 +-
+ meta-luv/recipes-core/images/luv-image.inc         |   3 +-
+ meta-luv/recipes-core/images/luv-live-image.bb     |   8 +-
+ meta-luv/recipes-core/images/luv-netboot-image.bb  |   5 +-
  .../kernel_efi_warnings/kernel-efi-warnings_0.1.bb |   2 -
  meta-luv/recipes-core/luv-test/luv-test.bb         |   6 +
  .../luv-test/luv-test/luv-collect-results          | 181 +++++++++++++++++++++
  .../recipes-core/luv-test/luv-test/luv-sbsa-test   |  18 ++
  .../luv-test/luv-test/luv-test-manager             |   5 +
- .../linux/linux-yocto-efi-test_4.13.bb             |   3 +-
+ .../linux/linux-yocto-efi-test_4.14.bb             |   3 +-
  meta/conf/bitbake.conf                             |   2 +-
  sbsa_setup.sh                                      |  41 +++++
- 22 files changed, 821 insertions(+), 17 deletions(-)
+ 23 files changed, 818 insertions(+), 15 deletions(-)
  create mode 100755 build_luvos.sh
  create mode 100644 meta-luv/recipes-bsp/sbbr/sbbr/README.md
  create mode 100644 meta-luv/recipes-bsp/sbbr/sbbr/sbbr-sct.patch
@@ -133,7 +134,7 @@ index 0000000..bc6b659
 +fi
 +exit
 diff --git a/meta-luv/classes/luv-efi.bbclass b/meta-luv/classes/luv-efi.bbclass
-index 0caa5a8..4cdf56e 100644
+index 8c1b892..66c653e 100644
 --- a/meta-luv/classes/luv-efi.bbclass
 +++ b/meta-luv/classes/luv-efi.bbclass
 @@ -16,6 +16,13 @@ def get_bits_depends(d):
@@ -147,10 +148,10 @@ index 0caa5a8..4cdf56e 100644
 +                 return "sbbr:do_deploy"
 +_SBBRDEPENDS = "${@get_sbbr_depends(d)}"
 +
- # The x86 build is depends on grub-efi and AArch64 build depends on grub_git
- def get_grub_depends(d):
-          import re
-@@ -65,7 +72,13 @@ efi_populate() {
+ do_bootimg[depends] += "${MLPREFIX}grub-efi:do_deploy \
+                         sbsigntool-native:do_populate_sysroot"
+ 
+@@ -55,7 +62,13 @@ efi_populate() {
      # Install grub2 in EFI directory
      if [ "${TARGET_ARCH}" = "aarch64" ]; then
  		install -m 0644 ${DEPLOY_DIR_IMAGE}/${GRUB_EFI_LOADER_IMAGE} ${DEST}${EFIDIR}/${DEST_EFI_LOADER_IMAGE}
@@ -165,7 +166,7 @@ index 0caa5a8..4cdf56e 100644
  
      # TODO: need conditional signing; e.g., if (DISTRO_FEATURES contains secure_boot)
      # shim bootloader does not seem to work with i386. Thus we don't use it for 32-bit
-@@ -102,6 +115,52 @@ efi_populate() {
+@@ -92,6 +105,52 @@ efi_populate() {
      install -m 0644 ${LUV_CFG} ${DEST}
  }
  
@@ -218,7 +219,7 @@ index 0caa5a8..4cdf56e 100644
  BITS_EFI_LOADER_IMAGE = "${DEST_EFI_LOADER_IMAGE}"
  efi_populate_bits() {
      DEST=$1
-@@ -182,6 +241,11 @@ python build_efi_cfg() {
+@@ -172,6 +231,11 @@ python build_efi_cfg() {
         cfgfile.write('default=bits\n')
         cfgfile.write('fallback=0\n')
  
@@ -230,7 +231,7 @@ index 0caa5a8..4cdf56e 100644
      cfgfile.write('menuentry \'luv\' {\n')
      cfgfile.write('linux /vmlinuz ')
  
-@@ -208,6 +272,11 @@ python build_efi_cfg() {
+@@ -199,6 +263,11 @@ python build_efi_cfg() {
         cfgfile.write('chainloader /EFI/BOOT/bits/%s\n' % loader)
         cfgfile.write('}\n')
  
@@ -243,14 +244,14 @@ index 0caa5a8..4cdf56e 100644
  }
  
 diff --git a/meta-luv/conf/distro/luv.conf b/meta-luv/conf/distro/luv.conf
-index d846d00..50ff3dc 100644
+index fb0a833..55ddcfe 100644
 --- a/meta-luv/conf/distro/luv.conf
 +++ b/meta-luv/conf/distro/luv.conf
 @@ -17,4 +17,4 @@ VIRTUAL-RUNTIME_init_manager = "systemd"
  VIRTUAL-RUNTIME_initscripts = ""
  DISTRO_FEATURES_BACKFILL_CONSIDERED += "sysvinit"
  
--INITRAMFS_MAXSIZE = "200000"
+-INITRAMFS_MAXSIZE = "235000"
 +INITRAMFS_MAXSIZE = "400000"
 diff --git a/meta-luv/recipes-bsp/sbbr/sbbr/README.md b/meta-luv/recipes-bsp/sbbr/sbbr/README.md
 new file mode 100644
@@ -657,10 +658,10 @@ index 0000000..8b1af24
 +
 +addtask deploy before do_build after do_install
 diff --git a/meta-luv/recipes-core/efivarfs/efivarfs-test.bb b/meta-luv/recipes-core/efivarfs/efivarfs-test.bb
-index 07760b2..c3eec9a 100644
+index 0853e52..190d683 100644
 --- a/meta-luv/recipes-core/efivarfs/efivarfs-test.bb
 +++ b/meta-luv/recipes-core/efivarfs/efivarfs-test.bb
-@@ -72,4 +72,3 @@ do_install() {
+@@ -71,4 +71,3 @@ do_install() {
  }
  
  LUV_TEST_LOG_PARSER="luv-parser-efivarfs"
@@ -689,18 +690,11 @@ index 0000000..69e92fe
 + }
 + 
 diff --git a/meta-luv/recipes-core/fwts/fwts_git.bb b/meta-luv/recipes-core/fwts/fwts_git.bb
-index 122f9b9..9baa534 100644
+index 62d2430..0d2d751 100644
 --- a/meta-luv/recipes-core/fwts/fwts_git.bb
 +++ b/meta-luv/recipes-core/fwts/fwts_git.bb
-@@ -4,11 +4,12 @@ HOMEPAGE = "https://wiki.ubuntu.com/Kernel/Reference/fwts"
- LICENSE = "GPLv2+"
- LIC_FILES_CHKSUM = "file://src/main.c;beginline=1;endline=16;md5=31da590f3e9f3bd34dcdb9e4db568519"
- 
--PV = "V17.09.00+git${SRCPV}"
-+PV = "V17.12.00+git${SRCPV}"
- 
--SRCREV = "7cc5c0823ec56859b0c8d91607befd8a151ec7f1"
-+SRCREV = "df2784c6fbff02288c736f85354b22f46dc193f4"
+@@ -9,6 +9,7 @@ PV = "V17.12.00+git${SRCPV}"
+ SRCREV = "df2784c6fbff02288c736f85354b22f46dc193f4"
  SRC_URI = "git://kernel.ubuntu.com/hwe/fwts.git \
             file://luv-parser-fwts \
 +           file://sbbr-fwts.patch \
@@ -718,22 +712,31 @@ index 122f9b9..9baa534 100644
  FILES_${PN} += "${libdir}/fwts/lib*${SOLIBS}"
  FILES_${PN} += "/lib/modules/${KERNEL_VERSION}/extra/efi_runtime.ko"
 diff --git a/meta-luv/recipes-core/images/core-image-efi-initramfs.bb b/meta-luv/recipes-core/images/core-image-efi-initramfs.bb
-index d733b61..b7736ff 100644
+index 9529534..8a62075 100644
 --- a/meta-luv/recipes-core/images/core-image-efi-initramfs.bb
 +++ b/meta-luv/recipes-core/images/core-image-efi-initramfs.bb
-@@ -9,6 +9,7 @@ IMAGE_INSTALL = "\
+@@ -8,7 +8,7 @@ IMAGE_INSTALL = "\
      util-linux-mount util-linux-umount kmod sed tar net-tools \
      shadow util-linux procps efivarfs-test pstore-test \
-     plymouth plymouth-set-default-theme kernel-efi-warnings linux-firmware kexec \
-+    sbsa-acs-drv sbsa-acs-app \
+     plymouth plymouth-set-default-theme kernel-efi-warnings linux-firmware-luv kexec \
+-    acpixtract iasl \
++    acpixtract iasl sbsa-acs-drv sbsa-acs-app \
      "
  
  X86_ADDITIONS = "chipsec python-codecs python-subprocess vmcore-dmesg bits \
-diff --git a/meta-luv/recipes-core/images/luv-live-image.bb b/meta-luv/recipes-core/images/luv-live-image.bb
-index 142d71c..9ed38ab 100644
---- a/meta-luv/recipes-core/images/luv-live-image.bb
-+++ b/meta-luv/recipes-core/images/luv-live-image.bb
-@@ -28,7 +28,7 @@ COMMON_CMDLINE_x86 += "splash nomodeset crash_kexec_post_notifiers"
+diff --git a/meta-luv/recipes-core/images/luv-image.inc b/meta-luv/recipes-core/images/luv-image.inc
+index b851709..55275e6 100644
+--- a/meta-luv/recipes-core/images/luv-image.inc
++++ b/meta-luv/recipes-core/images/luv-image.inc
+@@ -3,6 +3,7 @@ LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/MIT;md5=0835ade698e0bcf8506ecda
+ 
+ DEPENDS_append_x86 = " grub-efi bits"
+ DEPENDS_append_x86-64 = " grub-efi bits"
++DEPENDS_${PN} = "bits sbbr"
+ 
+ HDDDIR = "${S}/hddimg"
+ 
+@@ -24,7 +25,7 @@ COMMON_CMDLINE_x86 += "splash nomodeset crash_kexec_post_notifiers"
  
  # Unlike the += operand, _append's do not insert a space between the current value
  # and the appended string. Thus, we add them.
@@ -742,16 +745,20 @@ index 142d71c..9ed38ab 100644
  CMDLINE_append_x86 = "${COMMON_CMDLINE_x86}"
  CMDLINE_append_x86-64 = "${COMMON_CMDLINE_x86}"
  
-@@ -44,7 +44,7 @@ python() {
+diff --git a/meta-luv/recipes-core/images/luv-live-image.bb b/meta-luv/recipes-core/images/luv-live-image.bb
+index b7a0f66..1cefc5d 100644
+--- a/meta-luv/recipes-core/images/luv-live-image.bb
++++ b/meta-luv/recipes-core/images/luv-live-image.bb
+@@ -9,7 +9,7 @@ MACHINE_FEATURES += "efi"
  
- SPLASH_IMAGE = "blue-luv.jpg"
+ CMDLINE = "${CMDLINE_BASE}"
  
 -GRUB_TIMEOUT = "2"
 +GRUB_TIMEOUT = "1"
  
  inherit image-live
  
-@@ -68,8 +68,8 @@ build_img() {
+@@ -31,8 +31,8 @@ build_img() {
      BYTES_PER_SECTOR=512
      MiB=$(expr 1024 \* 1024)
      VFAT_RESULTS=${DEPLOY_DIR_IMAGE}/${PN}-results.hddimg
@@ -762,7 +769,7 @@ index 142d71c..9ed38ab 100644
      VFAT_RESULTS_SPACE=$(expr $VFAT_RESULTS_SPACE_MiB \* $MiB)
      VFAT_RESULTS_BLOCKS=$(expr $VFAT_RESULTS_SPACE / 1024)
      # TODO: do we need to dynamically generate the UUID?
-@@ -88,6 +88,8 @@ build_img() {
+@@ -51,6 +51,8 @@ build_img() {
      mkdosfs -C ${VFAT_RESULTS} -S ${BYTES_PER_SECTOR} -i ${VFAT_RESULTS_UUID} \
              -n ${VFAT_RESULTS_LABEL} $VFAT_RESULTS_BLOCKS
  
@@ -772,27 +779,10 @@ index 142d71c..9ed38ab 100644
  
      # Now that we are calculating sizes in MiB make sure that the value
 diff --git a/meta-luv/recipes-core/images/luv-netboot-image.bb b/meta-luv/recipes-core/images/luv-netboot-image.bb
-index facb24a..e8602a1 100644
+index d6eca7b..77dde4f 100644
 --- a/meta-luv/recipes-core/images/luv-netboot-image.bb
 +++ b/meta-luv/recipes-core/images/luv-netboot-image.bb
-@@ -3,6 +3,7 @@ LIC_FILES_CHKSUM = "file://${COREBASE}/LICENSE;md5=4d92cd373abda3937c2bc47fbc49d
- 
- DEPENDS_append_x86 = " bits"
- DEPENDS_append_x86-64 = " bits"
-+DEPENDS_${PN} = "bits sbbr"
- 
- INITRD_IMAGE_LIVE = "core-image-efi-initramfs"
- IMGDEPLOYDIR = "${DEPLOY_DIR_IMAGE}"
-@@ -29,7 +30,7 @@ COMMON_CMDLINE_x86 += "splash nomodeset crash_kexec_post_notifiers"
- 
- # Unlike the += operand, _append's do not insert a space between the current value
- # and the appended string. Thus, we add them.
--CMDLINE_append_aarch64 = " acpi=on"
-+CMDLINE_append_aarch64 = " acpi=on crashkernel=256M earlycon uefi_debug luv.netboot"
- CMDLINE_append_x86 = "${COMMON_CMDLINE_x86}"
- CMDLINE_append_x86-64 = "${COMMON_CMDLINE_x86}"
- 
-@@ -68,7 +69,8 @@ do_mkimage[depends] += "dosfstools-native:do_populate_sysroot \
+@@ -25,7 +25,8 @@ do_mkimage[depends] += "dosfstools-native:do_populate_sysroot \
                          mtools-native:do_populate_sysroot \
                          cdrtools-native:do_populate_sysroot \
                          virtual/kernel:do_deploy \
@@ -802,9 +792,9 @@ index facb24a..e8602a1 100644
  
  do_bootimg[noexec] = "1"
  
-@@ -78,6 +80,8 @@ do_populate_image() {
- 		efi_populate_bits ${HDDDIR}
- 	else
+@@ -33,6 +34,8 @@ do_populate_image() {
+ 	install -d ${HDDDIR}${EFIDIR}
+ 	if [ "${TARGET_ARCH}" = "aarch64" ]; then
  		echo "${DEST_EFI_LOADER_IMAGE}" > ${HDDDIR}${EFIDIR}/startup.nsh
 +		efi_populate_sbbr ${HDDDIR}
 +		efi_populate_sbsa ${HDDDIR}
@@ -822,19 +812,19 @@ index a0fde3c..85eec50 100644
 -LUV_TEST="kernel-efi-warnings"
 -LUV_TEST_ARGS=""
 diff --git a/meta-luv/recipes-core/luv-test/luv-test.bb b/meta-luv/recipes-core/luv-test/luv-test.bb
-index 36421dd..6f2f1d2 100644
+index 164a616..0ca0fc1 100644
 --- a/meta-luv/recipes-core/luv-test/luv-test.bb
 +++ b/meta-luv/recipes-core/luv-test/luv-test.bb
-@@ -33,6 +33,8 @@ SRC_URI += "file://luv-test-manager file://luv-test-parser \
-             file://luv-crash-handler.service \
-             file://luv-netconsole.service \
-             file://luv-dmesg-acpi-tables-dump \
+@@ -36,6 +36,8 @@ SRC_URI += "file://luv-test-manager file://luv-test-parser \
+             file://luv-reboot-poweroff.service \
+             file://luv-reboot-poweroff \
+             file://luv-message \
 +            file://luv-collect-results \
 +            file://luv-sbsa-test \
            "
  
- RDEPENDS_${PN}-netconsole+= "kernel-modules curl iputils iproute2 bash init-ifupdown dhcp-client"
-@@ -68,6 +70,10 @@ do_install_append() {
+ RDEPENDS_${PN}+= "kernel-modules curl iputils iproute2 bash init-ifupdown dhcp-client gzip"
+@@ -84,6 +86,10 @@ do_install_append() {
         install -m 0644 ${WORKDIR}/luv-scripts ${D}${datadir}/luv/html
         install -m 0644 ${WORKDIR}/luv-css-styles ${D}${datadir}/luv/html
  
@@ -847,7 +837,7 @@ index 36421dd..6f2f1d2 100644
         install -m 0644 ${WORKDIR}/luv-test-manager.service ${D}${systemd_unitdir}/system
 diff --git a/meta-luv/recipes-core/luv-test/luv-test/luv-collect-results b/meta-luv/recipes-core/luv-test/luv-test/luv-collect-results
 new file mode 100644
-index 0000000..6f4601a
+index 0000000..9afbc12
 --- /dev/null
 +++ b/meta-luv/recipes-core/luv-test/luv-test/luv-collect-results
 @@ -0,0 +1,181 @@
@@ -893,7 +883,7 @@ index 0000000..6f4601a
 +    try:
 +        fwtsRaw = open(fwtsRawPath, "r")
 +    except IOError:
-+        print "FWTS raw results file \"%s\" could not be opened, skipping." % fwtsRawPath
++        print ("FWTS raw results file \"%s\" could not be opened, skipping." % fwtsRawPath)
 +        return -1
 +
 +    # Printing .MD file header for FWTS results.
@@ -917,7 +907,7 @@ index 0000000..6f4601a
 +    # Finding SCT test results.
 +    sbbrDir = os.path.join(d, "SCT", "Log")
 +    if os.path.isdir(sbbrDir) == False:
-+        print "SBBR SCT results directory \"%s\" not found.  Skipping." % sbbrDir
++        print ("SBBR SCT results directory \"%s\" not found.  Skipping." % sbbrDir)
 +        return -1
 +
 +    # Printing .MD file header for SCT results.
@@ -960,7 +950,7 @@ index 0000000..6f4601a
 +def log_sbsa(d):
 +    sbsaDir = os.path.join(d, "sbsa_results")
 +    if os.path.isdir(sbsaDir) == False:
-+        print "SBSA results results directory \"%s\" not found.  Skipping." % sbsaDir
++        print ("SBSA results results directory \"%s\" not found.  Skipping." % sbsaDir)
 +        return -1
 +
 +    uefi = "not found";
@@ -968,39 +958,39 @@ index 0000000..6f4601a
 +    for entry in os.listdir(sbsaDir):
 +        if(entry == "uefi"):
 +            sbsaUefiLogs = os.path.join(sbsaDir, "uefi", "SbsaResults.log")
-+	    try:
-+		f = open(sbsaUefiLogs, "r")
-+	    except IOError:
-+		print "SBSA UEFI results file \"%s\" could not be opened, skipping." % sbsaUefiLogs
++            try:
++                f = open(sbsaUefiLogs, "r")
++            except IOError:
++                print ("SBSA UEFI results file \"%s\" could not be opened, skipping." % sbsaUefiLogs)
 +                continue
 +            logs = f.read()
 +            outFile.write("\n\nSBSA UEFI Test Results\n\n")
 +            outFile.write(logs)
-+	    uefi = "collected"
-+	if(entry=="linux"):
-+	    sbsaLinuxLogs = os.path.join(sbsaDir, "linux", "SbsaResults.log")
-+	    try:
-+		f = open(sbsaLinuxLogs, "r")
-+	    except IOError:
-+		print "SBSA Linux results file \"%s\" could not be opened, skipping." % sbsaLinuxLogs
-+		continue
++            uefi = "collected"
++        if(entry == "linux"):
++            sbsaLinuxLogs = os.path.join(sbsaDir, "linux", "SbsaResults.log")
++            try:
++                f = open(sbsaLinuxLogs, "r")
++            except IOError:
++                print ("SBSA Linux results file \"%s\" could not be opened, skipping." % sbsaLinuxLogs)
++                continue
 +            logs = f.read()
 +            outFile.write("\n\nSBSA Linux Test Results\n\n")
 +            outFile.write(logs)
-+	    linux = "collected"
-+    print "SBSA Results for linux %s\n" % linux
-+    print "SBSA Results for UEFI %s\n" % uefi
++            linux = "collected"
++    print ("SBSA Results for linux %s\n" % linux)
++    print ("SBSA Results for UEFI %s\n" % uefi)
 +
 +# Script entry point.
 +
 +# This script needs to be run on a stripped out yocto distribution so we can't use argparse.
 +if "-h" in sys.argv or "--help" in sys.argv:
-+    print "Usage:"
-+    print " python %s [-h] LUV_RESULTS OUTPUT_FILE" % sys.argv[0]
-+    print "Options:"
-+    print " -h, --help              Display this help and exit."
-+    print " LUV_RESULTS             Path to luv-results directory/drive."
-+    print " OUTPUT_FILE             File for script output, must have .md file extension."
++    print ("Usage:")
++    print (" python %s [-h] LUV_RESULTS OUTPUT_FILE" % sys.argv[0])
++    print ("Options:")
++    print (" -h, --help              Display this help and exit.")
++    print (" LUV_RESULTS             Path to luv-results directory/drive.")
++    print (" OUTPUT_FILE             File for script output, must have .md file extension.")
 +    exit()
 +
 +arg_directory = sys.argv[1]
@@ -1009,32 +999,32 @@ index 0000000..6f4601a
 +# Validating parameter and opening output file.
 +filename, fileext = os.path.splitext(arg_output)
 +if fileext != ".md" and fileext != ".MD":
-+    print "Output file must have .md file extension. Exiting."
++    print ("Output file must have .md file extension. Exiting.")
 +    exit()
 +try:
 +    outFile = open(arg_output, "w")
 +except IOError:
-+    print "Could not open \"%s\" for writing. Exiting." % arg_output
++    print ("Could not open \"%s\" for writing. Exiting." % arg_output)
 +    exit()
 +
 +# Scanning FWTS.
-+print "Gathering FWTS test results..."
++print ("Gathering FWTS test results...")
 +log_fwts(arg_directory)
 +
 +# Scanning SBBR.
-+print "Gathering UEFI SBBR SCT test results..."
++print ("Gathering UEFI SBBR SCT test results...")
 +log_sbbr(arg_directory)
 +
 +# Scanning SBSA.
-+print "Gathering SBSA test results..."
++print ("Gathering SBSA test results...")
 +log_sbsa(arg_directory)
 +
 +outFile.close()
 +
-+print "Done, test results can be found in \"%s\"" % arg_output
++print ("Done, test results can be found in \"%s\"" % arg_output)
 diff --git a/meta-luv/recipes-core/luv-test/luv-test/luv-sbsa-test b/meta-luv/recipes-core/luv-test/luv-test/luv-sbsa-test
 new file mode 100644
-index 0000000..a9b6863
+index 0000000..a359ddb
 --- /dev/null
 +++ b/meta-luv/recipes-core/luv-test/luv-test/luv-sbsa-test
 @@ -0,0 +1,18 @@
@@ -1053,29 +1043,29 @@ index 0000000..a9b6863
 +# See the License for the specific language governing permissions and
 +# limitations under the License.
 +
-+insmod /lib/modules/4.13.0-yocto-standard/extra/sbsa_acs.ko
++insmod /lib/modules/4.14.0-efitest/extra/sbsa_acs.ko
 +mkdir -p $1/sbsa_results/linux
 +sbsa > $1/sbsa_results/linux/SbsaResults.log
 diff --git a/meta-luv/recipes-core/luv-test/luv-test/luv-test-manager b/meta-luv/recipes-core/luv-test/luv-test/luv-test-manager
-index 6f3a120..fcb02df 100644
+index f1e2176..cbf6a31 100644
 --- a/meta-luv/recipes-core/luv-test/luv-test/luv-test-manager
 +++ b/meta-luv/recipes-core/luv-test/luv-test/luv-test-manager
-@@ -295,6 +295,11 @@ cat ${LUV_SAVE_RESULTS_DIR}/luv.results | awk '/\[\+/  { units += 1 }
- cat /tmp/testsuites | html_inline ${LUV_HTML_REPORT} | tee -a /dev/kmsg /tmp/luv.results \
+@@ -289,6 +289,11 @@ cat ${LUV_SAVE_RESULTS_DIR}/luv.results | awk '/\[\+/  { units += 1 }
+ cat /tmp/testsuites | html_inline ${LUV_HTML_REPORT} | tee -a /tmp/luv.results \
           ${LUV_SAVE_RESULTS_DIR}/luv.results
  
 +# test SBSA compliance on luv
 +sh /etc/luv-sbsa-test ${LUV_STORAGE}
 +# collecting test results
-+python /etc/luv-collect-results ${LUV_STORAGE} ${LUV_STORAGE}/results.md
++python3 /etc/luv-collect-results ${LUV_STORAGE} ${LUV_STORAGE}/results.md
 +
  result=$(cat /tmp/testsuites)
- plymouth_write "$result"
+ luv_msg_write "$result"
  sleep 2
-diff --git a/meta-luv/recipes-kernel/linux/linux-yocto-efi-test_4.13.bb b/meta-luv/recipes-kernel/linux/linux-yocto-efi-test_4.13.bb
-index a60e59a..450954f 100644
---- a/meta-luv/recipes-kernel/linux/linux-yocto-efi-test_4.13.bb
-+++ b/meta-luv/recipes-kernel/linux/linux-yocto-efi-test_4.13.bb
+diff --git a/meta-luv/recipes-kernel/linux/linux-yocto-efi-test_4.14.bb b/meta-luv/recipes-kernel/linux/linux-yocto-efi-test_4.14.bb
+index f02dfa5..230f9b8 100644
+--- a/meta-luv/recipes-kernel/linux/linux-yocto-efi-test_4.14.bb
++++ b/meta-luv/recipes-kernel/linux/linux-yocto-efi-test_4.14.bb
 @@ -59,7 +59,7 @@ KERNEL_FEATURES_remove= " features/debug/printk.scc"
  
  # Override SRC_URI in a bbappend file to point at a different source
@@ -1085,19 +1075,19 @@ index a60e59a..450954f 100644
  
  # These patches are under discussion on ML
  SRC_URI += "file://0001-serial-SPCR-check-bit-width-for-the-16550-UART.patch  \
-@@ -79,6 +79,7 @@ SRC_URI += "file://0001-PCI-Vulcan-AHCI-PCI-bar-fix-for-Broadcom-Vulcan-earl.pat
-             file://0008-x86-efi-Introduce-EFI_WARN_ON_ILLEGAL_ACCESSES.patch \
+@@ -80,6 +80,7 @@ SRC_URI += "file://0001-PCI-Vulcan-AHCI-PCI-bar-fix-for-Broadcom-Vulcan-earl.pat
              file://0001-selftests-change-reboot-flag-location.patch \
              file://0001-pstore-test-remove-log-directory.patch \
+             file://0001-x86-mttr-Update-only-valid-variable-range-MTRRs.patch \
 +            file://0001-SBSA-ACS-linux-v4.13.patch \
             "
  
  COMMON_CFG_x86 = " file://qemux86/modules.cfg \
 diff --git a/meta/conf/bitbake.conf b/meta/conf/bitbake.conf
-index 2dac3a1..7833e05 100644
+index 9696273..11d8888 100644
 --- a/meta/conf/bitbake.conf
 +++ b/meta/conf/bitbake.conf
-@@ -754,7 +754,7 @@ INITRAMFS_FSTYPES ?= "cpio.gz"
+@@ -763,7 +763,7 @@ INITRAMFS_FSTYPES ?= "cpio.gz"
  # The maximum size in Kbytes for the generated initramfs image size.
  # Usually, it should be less than 1/2 of ram size, or you may fail to
  # boot it.
