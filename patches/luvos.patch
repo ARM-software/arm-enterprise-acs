@@ -1,17 +1,17 @@
-From 3d29f5a1164c16e33aa022c62af580c0105a838e Mon Sep 17 00:00:00 2001
+From 47d6be79584a123bf7adcf544432cb5335064c52 Mon Sep 17 00:00:00 2001
 From: Sakar Arora <Sakar.Arora@arm.com>
 Date: Tue, 6 Feb 2018 14:19:21 +0530
 Subject: [PATCH] luvos
 
 ---
- build_luvos.sh                                     |  88 ++++++++++
- meta-luv/classes/luv-efi.bbclass                   |  71 +++++++-
+ build_luvos.sh                                     |  88 +++++++
+ meta-luv/classes/luv-efi.bbclass                   |  71 +++++-
  meta-luv/conf/distro/luv.conf                      |   2 +-
  meta-luv/recipes-bsp/sbbr/sbbr/README.md           |   2 +
- meta-luv/recipes-bsp/sbbr/sbbr/sbbr-sct.patch      | 136 ++++++++++++++++
- meta-luv/recipes-bsp/sbbr/sbbr_v1.0.bb             | 101 ++++++++++++
- meta-luv/recipes-bsp/sbsa/files/compile.sh         |  28 ++++
- meta-luv/recipes-bsp/sbsa/sbsa.bb                  | 107 ++++++++++++
+ meta-luv/recipes-bsp/sbbr/sbbr/sbbr-sct.patch      | 277 +++++++++++++++++++++
+ meta-luv/recipes-bsp/sbbr/sbbr_v1.0.bb             | 101 ++++++++
+ meta-luv/recipes-bsp/sbsa/files/compile.sh         |  28 +++
+ meta-luv/recipes-bsp/sbsa/sbsa.bb                  | 107 ++++++++
  meta-luv/recipes-core/efivarfs/efivarfs-test.bb    |   1 -
  meta-luv/recipes-core/fwts/fwts/sbbr-fwts.patch    |  17 ++
  meta-luv/recipes-core/fwts/fwts_git.bb             |   4 +-
@@ -21,13 +21,13 @@ Subject: [PATCH] luvos
  meta-luv/recipes-core/images/luv-netboot-image.bb  |   5 +-
  .../kernel_efi_warnings/kernel-efi-warnings_0.1.bb |   2 -
  meta-luv/recipes-core/luv-test/luv-test.bb         |   6 +
- .../luv-test/luv-test/luv-collect-results          | 181 +++++++++++++++++++++
+ .../luv-test/luv-test/luv-collect-results          | 181 ++++++++++++++
  .../recipes-core/luv-test/luv-test/luv-sbsa-test   |  18 ++
  .../luv-test/luv-test/luv-test-manager             |   5 +
  .../linux/linux-yocto-efi-test_4.14.bb             |   3 +-
  meta/conf/bitbake.conf                             |   2 +-
- sbsa_setup.sh                                      |  41 +++++
- 23 files changed, 818 insertions(+), 15 deletions(-)
+ sbsa_setup.sh                                      |  41 +++
+ 23 files changed, 959 insertions(+), 15 deletions(-)
  create mode 100755 build_luvos.sh
  create mode 100644 meta-luv/recipes-bsp/sbbr/sbbr/README.md
  create mode 100644 meta-luv/recipes-bsp/sbbr/sbbr/sbbr-sct.patch
@@ -263,10 +263,139 @@ index 0000000..06f0264
 +========
 diff --git a/meta-luv/recipes-bsp/sbbr/sbbr/sbbr-sct.patch b/meta-luv/recipes-bsp/sbbr/sbbr/sbbr-sct.patch
 new file mode 100644
-index 0000000..8954968
+index 0000000..3c2fb4b
 --- /dev/null
 +++ b/meta-luv/recipes-bsp/sbbr/sbbr/sbbr-sct.patch
-@@ -0,0 +1,136 @@
+@@ -0,0 +1,277 @@
++diff --git a/SctPkg/TestCase/UEFI/EFI/BootServices/ImageServices/BlackBoxTest/ImageBBTest.inf b/SctPkg/TestCase/UEFI/EFI/BootServices/ImageServices/BlackBoxTest/ImageBBTest.inf
++index 10d9e8c..9deb345 100644
++--- a/SctPkg/TestCase/UEFI/EFI/BootServices/ImageServices/BlackBoxTest/ImageBBTest.inf
+++++ b/SctPkg/TestCase/UEFI/EFI/BootServices/ImageServices/BlackBoxTest/ImageBBTest.inf
++@@ -84,4 +84,5 @@
++ 
++ [Protocols]
++   gEfiTestProfileLibraryGuid
+++  gEfiTestRecoveryLibraryGuid
++   gBlackBoxEfiHIIPackageListProtocolGuid
++diff --git a/SctPkg/TestCase/UEFI/EFI/BootServices/ImageServices/BlackBoxTest/ImageBBTestConformance.c b/SctPkg/TestCase/UEFI/EFI/BootServices/ImageServices/BlackBoxTest/ImageBBTestConformance.c
++index 4c63a08..6bd92ec 100644
++--- a/SctPkg/TestCase/UEFI/EFI/BootServices/ImageServices/BlackBoxTest/ImageBBTestConformance.c
+++++ b/SctPkg/TestCase/UEFI/EFI/BootServices/ImageServices/BlackBoxTest/ImageBBTestConformance.c
++@@ -809,6 +809,7 @@ BBTestExitBootServicesConsistencyTest (
++   )
++ {
++   EFI_STANDARD_TEST_LIBRARY_PROTOCOL   *StandardLib;
+++  EFI_TEST_RECOVERY_LIBRARY_PROTOCOL   *RecoveryLib;
++   EFI_STATUS                           Status;
++   EFI_TEST_ASSERTION                   AssertionType;
++   UINTN                                MapKey;
++@@ -817,6 +818,7 @@ BBTestExitBootServicesConsistencyTest (
++   UINTN                                DataSize;
++   UINT8                                Data[MAX_BUFFER_SIZE];
++   EFI_STATUS                           ReturnStatus;
+++  UINTN                                RecoveryData[2], RecoveryDataSize;
++ 
++   //
++   // Init
++@@ -834,6 +836,16 @@ BBTestExitBootServicesConsistencyTest (
++     return Status;
++   }
++ 
+++  RecoveryLib = NULL;
+++
+++  Status = gtBS->HandleProtocol (
+++                   SupportHandle,
+++                   &gEfiTestRecoveryLibraryGuid,
+++                   (VOID **) &RecoveryLib);
+++  if (EFI_ERROR(Status)) {
+++    return Status;
+++  }
+++
++   Status = ImageTestCheckForCleanEnvironment (&Numbers);
++   if (EFI_ERROR(Status)) {
++     StandardLib->RecordAssertion (
++@@ -849,18 +861,12 @@ BBTestExitBootServicesConsistencyTest (
++                    );
++     return Status;
++   }
+++  
+++  RecoveryDataSize = sizeof(RecoveryData);
+++  Status = RecoveryLib->ReadResetRecord(RecoveryLib, &RecoveryDataSize, RecoveryData);
++ 
++-  DataSize = MAX_BUFFER_SIZE;
++-  Status = gtRT->GetVariable (
++-                 L"ExitBootServicesTestVariable",             // VariableName
++-                 &gTestVendor1Guid,                           // VendorGuid
++-                 NULL,                                        // Attributes
++-                 &DataSize,                                   // DataSize
++-                 &ReturnStatus                                // Data
++-                 );
++-
++-  if (Status == EFI_SUCCESS) {
++-    goto CheckResult;
+++  if (!EFI_ERROR(Status) && RecoveryData[0] == 1) {
+++      goto CheckResult;
++   }
++ 
++   //
++@@ -899,19 +905,10 @@ BBTestExitBootServicesConsistencyTest (
++                          mImageHandle,
++                          MapKey
++                          );
++-  if (ReturnStatus == EFI_INVALID_PARAMETER) {
++-    AssertionType = EFI_TEST_ASSERTION_PASSED;
++-  } else {
++-    AssertionType = EFI_TEST_ASSERTION_FAILED;
++-  }
++-
++-  Status = gtRT->SetVariable (
++-                     L"ExitBootServicesTestVariable",                                                           // VariableName
++-                     &gTestVendor1Guid,                                                                         // VendorGuid
++-                     EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS, // Attributes
++-                     sizeof(EFI_STATUS),                        // DataSize
++-                     &ReturnStatus                              // Data
++-                     );
+++  
+++  RecoveryData[0] = 1;
+++  RecoveryData[1] = ReturnStatus;
+++  RecoveryLib->WriteResetRecord (RecoveryLib, sizeof(RecoveryData), RecoveryData);
++ 
++   //reset system
++   gtRT->ResetSystem (EfiResetCold, EFI_SUCCESS, 0, NULL);
++@@ -919,7 +916,7 @@ BBTestExitBootServicesConsistencyTest (
++   // get var to get the status
++ CheckResult:
++ 
++-  if (ReturnStatus == EFI_INVALID_PARAMETER) {
+++  if (RecoveryData[1] == EFI_INVALID_PARAMETER) {
++     AssertionType = EFI_TEST_ASSERTION_PASSED;
++   } else {
++     AssertionType = EFI_TEST_ASSERTION_FAILED;
++@@ -933,18 +930,10 @@ CheckResult:
++                  L"%a:%d: the Status is - %r, expected status is %r",
++                  __FILE__,
++                  (UINTN)__LINE__,
++-                 ReturnStatus,
+++                 RecoveryData[1],
++                  EFI_INVALID_PARAMETER
++                  );
++ 
++-  Status = gtRT->SetVariable (
++-                     L"ExitBootServicesTestVariable",                                                           // VariableName
++-                     &gTestVendor1Guid,                                                                         // VendorGuid
++-                     EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS, // Attributes
++-                     0,                               // DataSize
++-                     Data                             // Data
++-                     );
++-
++   Status = ImageTestCheckForCleanEnvironment (&Numbers);
++   if (EFI_ERROR(Status)) {
++     StandardLib->RecordAssertion (
++@@ -961,4 +950,3 @@ CheckResult:
++   }
++   return EFI_SUCCESS;
++ }
++-
 +diff --git a/SctPkg/TestCase/UEFI/EFI/BootServices/ImageServices/BlackBoxTest/ImageBBTestFunction.c b/SctPkg/TestCase/UEFI/EFI/BootServices/ImageServices/BlackBoxTest/ImageBBTestFunction.c
 +index d0af10d..632c8df 100644
 +--- a/SctPkg/TestCase/UEFI/EFI/BootServices/ImageServices/BlackBoxTest/ImageBBTestFunction.c
@@ -283,6 +412,18 @@ index 0000000..8954968
 + #endif  
 +   return EFI_SUCCESS;
 + }
++diff --git a/SctPkg/TestCase/UEFI/EFI/BootServices/ImageServices/BlackBoxTest/Misc.h b/SctPkg/TestCase/UEFI/EFI/BootServices/ImageServices/BlackBoxTest/Misc.h
++index da3277b..5457565 100644
++--- a/SctPkg/TestCase/UEFI/EFI/BootServices/ImageServices/BlackBoxTest/Misc.h
+++++ b/SctPkg/TestCase/UEFI/EFI/BootServices/ImageServices/BlackBoxTest/Misc.h
++@@ -60,6 +60,7 @@ Abstract:
++ 
++ #include "ImageBBTest.h"
++ #include "ProtocolDefinition.h"
+++#include EFI_TEST_PROTOCOL_DEFINITION(TestRecoveryLibrary)
++ 
++ typedef struct {
++   VOID          *Registration;
 +diff --git a/SctPkg/TestCase/UEFI/EFI/BootServices/SbbrBootServices/BlackBoxTest/SbbrBootServicesBBTestFunction.c b/SctPkg/TestCase/UEFI/EFI/BootServices/SbbrBootServices/BlackBoxTest/SbbrBootServicesBBTestFunction.c
 +index c88d60b..6fbd11a 100644
 +--- a/SctPkg/TestCase/UEFI/EFI/BootServices/SbbrBootServices/BlackBoxTest/SbbrBootServicesBBTestFunction.c
