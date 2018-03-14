@@ -1,0 +1,50 @@
+## @file
+#  Copyright (c) 2018, Arm Limited or its affiliates. All rights reserved.
+#  SPDX-License-Identifier : Apache-2.0
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = SdeiValLib
+  FILE_GUID                      = cdd4fb8f-06c5-4a28-8cb8-7f5b664e278c
+  MODULE_TYPE                    = UEFI_APPLICATION
+  VERSION_STRING                 = 1.0
+  LIBRARY_CLASS                  = SdeiValLib|UEFI_APPLICATION UEFI_DRIVER
+
+[Sources.common]
+  ../
+  include/val_interface.h
+  include/val_sdei_interface.h
+  include/pal_interface.h
+  include/val_pe.h
+  include/val_timer.h
+  src/val_misc.c
+  src/val_wd_timer.c
+  src/val_sdei_interface.c
+  src/val_pe.c
+  src/val_gic.c
+  src/val_timer.c
+  src/val_timer_support.c
+  src/val_test_infra.c
+  src/val_psci.c
+  src/AArch64/PeRegSysSupport.S
+  src/AArch64/event_handler.S
+  src/AArch64/ArchTimerSupport.S
+
+[Packages]
+  MdePkg/MdePkg.dec
+
+[BuildOptions]
+  GCC:*_*_*_ASM_FLAGS  =  -march=armv8.2-a

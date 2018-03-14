@@ -1,0 +1,114 @@
+## @file
+#  Copyright (c) 2018, Arm Limited or its affiliates. All rights reserved.
+#  SPDX-License-Identifier : Apache-2.0
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+##
+
+
+[Defines]
+  INF_VERSION                    = 0x00010006
+  BASE_NAME                      = Sdei
+  FILE_GUID                      = a912f198-7f0e-4803-b908-b757b806ec83
+  MODULE_TYPE                    = UEFI_APPLICATION
+  VERSION_STRING                 = 0.1
+  ENTRY_POINT                    = ShellCEntryLib
+
+#
+#  VALID_ARCHITECTURES           = AARCH64
+#
+
+[Sources.AARCH64]
+  ../val/include/val_interface.h
+  SdeiAcsMain.c
+  ../test_pool/test_001.c
+  ../test_pool/test_002.c
+  ../test_pool/test_003.c
+  ../test_pool/test_004.c
+  ../test_pool/test_005.c
+  ../test_pool/test_006.c
+  ../test_pool/test_007.c
+  ../test_pool/test_008.c
+  ../test_pool/test_009.c
+  ../test_pool/test_010.c
+  ../test_pool/test_011.c
+  ../test_pool/test_012.c
+  ../test_pool/test_013.c
+  ../test_pool/test_014.c
+  ../test_pool/test_015.c
+  ../test_pool/test_016.c
+  ../test_pool/test_017.c
+  ../test_pool/test_018.c
+  ../test_pool/test_019.c
+  ../test_pool/test_020.c
+  ../test_pool/test_021.c
+  ../test_pool/test_022.c
+  ../test_pool/test_023.c
+  ../test_pool/test_024.c
+  ../test_pool/test_025.c
+  ../test_pool/test_026.c
+  ../test_pool/test_027.c
+  ../test_pool/test_028.c
+  ../test_pool/test_029.c
+  ../test_pool/test_030.c
+  ../test_pool/test_031.c
+  ../test_pool/test_032.c
+  ../test_pool/test_033.c
+  ../test_pool/test_034.c
+  ../test_pool/test_035.c
+  ../test_pool/test_036.c
+  ../test_pool/test_037.c
+  ../test_pool/test_038.c
+  ../test_pool/test_039.c
+  ../test_pool/test_040.c
+  ../test_pool/test_041.c
+  ../test_pool/test_042.c
+  ../test_pool/test_043.c
+  ../test_pool/test_044.c
+  ../test_pool/test_045.c
+  ../test_pool/test_046.c
+  ../test_pool/test_047.c
+  ../test_pool/test_048.c
+  ../test_pool/test_049.c
+
+[Packages]
+  EmbeddedPkg/EmbeddedPkg.dec
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  ShellPkg/ShellPkg.dec
+  EdkCompatibilityPkg/EdkCompatibilityPkg.dec
+
+[LibraryClasses]
+  SdeiValLib
+  SdeiPalLib
+  UefiLib
+  ShellLib
+  DebugLib
+  BaseMemoryLib
+  ShellCEntryLib
+  UefiBootServicesTableLib
+  UefiRuntimeServicesTableLib
+
+[Protocols]
+  gEfiAcpiTableProtocolGuid                     ## CONSUMES
+  gHardwareInterruptProtocolGuid                ## CONSUMES
+  gEfiCpuArchProtocolGuid                       ## CONSUMES
+  gEfiPciIoProtocolGuid                         ## CONSUMES
+  gEfiLoadedImageProtocolGuid                   ## CONSUMES
+
+[Guids]
+  gEfiAcpi20TableGuid
+  gEfiAcpiTableGuid
+
+[BuildOptions]
+  GCC:*_*_*_ASM_FLAGS =  -march=armv8.1-a
