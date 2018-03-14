@@ -1,4 +1,4 @@
-From 47d6be79584a123bf7adcf544432cb5335064c52 Mon Sep 17 00:00:00 2001
+From 89e9c24bf1f4a7289cd0285b46bdab0338c5c181 Mon Sep 17 00:00:00 2001
 From: Sakar Arora <Sakar.Arora@arm.com>
 Date: Tue, 6 Feb 2018 14:19:21 +0530
 Subject: [PATCH] luvos
@@ -22,12 +22,13 @@ Subject: [PATCH] luvos
  .../kernel_efi_warnings/kernel-efi-warnings_0.1.bb |   2 -
  meta-luv/recipes-core/luv-test/luv-test.bb         |   6 +
  .../luv-test/luv-test/luv-collect-results          | 181 ++++++++++++++
+ .../recipes-core/luv-test/luv-test/luv-message     |   2 +-
  .../recipes-core/luv-test/luv-test/luv-sbsa-test   |  18 ++
  .../luv-test/luv-test/luv-test-manager             |   5 +
  .../linux/linux-yocto-efi-test_4.14.bb             |   3 +-
  meta/conf/bitbake.conf                             |   2 +-
  sbsa_setup.sh                                      |  41 +++
- 23 files changed, 959 insertions(+), 15 deletions(-)
+ 24 files changed, 960 insertions(+), 16 deletions(-)
  create mode 100755 build_luvos.sh
  create mode 100644 meta-luv/recipes-bsp/sbbr/sbbr/README.md
  create mode 100644 meta-luv/recipes-bsp/sbbr/sbbr/sbbr-sct.patch
@@ -134,7 +135,7 @@ index 0000000..bc6b659
 +fi
 +exit
 diff --git a/meta-luv/classes/luv-efi.bbclass b/meta-luv/classes/luv-efi.bbclass
-index 8c1b892..66c653e 100644
+index 8c1b892..7a1807d 100644
 --- a/meta-luv/classes/luv-efi.bbclass
 +++ b/meta-luv/classes/luv-efi.bbclass
 @@ -16,6 +16,13 @@ def get_bits_depends(d):
@@ -213,7 +214,7 @@ index 8c1b892..66c653e 100644
 +          echo \"sbsa.nsh not found\"
 +          :Done
 +          FS%i:
-+          vmlinuz initrd=\initrd ${CMDLINE}" > ${DEST}${EFIDIR}/startup.nsh
++          vmlinuz initrd=\initrd ${CMDLINE} luv_netconsole=none luv_storage=none luv_tests=fwts" > ${DEST}${EFIDIR}/startup.nsh
 +}
 +
  BITS_EFI_LOADER_IMAGE = "${DEST_EFI_LOADER_IMAGE}"
@@ -1163,6 +1164,19 @@ index 0000000..9afbc12
 +outFile.close()
 +
 +print ("Done, test results can be found in \"%s\"" % arg_output)
+diff --git a/meta-luv/recipes-core/luv-test/luv-test/luv-message b/meta-luv/recipes-core/luv-test/luv-test/luv-message
+index 50edf1f..fa3f95a 100755
+--- a/meta-luv/recipes-core/luv-test/luv-test/luv-message
++++ b/meta-luv/recipes-core/luv-test/luv-test/luv-message
+@@ -8,7 +8,7 @@ luv_msg_write() {
+ 
+     if [ $# == 2 ]; then
+          sleep $2
+-         plymouth_hide "$1"
++         /bin/plymouth hide-message --text="$1"
+     fi
+ 
+     echo "$1" >&2
 diff --git a/meta-luv/recipes-core/luv-test/luv-test/luv-sbsa-test b/meta-luv/recipes-core/luv-test/luv-test/luv-sbsa-test
 new file mode 100644
 index 0000000..a359ddb
