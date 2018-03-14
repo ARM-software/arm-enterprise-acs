@@ -1,3 +1,9 @@
+v18.03_REL1.4
+
+* LUVOS: Moved to luv-yocto tag v2.2, which supports kernel v4.14.
+* SCT: Bug fix in ExitBootServices_Conf test.
+* SBSA: Update tag/commit information to include latest bug fixes in sbsa-acs.
+
 v18.02_REL1.3
 
 * SCT: Remove tests that are optional, like EBC interface test, EFI_LOAD_FILE2_PROTOCOL, etc.
