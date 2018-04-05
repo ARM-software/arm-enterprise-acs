@@ -199,7 +199,7 @@ Enter the following commands after installation of SCT:
  #To run all tests
 - FS2:\SCT>SCT.efi -a -v
 
-User can select and run tests based on available choices. For information about running the tests, see [SCT User Guide](http://http://www.uefi.org/testtools).
+User can select and run tests based on available choices. For information about running the tests, see [SCT User Guide](http://www.uefi.org/testtools).
 
 
 ### 3. LUV OS FWTS tests
