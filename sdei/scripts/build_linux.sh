@@ -36,21 +36,16 @@ fi
 cd linux
 export ARCH=arm64
 export CROSS_COMPILE=${W}/gcc-linaro-6.3.1-2017.05-x86_64_aarch64-linux-gnu/bin/aarch64-linux-gnu-
-make defconfig
-make -j16
+#make defconfig
+#make -j16
 cp arch/arm64/boot/Image ../output
 cd ${W}/linux-acs/sdei-acs-drv/files
 ./setup.sh ${S}
 export KERNEL_SRC=${W}/linux
-cd platform/pal_linux
-make
-cd ../../val
-make
-cd ../
 make
 cp sdei_acs.ko ${W}/output
 
-cd ${S}/linux_app/
+cd ${S}/linux_app/sdei-acs-app
 make
 cp sdei ${W}/output
 cd ${S}
