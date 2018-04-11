@@ -45,7 +45,7 @@ export KERNEL_SRC=${W}/linux
 make
 cp sdei_acs.ko ${W}/output
 
-cd ${S}/linux_app/
+cd ${S}/linux_app/sdei-acs-app
 make
 cp sdei ${W}/output
 cd ${S}
