@@ -1,51 +1,9 @@
-From 89e9c24bf1f4a7289cd0285b46bdab0338c5c181 Mon Sep 17 00:00:00 2001
-From: Sakar Arora <Sakar.Arora@arm.com>
-Date: Tue, 6 Feb 2018 14:19:21 +0530
-Subject: [PATCH] luvos
-
----
- build_luvos.sh                                     |  88 +++++++
- meta-luv/classes/luv-efi.bbclass                   |  71 +++++-
- meta-luv/conf/distro/luv.conf                      |   2 +-
- meta-luv/recipes-bsp/sbbr/sbbr/README.md           |   2 +
- meta-luv/recipes-bsp/sbbr/sbbr/sbbr-sct.patch      | 277 +++++++++++++++++++++
- meta-luv/recipes-bsp/sbbr/sbbr_v1.0.bb             | 101 ++++++++
- meta-luv/recipes-bsp/sbsa/files/compile.sh         |  28 +++
- meta-luv/recipes-bsp/sbsa/sbsa.bb                  | 107 ++++++++
- meta-luv/recipes-core/efivarfs/efivarfs-test.bb    |   1 -
- meta-luv/recipes-core/fwts/fwts/sbbr-fwts.patch    |  17 ++
- meta-luv/recipes-core/fwts/fwts_git.bb             |   4 +-
- .../images/core-image-efi-initramfs.bb             |   2 +-
- meta-luv/recipes-core/images/luv-image.inc         |   3 +-
- meta-luv/recipes-core/images/luv-live-image.bb     |   8 +-
- meta-luv/recipes-core/images/luv-netboot-image.bb  |   5 +-
- .../kernel_efi_warnings/kernel-efi-warnings_0.1.bb |   2 -
- meta-luv/recipes-core/luv-test/luv-test.bb         |   6 +
- .../luv-test/luv-test/luv-collect-results          | 181 ++++++++++++++
- .../recipes-core/luv-test/luv-test/luv-message     |   2 +-
- .../recipes-core/luv-test/luv-test/luv-sbsa-test   |  18 ++
- .../luv-test/luv-test/luv-test-manager             |   5 +
- .../linux/linux-yocto-efi-test_4.14.bb             |   3 +-
- meta/conf/bitbake.conf                             |   2 +-
- sbsa_setup.sh                                      |  41 +++
- 24 files changed, 960 insertions(+), 16 deletions(-)
- create mode 100755 build_luvos.sh
- create mode 100644 meta-luv/recipes-bsp/sbbr/sbbr/README.md
- create mode 100644 meta-luv/recipes-bsp/sbbr/sbbr/sbbr-sct.patch
- create mode 100644 meta-luv/recipes-bsp/sbbr/sbbr_v1.0.bb
- create mode 100755 meta-luv/recipes-bsp/sbsa/files/compile.sh
- create mode 100644 meta-luv/recipes-bsp/sbsa/sbsa.bb
- create mode 100644 meta-luv/recipes-core/fwts/fwts/sbbr-fwts.patch
- create mode 100644 meta-luv/recipes-core/luv-test/luv-test/luv-collect-results
- create mode 100644 meta-luv/recipes-core/luv-test/luv-test/luv-sbsa-test
- create mode 100755 sbsa_setup.sh
-
 diff --git a/build_luvos.sh b/build_luvos.sh
 new file mode 100755
-index 0000000..bc6b659
+index 0000000000..6cf71fa5a7
 --- /dev/null
 +++ b/build_luvos.sh
-@@ -0,0 +1,88 @@
+@@ -0,0 +1,92 @@
 +#!/bin/bash
 +# Copyright (c) 2017, ARM Limited or its affiliates. All rights reserved.
 +#
@@ -95,6 +53,8 @@ index 0000000..bc6b659
 +read ACS_CMDLINE_APPEND
 +export ACS_CMDLINE_APPEND
 +./sbsa_setup.sh
++chmod +x sdei_setup.sh
++./sdei_setup.sh
 +rm -rf build
 +source oe-init-build-env
 +export BB_ENV_EXTRAWHITE="BB_ENV_EXTRAWHITE SCTOPTIONAL SCTUSERNAME SCTPASSWORD ACS_CMDLINE_APPEND"
@@ -116,12 +76,14 @@ index 0000000..bc6b659
 +	bitbake -c cleanall sbbr
 +fi
 +bitbake -c cleanall sbsa
++bitbake -c cleanall sdei
 +bitbake -c cleanall luv-live-image
 +if [ "$SCTOPTIONAL" = "no" ]
 +then
 +	bitbake sbbr
 +fi
 +bitbake sbsa
++bitbake sdei
 +bitbake luv-live-image
 +unset BB_ENV_EXTRAWHITE
 +unset SCTOPTIONAL
@@ -135,7 +97,7 @@ index 0000000..bc6b659
 +fi
 +exit
 diff --git a/meta-luv/classes/luv-efi.bbclass b/meta-luv/classes/luv-efi.bbclass
-index 8c1b892..7a1807d 100644
+index 8c1b892ef9..f2c363f4a0 100644
 --- a/meta-luv/classes/luv-efi.bbclass
 +++ b/meta-luv/classes/luv-efi.bbclass
 @@ -16,6 +16,13 @@ def get_bits_depends(d):
@@ -152,7 +114,7 @@ index 8c1b892..7a1807d 100644
  do_bootimg[depends] += "${MLPREFIX}grub-efi:do_deploy \
                          sbsigntool-native:do_populate_sysroot"
  
-@@ -55,7 +62,13 @@ efi_populate() {
+@@ -55,7 +62,14 @@ efi_populate() {
      # Install grub2 in EFI directory
      if [ "${TARGET_ARCH}" = "aarch64" ]; then
  		install -m 0644 ${DEPLOY_DIR_IMAGE}/${GRUB_EFI_LOADER_IMAGE} ${DEST}${EFIDIR}/${DEST_EFI_LOADER_IMAGE}
@@ -164,10 +126,11 @@ index 8c1b892..7a1807d 100644
 +            efi_populate_startup ${DEST}
 +            echo "SCTOPTIONAL=${SCTOPTIONAL}"
 +            efi_populate_sbsa ${DEST}
++            efi_populate_sdei ${DEST}
  
      # TODO: need conditional signing; e.g., if (DISTRO_FEATURES contains secure_boot)
      # shim bootloader does not seem to work with i386. Thus we don't use it for 32-bit
-@@ -92,6 +105,52 @@ efi_populate() {
+@@ -92,6 +106,83 @@ efi_populate() {
      install -m 0644 ${LUV_CFG} ${DEST}
  }
  
@@ -184,7 +147,7 @@ index 8c1b892..7a1807d 100644
 +          for %i in 0 1 2 3 4 5 6 7 8 9 A B C D E F then
 +            if exist FS%i:\sbsa_results then
 +              FS%i:
-+              cd sbsa_results
++              cd FS%i:\sbsa_results
 +              if not exist uefi then
 +                mkdir uefi
 +              endif
@@ -200,6 +163,33 @@ index 8c1b892..7a1807d 100644
 +          endfor
 +          echo \"LUV-RESULTS partition not found\"
 +          :Done" > ${DEST}${EFIDIR}/sbsa/sbsa.nsh
++
++}
++
++efi_populate_sdei() {
++    DEST=$1
++    cp -r ${DEPLOY_DIR_IMAGE}/sdei ${DEST}${EFIDIR}/sdei
++    cp ${DEST}${EFIDIR}/sdei/Shell.efi ${DEST}${EFIDIR}/Shell.efi
++    echo "echo -off
++          for %i in 0 1 2 3 4 5 6 7 8 9 A B C D E F then
++            if exist FS%i:\sdei_results then
++              FS%i:
++              cd FS%i:\sdei_results
++              if not exist uefi then
++                mkdir uefi
++              endif
++              cd uefi
++              for %j in 0 1 2 3 4 5 6 7 8 9 A B C D E F then
++                if exist FS%j:\EFI\BOOT\sdei\Sdei.efi then
++                  FS%j:\EFI\BOOT\sdei\Sdei.efi -f SdeiResults.log
++                  goto Done
++                endif
++              endfor
++              echo \"Sdei.efi not found\"
++            endif
++          endfor
++          echo \"LUV-RESULTS partition not found\"
++          :Done" > ${DEST}${EFIDIR}/sdei/sdei.nsh
 +}
 +
 +efi_populate_startup() {
@@ -208,19 +198,44 @@ index 8c1b892..7a1807d 100644
 +          for %i in 0 1 2 3 4 5 6 7 8 9 A B C D E F then
 +            if exist FS%i:\EFI\BOOT\sbsa\sbsa.nsh then
 +              FS%i:\EFI\BOOT\sbsa\sbsa.nsh
++            endif
++            if exist FS%i:\EFI\BOOT\sdei\sdei.nsh then
++              FS%i:\EFI\BOOT\sdei\sdei.nsh
 +              goto Done
 +            endif
 +          endfor
 +          echo \"sbsa.nsh not found\"
 +          :Done
 +          FS%i:
-+          vmlinuz initrd=\initrd ${CMDLINE} luv_netconsole=none luv_storage=none luv_tests=fwts" > ${DEST}${EFIDIR}/startup.nsh
++          vmlinuz initrd=\initrd ${CMDLINE}" > ${DEST}${EFIDIR}/startup.nsh
++
 +}
 +
  BITS_EFI_LOADER_IMAGE = "${DEST_EFI_LOADER_IMAGE}"
  efi_populate_bits() {
      DEST=$1
-@@ -172,6 +231,11 @@ python build_efi_cfg() {
+@@ -126,6 +217,7 @@ efi_populate_bits() {
+         install -m 0644 ${DEPLOY_DIR_IMAGE}/bits/efi/boot/${BITS_EFI_LOADER_IMAGE} \
+                 ${DEST}${EFIDIR}/bits/
+     fi
++
+ }
+ 
+ efi_iso_populate() {
+@@ -146,10 +238,12 @@ efi_iso_populate() {
+     if [ -f "$iso_dir/initrd" ] ; then
+         cp $iso_dir/initrd ${EFIIMGDIR}
+     fi
++
+ }
+ 
+ efi_hddimg_populate() {
+     efi_populate $1
++
+ }
+ 
+ python build_efi_cfg() {
+@@ -172,6 +266,11 @@ python build_efi_cfg() {
         cfgfile.write('default=bits\n')
         cfgfile.write('fallback=0\n')
  
@@ -232,7 +247,7 @@ index 8c1b892..7a1807d 100644
      cfgfile.write('menuentry \'luv\' {\n')
      cfgfile.write('linux /vmlinuz ')
  
-@@ -199,6 +263,11 @@ python build_efi_cfg() {
+@@ -199,7 +298,13 @@ python build_efi_cfg() {
         cfgfile.write('chainloader /EFI/BOOT/bits/%s\n' % loader)
         cfgfile.write('}\n')
  
@@ -242,10 +257,26 @@ index 8c1b892..7a1807d 100644
 +       cfgfile.write('}\n')
 +
      cfgfile.close()
++
  }
  
+ # define a function that takes name and comment as arguments
+@@ -252,6 +357,7 @@ python build_luv_cfg() {
+     luvcfg.write('\n## END of luv.cfg ##')
+ 
+     luvcfg.close()
++
+ }
+ 
+ create_symlinks() {
+@@ -262,4 +368,5 @@ create_symlinks() {
+ 
+ 	rm -f ${DEPLOY_DIR_IMAGE}/${IMAGE_LINK_NAME}.hddimg
+ 	ln -s ${IMAGE_NAME}.hddimg ${DEPLOY_DIR_IMAGE}/${IMAGE_LINK_NAME}.hddimg
++
+ }
 diff --git a/meta-luv/conf/distro/luv.conf b/meta-luv/conf/distro/luv.conf
-index fb0a833..55ddcfe 100644
+index fb0a83314b..55ddcfe326 100644
 --- a/meta-luv/conf/distro/luv.conf
 +++ b/meta-luv/conf/distro/luv.conf
 @@ -17,4 +17,4 @@ VIRTUAL-RUNTIME_init_manager = "systemd"
@@ -254,9 +285,23 @@ index fb0a833..55ddcfe 100644
  
 -INITRAMFS_MAXSIZE = "235000"
 +INITRAMFS_MAXSIZE = "400000"
+diff --git a/meta-luv/conf/layer.conf b/meta-luv/conf/layer.conf
+index 724d5a9c99..5a9f7a5106 100644
+--- a/meta-luv/conf/layer.conf
++++ b/meta-luv/conf/layer.conf
+@@ -3,7 +3,8 @@ BBPATH =. "${LAYERDIR}:"
+ 
+ # We have recipes-* directories, add to BBFILES
+ BBFILES += "${LAYERDIR}/recipes-*/*/*.bb \
+-	${LAYERDIR}/recipes-*/*/*.bbappend"
++	${LAYERDIR}/recipes-*/*/*.bbappend \
++        "
+ 
+ BBFILE_COLLECTIONS += "luv"
+ BBFILE_PATTERN_luv = "^${LAYERDIR}/"
 diff --git a/meta-luv/recipes-bsp/sbbr/sbbr/README.md b/meta-luv/recipes-bsp/sbbr/sbbr/README.md
 new file mode 100644
-index 0000000..06f0264
+index 0000000000..06f0264005
 --- /dev/null
 +++ b/meta-luv/recipes-bsp/sbbr/sbbr/README.md
 @@ -0,0 +1,2 @@
@@ -264,139 +309,10 @@ index 0000000..06f0264
 +========
 diff --git a/meta-luv/recipes-bsp/sbbr/sbbr/sbbr-sct.patch b/meta-luv/recipes-bsp/sbbr/sbbr/sbbr-sct.patch
 new file mode 100644
-index 0000000..3c2fb4b
+index 0000000000..8954968a3f
 --- /dev/null
 +++ b/meta-luv/recipes-bsp/sbbr/sbbr/sbbr-sct.patch
-@@ -0,0 +1,277 @@
-+diff --git a/SctPkg/TestCase/UEFI/EFI/BootServices/ImageServices/BlackBoxTest/ImageBBTest.inf b/SctPkg/TestCase/UEFI/EFI/BootServices/ImageServices/BlackBoxTest/ImageBBTest.inf
-+index 10d9e8c..9deb345 100644
-+--- a/SctPkg/TestCase/UEFI/EFI/BootServices/ImageServices/BlackBoxTest/ImageBBTest.inf
-++++ b/SctPkg/TestCase/UEFI/EFI/BootServices/ImageServices/BlackBoxTest/ImageBBTest.inf
-+@@ -84,4 +84,5 @@
-+ 
-+ [Protocols]
-+   gEfiTestProfileLibraryGuid
-++  gEfiTestRecoveryLibraryGuid
-+   gBlackBoxEfiHIIPackageListProtocolGuid
-+diff --git a/SctPkg/TestCase/UEFI/EFI/BootServices/ImageServices/BlackBoxTest/ImageBBTestConformance.c b/SctPkg/TestCase/UEFI/EFI/BootServices/ImageServices/BlackBoxTest/ImageBBTestConformance.c
-+index 4c63a08..6bd92ec 100644
-+--- a/SctPkg/TestCase/UEFI/EFI/BootServices/ImageServices/BlackBoxTest/ImageBBTestConformance.c
-++++ b/SctPkg/TestCase/UEFI/EFI/BootServices/ImageServices/BlackBoxTest/ImageBBTestConformance.c
-+@@ -809,6 +809,7 @@ BBTestExitBootServicesConsistencyTest (
-+   )
-+ {
-+   EFI_STANDARD_TEST_LIBRARY_PROTOCOL   *StandardLib;
-++  EFI_TEST_RECOVERY_LIBRARY_PROTOCOL   *RecoveryLib;
-+   EFI_STATUS                           Status;
-+   EFI_TEST_ASSERTION                   AssertionType;
-+   UINTN                                MapKey;
-+@@ -817,6 +818,7 @@ BBTestExitBootServicesConsistencyTest (
-+   UINTN                                DataSize;
-+   UINT8                                Data[MAX_BUFFER_SIZE];
-+   EFI_STATUS                           ReturnStatus;
-++  UINTN                                RecoveryData[2], RecoveryDataSize;
-+ 
-+   //
-+   // Init
-+@@ -834,6 +836,16 @@ BBTestExitBootServicesConsistencyTest (
-+     return Status;
-+   }
-+ 
-++  RecoveryLib = NULL;
-++
-++  Status = gtBS->HandleProtocol (
-++                   SupportHandle,
-++                   &gEfiTestRecoveryLibraryGuid,
-++                   (VOID **) &RecoveryLib);
-++  if (EFI_ERROR(Status)) {
-++    return Status;
-++  }
-++
-+   Status = ImageTestCheckForCleanEnvironment (&Numbers);
-+   if (EFI_ERROR(Status)) {
-+     StandardLib->RecordAssertion (
-+@@ -849,18 +861,12 @@ BBTestExitBootServicesConsistencyTest (
-+                    );
-+     return Status;
-+   }
-++  
-++  RecoveryDataSize = sizeof(RecoveryData);
-++  Status = RecoveryLib->ReadResetRecord(RecoveryLib, &RecoveryDataSize, RecoveryData);
-+ 
-+-  DataSize = MAX_BUFFER_SIZE;
-+-  Status = gtRT->GetVariable (
-+-                 L"ExitBootServicesTestVariable",             // VariableName
-+-                 &gTestVendor1Guid,                           // VendorGuid
-+-                 NULL,                                        // Attributes
-+-                 &DataSize,                                   // DataSize
-+-                 &ReturnStatus                                // Data
-+-                 );
-+-
-+-  if (Status == EFI_SUCCESS) {
-+-    goto CheckResult;
-++  if (!EFI_ERROR(Status) && RecoveryData[0] == 1) {
-++      goto CheckResult;
-+   }
-+ 
-+   //
-+@@ -899,19 +905,10 @@ BBTestExitBootServicesConsistencyTest (
-+                          mImageHandle,
-+                          MapKey
-+                          );
-+-  if (ReturnStatus == EFI_INVALID_PARAMETER) {
-+-    AssertionType = EFI_TEST_ASSERTION_PASSED;
-+-  } else {
-+-    AssertionType = EFI_TEST_ASSERTION_FAILED;
-+-  }
-+-
-+-  Status = gtRT->SetVariable (
-+-                     L"ExitBootServicesTestVariable",                                                           // VariableName
-+-                     &gTestVendor1Guid,                                                                         // VendorGuid
-+-                     EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS, // Attributes
-+-                     sizeof(EFI_STATUS),                        // DataSize
-+-                     &ReturnStatus                              // Data
-+-                     );
-++  
-++  RecoveryData[0] = 1;
-++  RecoveryData[1] = ReturnStatus;
-++  RecoveryLib->WriteResetRecord (RecoveryLib, sizeof(RecoveryData), RecoveryData);
-+ 
-+   //reset system
-+   gtRT->ResetSystem (EfiResetCold, EFI_SUCCESS, 0, NULL);
-+@@ -919,7 +916,7 @@ BBTestExitBootServicesConsistencyTest (
-+   // get var to get the status
-+ CheckResult:
-+ 
-+-  if (ReturnStatus == EFI_INVALID_PARAMETER) {
-++  if (RecoveryData[1] == EFI_INVALID_PARAMETER) {
-+     AssertionType = EFI_TEST_ASSERTION_PASSED;
-+   } else {
-+     AssertionType = EFI_TEST_ASSERTION_FAILED;
-+@@ -933,18 +930,10 @@ CheckResult:
-+                  L"%a:%d: the Status is - %r, expected status is %r",
-+                  __FILE__,
-+                  (UINTN)__LINE__,
-+-                 ReturnStatus,
-++                 RecoveryData[1],
-+                  EFI_INVALID_PARAMETER
-+                  );
-+ 
-+-  Status = gtRT->SetVariable (
-+-                     L"ExitBootServicesTestVariable",                                                           // VariableName
-+-                     &gTestVendor1Guid,                                                                         // VendorGuid
-+-                     EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS, // Attributes
-+-                     0,                               // DataSize
-+-                     Data                             // Data
-+-                     );
-+-
-+   Status = ImageTestCheckForCleanEnvironment (&Numbers);
-+   if (EFI_ERROR(Status)) {
-+     StandardLib->RecordAssertion (
-+@@ -961,4 +950,3 @@ CheckResult:
-+   }
-+   return EFI_SUCCESS;
-+ }
-+-
+@@ -0,0 +1,136 @@
 +diff --git a/SctPkg/TestCase/UEFI/EFI/BootServices/ImageServices/BlackBoxTest/ImageBBTestFunction.c b/SctPkg/TestCase/UEFI/EFI/BootServices/ImageServices/BlackBoxTest/ImageBBTestFunction.c
 +index d0af10d..632c8df 100644
 +--- a/SctPkg/TestCase/UEFI/EFI/BootServices/ImageServices/BlackBoxTest/ImageBBTestFunction.c
@@ -413,18 +329,6 @@ index 0000000..3c2fb4b
 + #endif  
 +   return EFI_SUCCESS;
 + }
-+diff --git a/SctPkg/TestCase/UEFI/EFI/BootServices/ImageServices/BlackBoxTest/Misc.h b/SctPkg/TestCase/UEFI/EFI/BootServices/ImageServices/BlackBoxTest/Misc.h
-+index da3277b..5457565 100644
-+--- a/SctPkg/TestCase/UEFI/EFI/BootServices/ImageServices/BlackBoxTest/Misc.h
-++++ b/SctPkg/TestCase/UEFI/EFI/BootServices/ImageServices/BlackBoxTest/Misc.h
-+@@ -60,6 +60,7 @@ Abstract:
-+ 
-+ #include "ImageBBTest.h"
-+ #include "ProtocolDefinition.h"
-++#include EFI_TEST_PROTOCOL_DEFINITION(TestRecoveryLibrary)
-+ 
-+ typedef struct {
-+   VOID          *Registration;
 +diff --git a/SctPkg/TestCase/UEFI/EFI/BootServices/SbbrBootServices/BlackBoxTest/SbbrBootServicesBBTestFunction.c b/SctPkg/TestCase/UEFI/EFI/BootServices/SbbrBootServices/BlackBoxTest/SbbrBootServicesBBTestFunction.c
 +index c88d60b..6fbd11a 100644
 +--- a/SctPkg/TestCase/UEFI/EFI/BootServices/SbbrBootServices/BlackBoxTest/SbbrBootServicesBBTestFunction.c
@@ -547,7 +451,7 @@ index 0000000..3c2fb4b
 + 
 diff --git a/meta-luv/recipes-bsp/sbbr/sbbr_v1.0.bb b/meta-luv/recipes-bsp/sbbr/sbbr_v1.0.bb
 new file mode 100644
-index 0000000..9d4b4b3
+index 0000000000..9d4b4b305e
 --- /dev/null
 +++ b/meta-luv/recipes-bsp/sbbr/sbbr_v1.0.bb
 @@ -0,0 +1,101 @@
@@ -654,7 +558,7 @@ index 0000000..9d4b4b3
 +addtask deploy before do_build after do_install
 diff --git a/meta-luv/recipes-bsp/sbsa/files/compile.sh b/meta-luv/recipes-bsp/sbsa/files/compile.sh
 new file mode 100755
-index 0000000..fae365c
+index 0000000000..fae365c3df
 --- /dev/null
 +++ b/meta-luv/recipes-bsp/sbsa/files/compile.sh
 @@ -0,0 +1,28 @@
@@ -688,10 +592,10 @@ index 0000000..fae365c
 +source AppPkg/Applications/sbsa-acs/tools/scripts/avsbuild.sh
 diff --git a/meta-luv/recipes-bsp/sbsa/sbsa.bb b/meta-luv/recipes-bsp/sbsa/sbsa.bb
 new file mode 100644
-index 0000000..8b1af24
+index 0000000000..3ec1f4639a
 --- /dev/null
 +++ b/meta-luv/recipes-bsp/sbsa/sbsa.bb
-@@ -0,0 +1,107 @@
+@@ -0,0 +1,110 @@
 +# Copyright (c) 2017, ARM Limited or its affiliates. All rights reserved.
 +#
 +# Licensed under the Apache License, Version 2.0 (the "License");
@@ -734,6 +638,7 @@ index 0000000..8b1af24
 +        echo "do_configure: Cloning EDK2 repository."
 +        git clone -b UDK2017 https://github.com/tianocore/edk2.git
 +    fi
++
 +
 +    # Linking SBSA and EDK2.
 +    echo "do_configure: Linking SBSA to EDK2."
@@ -781,6 +686,7 @@ index 0000000..8b1af24
 +}
 +
 +do_compile () {
++
 +    cd ${WORKDIR}
 +    ./compile.sh ${WORKDIR}
 +}
@@ -793,14 +699,120 @@ index 0000000..8b1af24
 +}
 +
 +do_deploy () {
++
 +    echo "do_deploy: Deploying SBSA files to destionation ${DEPLOYDIR}"
 +    install -d ${DEPLOYDIR}
 +    cp -r ${D}/sbsa ${DEPLOYDIR}/sbsa
 +}
 +
 +addtask deploy before do_build after do_install
+diff --git a/meta-luv/recipes-bsp/sdei/files/compile.sh b/meta-luv/recipes-bsp/sdei/files/compile.sh
+new file mode 100755
+index 0000000000..d818baa16e
+--- /dev/null
++++ b/meta-luv/recipes-bsp/sdei/files/compile.sh
+@@ -0,0 +1,28 @@
++#!/usr/bin/env bash
++# Copyright (c) 2017, ARM Limited or its affiliates. All rights reserved.
++#
++# Licensed under the Apache License, Version 2.0 (the "License");
++# you may not use this file except in compliance with the License.
++# You may obtain a copy of the License at
++#
++#  http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing, software
++# distributed under the License is distributed on an "AS IS" BASIS,
++# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++# See the License for the specific language governing permissions and
++# limitations under the License.
++
++cd ${1}/edk2
++
++
++echo "do_compile: Initializing EDK2 for building."
++set --
++source edksetup.sh
++
++echo "do_compile: Building BaseTools."
++make -C BaseTools/Source/C
++
++
++echo "do_compile: Building SBSA."
++source AppPkg/Applications/sdei-acs/scripts/acsbuild.sh
+diff --git a/meta-luv/recipes-bsp/sdei/sdei.bb b/meta-luv/recipes-bsp/sdei/sdei.bb
+new file mode 100644
+index 0000000000..1f27d25a0f
+--- /dev/null
++++ b/meta-luv/recipes-bsp/sdei/sdei.bb
+@@ -0,0 +1,65 @@
++
++#
++# This file was derived from the 'Hello World!' example recipe in the
++# Yocto Project Development Manual.
++#
++
++DESCRIPTION = "Simple helloworld application"
++SECTION = "exampled"
++LICENSE = "CLOSED"
++
++
++FILESEXTRAPATHS_prepend := "${THISDIR}/files:"
++inherit deploy
++
++SRC_URI =  " https://github.com/tianocore/edk2/archive/dbc85eb.zip;name=name2 \
++             https://github.com/ARM-software/arm-enterprise-acs/archive/54998dc.zip;name=name3 \
++             https://releases.linaro.org/components/toolchain/binaries/5.3-2016.05/aarch64-linux-gnu/gcc-linaro-5.3.1-2016.05-x86_64_aarch64-linux-gnu.tar.xz;name=name4 \
++	     file://compile.sh"
++SRC_URI[name2.md5sum] = "00667c21c5f6109ffdaaec5e79f30771"
++SRC_URI[name3.md5sum] = "84206f436b3124959bee817ff679ee89"
++SRC_URI[name4.md5sum] = "24ac2e26f50f49f3043f281440b41bba"
++
++
++
++do_unpack () {
++  /usr/bin/unzip ${DL_DIR}/dbc85eb.zip -d ${S}/
++  mv ${S}/edk2-dbc85eb993439a7006bb20091c1cc6de43d19e80/ ${S}/edk2/
++
++  /usr/bin/unzip ${DL_DIR}/54998dc.zip -d ${S}/
++  mv ${S}/arm-enterprise-acs-54998dc56761a7881a2823352e3375df0bfd0a08/ ${S}/arm-enterprise-acs/
++
++  tar -xf ${DL_DIR}/gcc-linaro*.tar.xz
++  mv gcc-linaro-5.3.1-2016.05-x86_64_aarch64-linux-gnu/ ${S}/gcc-linaro/
++  ls
++}
++
++do_configure () {
++cp -r arm-enterprise-acs/sdei edk2/AppPkg/Applications/sdei-acs
++sed -i '/LibraryClasses.common/ a\ SdeiValLib|AppPkg/Applications/sdei-acs/val/SdeiValLib.inf' edk2/ShellPkg/ShellPkg.dsc
++sed -i '/LibraryClasses.common/ a\ SdeiPalLib|AppPkg/Applications/sdei-acs/platform/pal_uefi/SdeiPalLib.inf' edk2/ShellPkg/ShellPkg.dsc
++sed -i '/Components/ a\ AppPkg/Applications/sdei-acs/uefi_app/SdeiAcs.inf' edk2/ShellPkg/ShellPkg.dsc
++}
++
++do_compile () {
++   export GCC49_AARCH64_PREFIX=${S}/gcc-linaro/bin/aarch64-linux-gnu-
++   /bin/bash ${THISDIR}/files/compile.sh ${S}
++}
++
++
++do_install () {
++    echo "do_install: Copying SDEI files to destination ${D}"
++    mkdir ${D}/sdei
++	cp ${S}/edk2/Build/Shell/DEBUG_GCC49/AARCH64/Sdei.efi ${D}/sdei/Sdei.efi
++	cp ${S}/edk2/ShellBinPkg/UefiShell/AArch64/Shell.efi ${D}/sdei/Shell.efi
++}
++
++
++do_deploy () {
++    echo "do_deploy: Deploying SDEI files to destination ${DEPLOYDIR}"
++    install -d ${DEPLOYDIR}
++    cp -r ${D}/sdei ${DEPLOYDIR}/sdei
++}
++
++addtask deploy before do_build after do_install
++
 diff --git a/meta-luv/recipes-core/efivarfs/efivarfs-test.bb b/meta-luv/recipes-core/efivarfs/efivarfs-test.bb
-index 0853e52..190d683 100644
+index 0853e52597..190d683dd9 100644
 --- a/meta-luv/recipes-core/efivarfs/efivarfs-test.bb
 +++ b/meta-luv/recipes-core/efivarfs/efivarfs-test.bb
 @@ -71,4 +71,3 @@ do_install() {
@@ -810,7 +822,7 @@ index 0853e52..190d683 100644
 -LUV_TEST="efivarfs"
 diff --git a/meta-luv/recipes-core/fwts/fwts/sbbr-fwts.patch b/meta-luv/recipes-core/fwts/fwts/sbbr-fwts.patch
 new file mode 100644
-index 0000000..69e92fe
+index 0000000000..69e92fe1a3
 --- /dev/null
 +++ b/meta-luv/recipes-core/fwts/fwts/sbbr-fwts.patch
 @@ -0,0 +1,17 @@
@@ -832,7 +844,7 @@ index 0000000..69e92fe
 + }
 + 
 diff --git a/meta-luv/recipes-core/fwts/fwts_git.bb b/meta-luv/recipes-core/fwts/fwts_git.bb
-index 62d2430..0d2d751 100644
+index 62d2430218..0d2d751216 100644
 --- a/meta-luv/recipes-core/fwts/fwts_git.bb
 +++ b/meta-luv/recipes-core/fwts/fwts_git.bb
 @@ -9,6 +9,7 @@ PV = "V17.12.00+git${SRCPV}"
@@ -854,7 +866,7 @@ index 62d2430..0d2d751 100644
  FILES_${PN} += "${libdir}/fwts/lib*${SOLIBS}"
  FILES_${PN} += "/lib/modules/${KERNEL_VERSION}/extra/efi_runtime.ko"
 diff --git a/meta-luv/recipes-core/images/core-image-efi-initramfs.bb b/meta-luv/recipes-core/images/core-image-efi-initramfs.bb
-index 9529534..8a62075 100644
+index 952953483d..868d37c06e 100644
 --- a/meta-luv/recipes-core/images/core-image-efi-initramfs.bb
 +++ b/meta-luv/recipes-core/images/core-image-efi-initramfs.bb
 @@ -8,7 +8,7 @@ IMAGE_INSTALL = "\
@@ -862,12 +874,12 @@ index 9529534..8a62075 100644
      shadow util-linux procps efivarfs-test pstore-test \
      plymouth plymouth-set-default-theme kernel-efi-warnings linux-firmware-luv kexec \
 -    acpixtract iasl \
-+    acpixtract iasl sbsa-acs-drv sbsa-acs-app \
++    acpixtract iasl sbsa-acs-drv sbsa-acs-app sdei-acs-drv sdei-acs-app \
      "
  
  X86_ADDITIONS = "chipsec python-codecs python-subprocess vmcore-dmesg bits \
 diff --git a/meta-luv/recipes-core/images/luv-image.inc b/meta-luv/recipes-core/images/luv-image.inc
-index b851709..55275e6 100644
+index b8517091cc..55275e6b87 100644
 --- a/meta-luv/recipes-core/images/luv-image.inc
 +++ b/meta-luv/recipes-core/images/luv-image.inc
 @@ -3,6 +3,7 @@ LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/MIT;md5=0835ade698e0bcf8506ecda
@@ -888,7 +900,7 @@ index b851709..55275e6 100644
  CMDLINE_append_x86-64 = "${COMMON_CMDLINE_x86}"
  
 diff --git a/meta-luv/recipes-core/images/luv-live-image.bb b/meta-luv/recipes-core/images/luv-live-image.bb
-index b7a0f66..1cefc5d 100644
+index b7a0f6630e..1bf7b54cbc 100644
 --- a/meta-luv/recipes-core/images/luv-live-image.bb
 +++ b/meta-luv/recipes-core/images/luv-live-image.bb
 @@ -9,7 +9,7 @@ MACHINE_FEATURES += "efi"
@@ -911,17 +923,18 @@ index b7a0f66..1cefc5d 100644
      VFAT_RESULTS_SPACE=$(expr $VFAT_RESULTS_SPACE_MiB \* $MiB)
      VFAT_RESULTS_BLOCKS=$(expr $VFAT_RESULTS_SPACE / 1024)
      # TODO: do we need to dynamically generate the UUID?
-@@ -51,6 +51,8 @@ build_img() {
+@@ -51,6 +51,9 @@ build_img() {
      mkdosfs -C ${VFAT_RESULTS} -S ${BYTES_PER_SECTOR} -i ${VFAT_RESULTS_UUID} \
              -n ${VFAT_RESULTS_LABEL} $VFAT_RESULTS_BLOCKS
  
 +    mmd -i ${VFAT_RESULTS} ::/sbsa_results
 +
++    mmd -i ${VFAT_RESULTS} ::/sdei_results
      dd if=/dev/zero of=${IMG} bs=${BYTES_PER_SECTOR} count=1
  
      # Now that we are calculating sizes in MiB make sure that the value
 diff --git a/meta-luv/recipes-core/images/luv-netboot-image.bb b/meta-luv/recipes-core/images/luv-netboot-image.bb
-index d6eca7b..77dde4f 100644
+index d6eca7b468..77dde4f93e 100644
 --- a/meta-luv/recipes-core/images/luv-netboot-image.bb
 +++ b/meta-luv/recipes-core/images/luv-netboot-image.bb
 @@ -25,7 +25,8 @@ do_mkimage[depends] += "dosfstools-native:do_populate_sysroot \
@@ -944,7 +957,7 @@ index d6eca7b..77dde4f 100644
  	fi
  	install -m 0644 ${GRUBCFG} ${HDDDIR}${EFIDIR}
 diff --git a/meta-luv/recipes-core/kernel_efi_warnings/kernel-efi-warnings_0.1.bb b/meta-luv/recipes-core/kernel_efi_warnings/kernel-efi-warnings_0.1.bb
-index a0fde3c..85eec50 100644
+index a0fde3c30b..85eec505de 100644
 --- a/meta-luv/recipes-core/kernel_efi_warnings/kernel-efi-warnings_0.1.bb
 +++ b/meta-luv/recipes-core/kernel_efi_warnings/kernel-efi-warnings_0.1.bb
 @@ -20,5 +20,3 @@ do_install() {
@@ -954,35 +967,37 @@ index a0fde3c..85eec50 100644
 -LUV_TEST="kernel-efi-warnings"
 -LUV_TEST_ARGS=""
 diff --git a/meta-luv/recipes-core/luv-test/luv-test.bb b/meta-luv/recipes-core/luv-test/luv-test.bb
-index 164a616..0ca0fc1 100644
+index 164a61692f..98875a5fcd 100644
 --- a/meta-luv/recipes-core/luv-test/luv-test.bb
 +++ b/meta-luv/recipes-core/luv-test/luv-test.bb
-@@ -36,6 +36,8 @@ SRC_URI += "file://luv-test-manager file://luv-test-parser \
+@@ -36,6 +36,9 @@ SRC_URI += "file://luv-test-manager file://luv-test-parser \
              file://luv-reboot-poweroff.service \
              file://luv-reboot-poweroff \
              file://luv-message \
 +            file://luv-collect-results \
++            file://luv-sdei-test \
 +            file://luv-sbsa-test \
            "
  
  RDEPENDS_${PN}+= "kernel-modules curl iputils iproute2 bash init-ifupdown dhcp-client gzip"
-@@ -84,6 +86,10 @@ do_install_append() {
+@@ -84,6 +87,11 @@ do_install_append() {
         install -m 0644 ${WORKDIR}/luv-scripts ${D}${datadir}/luv/html
         install -m 0644 ${WORKDIR}/luv-css-styles ${D}${datadir}/luv/html
  
 +       # Install luv-collect-results script
 +       install -m 755 ${WORKDIR}/luv-collect-results ${D}${sysconfdir}/
 +       install -m 755 ${WORKDIR}/luv-sbsa-test ${D}${sysconfdir}/
++       install -m 755 ${WORKDIR}/luv-sdei-test ${D}${sysconfdir}/
 +
         install -d ${D}${systemd_unitdir}/system
  
         install -m 0644 ${WORKDIR}/luv-test-manager.service ${D}${systemd_unitdir}/system
 diff --git a/meta-luv/recipes-core/luv-test/luv-test/luv-collect-results b/meta-luv/recipes-core/luv-test/luv-test/luv-collect-results
 new file mode 100644
-index 0000000..9afbc12
+index 0000000000..6ebc49167f
 --- /dev/null
 +++ b/meta-luv/recipes-core/luv-test/luv-test/luv-collect-results
-@@ -0,0 +1,181 @@
+@@ -0,0 +1,224 @@
 +#!/usr/bin/env python
 +# Copyright (c) 2017, ARM Limited or its affiliates. All rights reserved.
 +#
@@ -1123,6 +1138,45 @@ index 0000000..9afbc12
 +    print ("SBSA Results for linux %s\n" % linux)
 +    print ("SBSA Results for UEFI %s\n" % uefi)
 +
++
++
++
++
++def log_sdei(d):
++    sdeiDir = os.path.join(d, "sdei_results")
++    if os.path.isdir(sdeiDir) == False:
++        print ("SDEI results results directory \"%s\" not found.  Skipping." % sdeiDir)
++        return -1
++
++    uefi = "not found";
++    linux = "not found";
++    for entry in os.listdir(sdeiDir):
++        if(entry == "uefi"):
++            sdeiUefiLogs = os.path.join(sdeiDir, "uefi", "SdeiResults.log")
++            try:
++                f = open(sdeiUefiLogs, "r")
++            except IOError:
++                print ("SDEI UEFI results file \"%s\" could not be opened, skipping." % sdeiUefiLogs)
++                continue
++            logs = f.read()
++            outFile.write("\n\nSDEI UEFI Test Results\n\n")
++            outFile.write(logs)
++            uefi = "collected"
++        if(entry == "linux"):
++            sdeiLinuxLogs = os.path.join(sdeiDir, "linux", "SdeiResults.log")
++            try:
++                f = open(sdeiLinuxLogs, "r")
++            except IOError:
++                print ("SDEI Linux results file \"%s\" could not be opened, skipping." % sdeiLinuxLogs)
++                continue
++            logs = f.read()
++            outFile.write("\n\nSDEI Linux Test Results\n\n")
++            outFile.write(logs)
++            linux = "collected"
++    print ("SDEI Results for linux %s\n" % linux)
++    print ("SDEI Results for UEFI %s\n" % uefi)
++
++
 +# Script entry point.
 +
 +# This script needs to be run on a stripped out yocto distribution so we can't use argparse.
@@ -1161,25 +1215,16 @@ index 0000000..9afbc12
 +print ("Gathering SBSA test results...")
 +log_sbsa(arg_directory)
 +
++# Scanning SBSA.
++print ("Gathering SDEI test results...")
++log_sdei(arg_directory)
++
 +outFile.close()
 +
 +print ("Done, test results can be found in \"%s\"" % arg_output)
-diff --git a/meta-luv/recipes-core/luv-test/luv-test/luv-message b/meta-luv/recipes-core/luv-test/luv-test/luv-message
-index 50edf1f..fa3f95a 100755
---- a/meta-luv/recipes-core/luv-test/luv-test/luv-message
-+++ b/meta-luv/recipes-core/luv-test/luv-test/luv-message
-@@ -8,7 +8,7 @@ luv_msg_write() {
- 
-     if [ $# == 2 ]; then
-          sleep $2
--         plymouth_hide "$1"
-+         /bin/plymouth hide-message --text="$1"
-     fi
- 
-     echo "$1" >&2
 diff --git a/meta-luv/recipes-core/luv-test/luv-test/luv-sbsa-test b/meta-luv/recipes-core/luv-test/luv-test/luv-sbsa-test
 new file mode 100644
-index 0000000..a359ddb
+index 0000000000..a359ddb052
 --- /dev/null
 +++ b/meta-luv/recipes-core/luv-test/luv-test/luv-sbsa-test
 @@ -0,0 +1,18 @@
@@ -1201,24 +1246,506 @@ index 0000000..a359ddb
 +insmod /lib/modules/4.14.0-efitest/extra/sbsa_acs.ko
 +mkdir -p $1/sbsa_results/linux
 +sbsa > $1/sbsa_results/linux/SbsaResults.log
+diff --git a/meta-luv/recipes-core/luv-test/luv-test/luv-sdei-test b/meta-luv/recipes-core/luv-test/luv-test/luv-sdei-test
+new file mode 100644
+index 0000000000..d3d06e2c4d
+--- /dev/null
++++ b/meta-luv/recipes-core/luv-test/luv-test/luv-sdei-test
+@@ -0,0 +1,20 @@
++#!/bin/bash
++# Copyright (c) 2017, ARM Limited or its affiliates. All rights reserved.
++#
++# Licensed under the Apache License, Version 2.0 (the "License");
++# you may not use this file except in compliance with the License.
++# You may obtain a copy of the License at
++#
++#  http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing, software
++# distributed under the License is distributed on an "AS IS" BASIS,
++# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++# See the License for the specific language governing permissions and
++# limitations under the License.
++
++insmod /lib/modules/4.14.0-efitest/extra/sdei_acs.ko
++
++mkdir -p $1/sdei_results/linux
++
++sdei > $1/sdei_results/linux/SdeiResults.log
 diff --git a/meta-luv/recipes-core/luv-test/luv-test/luv-test-manager b/meta-luv/recipes-core/luv-test/luv-test/luv-test-manager
-index f1e2176..cbf6a31 100644
+index f1e2176006..caa327d1e8 100644
 --- a/meta-luv/recipes-core/luv-test/luv-test/luv-test-manager
 +++ b/meta-luv/recipes-core/luv-test/luv-test/luv-test-manager
-@@ -289,6 +289,11 @@ cat ${LUV_SAVE_RESULTS_DIR}/luv.results | awk '/\[\+/  { units += 1 }
+@@ -289,6 +289,16 @@ cat ${LUV_SAVE_RESULTS_DIR}/luv.results | awk '/\[\+/  { units += 1 }
  cat /tmp/testsuites | html_inline ${LUV_HTML_REPORT} | tee -a /tmp/luv.results \
           ${LUV_SAVE_RESULTS_DIR}/luv.results
  
++
++#test SDEI compliance on luv
++sh /etc/luv-sdei-test ${LUV_STORAGE}
++
 +# test SBSA compliance on luv
 +sh /etc/luv-sbsa-test ${LUV_STORAGE}
++
 +# collecting test results
 +python3 /etc/luv-collect-results ${LUV_STORAGE} ${LUV_STORAGE}/results.md
 +
  result=$(cat /tmp/testsuites)
  luv_msg_write "$result"
  sleep 2
+diff --git a/meta-luv/recipes-kernel/linux/linux-yocto-efi-test/0001-Enterprise-acs-linux-v4.13.patch b/meta-luv/recipes-kernel/linux/linux-yocto-efi-test/0001-Enterprise-acs-linux-v4.13.patch
+new file mode 100644
+index 0000000000..96e203be89
+--- /dev/null
++++ b/meta-luv/recipes-kernel/linux/linux-yocto-efi-test/0001-Enterprise-acs-linux-v4.13.patch
+@@ -0,0 +1,445 @@
++From fc3522aafe399798231a402b90398d60b26bbd3c Mon Sep 17 00:00:00 2001
++From: Mahesh Bireddy <mahesh.reddybireddy@arm.com>
++Date: Tue, 20 Feb 2018 10:54:07 +0530
++Subject: [PATCH] Enterprise acs linux-v4.13
++
++Signed-off-by: Mahesh Bireddy <mahesh.reddybireddy@arm.com>
++---
++ drivers/ata/libahci.c          |   4 +
++ drivers/ata/sata_sil24.c       |   4 +
++ drivers/iommu/Makefile         |   1 +
++ drivers/iommu/dma-iommu.c      |   7 ++
++ drivers/iommu/iommu.c          |   4 +
++ drivers/iommu/sbsa-dma-iommu.c | 198 +++++++++++++++++++++++++++++++++++++++++
++ drivers/irqchip/irq-gic-v3.c   |  16 ++++
++ include/linux/irqdomain.h      |   2 +
++ include/linux/sbsa-iommu.h     |  51 +++++++++++
++ kernel/irq/irqdomain.c         |   1 +
++ 10 files changed, 288 insertions(+)
++ create mode 100644 drivers/iommu/sbsa-dma-iommu.c
++ create mode 100644 include/linux/sbsa-iommu.h
++
++diff --git a/drivers/ata/libahci.c b/drivers/ata/libahci.c
++index 3e286d8..92726e3 100644
++--- a/drivers/ata/libahci.c
+++++ b/drivers/ata/libahci.c
++@@ -1586,6 +1586,9 @@ static void ahci_postreset(struct ata_link *link, unsigned int *class)
++ 	}
++ }
++ 
+++void
+++sbsa_scsi_sata_fill_dma_addr(struct scatterlist *sg);
+++
++ static unsigned int ahci_fill_sg(struct ata_queued_cmd *qc, void *cmd_tbl)
++ {
++ 	struct scatterlist *sg;
++@@ -1597,6 +1600,7 @@ static unsigned int ahci_fill_sg(struct ata_queued_cmd *qc, void *cmd_tbl)
++ 	/*
++ 	 * Next, the S/G list.
++ 	 */
+++	sbsa_scsi_sata_fill_dma_addr(qc->sg);
++ 	for_each_sg(qc->sg, sg, qc->n_elem, si) {
++ 		dma_addr_t addr = sg_dma_address(sg);
++ 		u32 sg_len = sg_dma_len(sg);
++diff --git a/drivers/ata/sata_sil24.c b/drivers/ata/sata_sil24.c
++index 4b1995e..3a9f6be 100644
++--- a/drivers/ata/sata_sil24.c
+++++ b/drivers/ata/sata_sil24.c
++@@ -776,6 +776,9 @@ static int sil24_hardreset(struct ata_link *link, unsigned int *class,
++ 	return -EIO;
++ }
++ 
+++void
+++sbsa_scsi_sata_fill_dma_addr(struct scatterlist *sg);
+++
++ static inline void sil24_fill_sg(struct ata_queued_cmd *qc,
++ 				 struct sil24_sge *sge)
++ {
++@@ -783,6 +786,7 @@ static inline void sil24_fill_sg(struct ata_queued_cmd *qc,
++ 	struct sil24_sge *last_sge = NULL;
++ 	unsigned int si;
++ 
+++	sbsa_scsi_sata_fill_dma_addr(qc->sg);
++ 	for_each_sg(qc->sg, sg, qc->n_elem, si) {
++ 		sge->addr = cpu_to_le64(sg_dma_address(sg));
++ 		sge->cnt = cpu_to_le32(sg_dma_len(sg));
++diff --git a/drivers/iommu/Makefile b/drivers/iommu/Makefile
++index 195f7b9..5a3dc9a 100644
++--- a/drivers/iommu/Makefile
+++++ b/drivers/iommu/Makefile
++@@ -2,6 +2,7 @@ obj-$(CONFIG_IOMMU_API) += iommu.o
++ obj-$(CONFIG_IOMMU_API) += iommu-traces.o
++ obj-$(CONFIG_IOMMU_API) += iommu-sysfs.o
++ obj-$(CONFIG_IOMMU_DMA) += dma-iommu.o
+++obj-$(CONFIG_IOMMU_DMA) += sbsa-dma-iommu.o
++ obj-$(CONFIG_IOMMU_IO_PGTABLE) += io-pgtable.o
++ obj-$(CONFIG_IOMMU_IO_PGTABLE_ARMV7S) += io-pgtable-arm-v7s.o
++ obj-$(CONFIG_IOMMU_IO_PGTABLE_LPAE) += io-pgtable-arm.o
++diff --git a/drivers/iommu/dma-iommu.c b/drivers/iommu/dma-iommu.c
++index 9d1cebe..857e07d 100644
++--- a/drivers/iommu/dma-iommu.c
+++++ b/drivers/iommu/dma-iommu.c
++@@ -56,6 +56,13 @@ struct iommu_dma_cookie {
++ 	spinlock_t			msi_lock;
++ };
++ 
+++struct iova_domain *cookie_iovad_sbsa(struct iommu_domain *domain)
+++{
+++    if (domain)
+++	    return &((struct iommu_dma_cookie *)domain->iova_cookie)->iovad;
+++    return NULL;
+++}
+++
++ static inline size_t cookie_msi_granule(struct iommu_dma_cookie *cookie)
++ {
++ 	if (cookie->type == IOMMU_DMA_IOVA_COOKIE)
++diff --git a/drivers/iommu/iommu.c b/drivers/iommu/iommu.c
++index 3f6ea16..fbcd10c 100644
++--- a/drivers/iommu/iommu.c
+++++ b/drivers/iommu/iommu.c
++@@ -34,6 +34,8 @@
++ #include <linux/property.h>
++ #include <trace/events/iommu.h>
++ 
+++#include <linux/sbsa-iommu.h>
+++
++ static struct kset *iommu_group_kset;
++ static DEFINE_IDA(iommu_group_ida);
++ static unsigned int iommu_def_domain_type = IOMMU_DOMAIN_DMA;
++@@ -1530,6 +1532,8 @@ int iommu_map(struct iommu_domain *domain, unsigned long iova,
++ 	}
++ 
++ 	pr_debug("map: iova 0x%lx pa %pa size 0x%zx\n", iova, &paddr, size);
+++	if (sbsa_is_domain_monitored(domain))
+++		sbsa_iommu_iova_save_addr((dma_addr_t)iova, (unsigned int)size);
++ 
++ 	while (size) {
++ 		size_t pgsize = iommu_pgsize(domain, iova | paddr, size);
++diff --git a/drivers/iommu/sbsa-dma-iommu.c b/drivers/iommu/sbsa-dma-iommu.c
++new file mode 100644
++index 0000000..88d9df1
++--- /dev/null
+++++ b/drivers/iommu/sbsa-dma-iommu.c
++@@ -0,0 +1,198 @@
+++/*
+++ * The IOMMU-API to SBSA Architecture Compliance Suite glue layer.
+++ *
+++ * Copyright (C) 2017 ARM Ltd.
+++ *
+++ * This program is free software; you can redistribute it and/or modify
+++ * it under the terms of the GNU General Public License version 2 as
+++ * published by the Free Software Foundation.
+++ *
+++ * This program is distributed in the hope that it will be useful,
+++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+++ * GNU General Public License for more details.
+++ *
+++ * You should have received a copy of the GNU General Public License
+++ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+++ */
+++
+++#include <linux/debugfs.h>
+++#include <linux/device.h>
+++#include <linux/dma-iommu.h>
+++#include <linux/gfp.h>
+++#include <linux/huge_mm.h>
+++#include <linux/iommu.h>
+++#include <linux/iova.h>
+++#include <linux/irq.h>
+++#include <linux/memblock.h>
+++#include <linux/mm.h>
+++#include <linux/pci.h>
+++#include <linux/scatterlist.h>
+++#include <linux/vmalloc.h>
+++#include <linux/property.h>
+++#include <linux/libata.h>
+++
+++#include <linux/sbsa-iommu.h>
+++
+++
+++sbsa_iova_array	g_sbsa_iova_array[SBSA_IOVA_DMA_ARRAY_LEN];
+++
+++struct iommu_domain *g_sbsa_iommu_domain;
+++
+++struct iova_domain *cookie_iovad_sbsa(struct iommu_domain *domain);
+++
+++/**
+++  @brief   This API returns the DMA address for a given index from the active IOVA table.
+++           1. Caller       -  Platform Abstraction Layer.
+++           2. Prerequisite -  None
+++  @param   dev   - device whose domain IOVA table is checked
+++  @param   base     - return DMA address base
+++  @param   in_node  - return first entry if NULL, else continue from in_node
+++  @return  length of the DMA range
+++**/
+++void *
+++sbsa_iommu_dma_get_iova(struct device *dev, unsigned long long *base, unsigned long int *size,
+++    phys_addr_t *phy_addr, void *in_node)
+++{
+++	struct iova_domain *iovad = cookie_iovad_sbsa(iommu_get_domain_for_dev(dev));
+++	unsigned long shift;
+++	struct rb_node *node;
+++
+++    if(!iovad)
+++        return NULL;
+++
+++    shift = iova_shift(iovad);
+++
+++	if (in_node == NULL)
+++		node = rb_last(&iovad->rbroot);
+++	else
+++		node = rb_prev((struct rb_node *)in_node);
+++
+++	while (node)
+++	{
+++		struct iova *iova = container_of(node, struct iova, node);
+++		unsigned long pfn_lo = iova->pfn_lo;
+++		unsigned long pfn_hi = iova->pfn_hi + 1;
+++		phys_addr_t phys = iommu_iova_to_phys(iommu_get_domain_for_dev(dev),
+++					pfn_lo << shift);
+++
+++		if (phys) {
+++			*base = pfn_lo << shift;
+++			*size = (pfn_hi - pfn_lo) << shift;
+++			*phy_addr = phys;
+++			break;
+++		}
+++		node = rb_prev(node);
+++	}
+++	return (void *)node;
+++}
+++EXPORT_SYMBOL(sbsa_iommu_dma_get_iova);
+++
+++/**
+++  @brief   This API is used to indicate which device IOMMU transactions are to be monitored.
+++           1. Caller       -  Platform Abstraction Layer.
+++           2. Prerequisite -  None
+++  @param   dev   - device whose domain IOVA table is checked
+++  @return  None
+++**/
+++void
+++sbsa_iommu_dev_start_monitor(struct device *dev)
+++{
+++	/* We only monitor 1 domain for now */
+++
+++	g_sbsa_iommu_domain = iommu_get_domain_for_dev(dev);
+++}
+++EXPORT_SYMBOL(sbsa_iommu_dev_start_monitor);
+++
+++void
+++sbsa_iommu_dev_stop_monitor(struct device *dev)
+++{
+++	g_sbsa_iommu_domain = NULL;
+++}
+++EXPORT_SYMBOL(sbsa_iommu_dev_stop_monitor);
+++
+++int
+++sbsa_is_domain_monitored(struct iommu_domain *dom)
+++{
+++	if (g_sbsa_iommu_domain == dom)
+++		return 1;
+++
+++	return 0;
+++}
+++
+++void
+++sbsa_iommu_iova_save_addr(dma_addr_t addr, unsigned int length)
+++{
+++
+++	static unsigned int index = 0;
+++
+++	g_sbsa_iova_array[index].dma_addr = addr;
+++	g_sbsa_iova_array[index].dma_len = length;
+++
+++	index++;
+++
+++	if (index >= SBSA_IOVA_DMA_ARRAY_LEN)
+++		index = 0;
+++}
+++
+++/**
+++  @brief   This API returns the DMA address for a given index from the saved IOVA addresses.
+++           1. Caller       -  Platform Abstraction Layer.
+++           2. Prerequisite -  sbsa_iommu_iova_save_addr.
+++  @param   index  - index of the entry
+++  @param   addr   - dma address returned
+++  @return  length of the DMA range
+++**/
+++unsigned int
+++sbsa_iommu_iova_get_addr(unsigned int index, dma_addr_t *addr)
+++{
+++
+++	if (index >= SBSA_IOVA_DMA_ARRAY_LEN)
+++		return 0;
+++
+++	*addr = g_sbsa_iova_array[index].dma_addr;
+++
+++	return g_sbsa_iova_array[index].dma_len;
+++
+++}
+++EXPORT_SYMBOL(sbsa_iommu_iova_get_addr);
+++
+++/**
+++  @brief   This API gets the DMA attributes of a device.
+++           1. Caller       -  Platform Abstraction Layer.
+++           2. Prerequisite -  None.
+++  @param   dev  - device structure.
+++  @return  Coherent or Not.
+++**/
+++enum
+++dev_dma_attr sbsa_dev_get_dma_attr(struct device *dev)
+++{
+++
+++	return device_get_dma_attr(dev);
+++}
+++EXPORT_SYMBOL(sbsa_dev_get_dma_attr);
+++
+++/* SBSA ACS Hook functions to export the DMA address used by the controller */
+++dma_addr_t sbsa_dma_addr;
+++unsigned int sbsa_dma_len;
+++
+++int
+++sbsa_scsi_sata_get_dma_addr(struct ata_port *ap, dma_addr_t *dma_addr, unsigned int *dma_len)
+++{
+++        //Not used struct sil24_port_priv *pp = ap->private_data;
+++
+++        *dma_addr = sbsa_dma_addr;
+++        *dma_len  = sbsa_dma_len;
+++
+++        return 0;
+++}
+++EXPORT_SYMBOL(sbsa_scsi_sata_get_dma_addr);
+++
+++void
+++sbsa_scsi_sata_fill_dma_addr(struct scatterlist *sg)
+++{
+++
+++        sbsa_dma_addr = cpu_to_le64(sg_dma_address(sg));
+++        sbsa_dma_len  = cpu_to_le32(sg_dma_len(sg));
+++}
+++EXPORT_SYMBOL(sbsa_scsi_sata_fill_dma_addr);
++diff --git a/drivers/irqchip/irq-gic-v3.c b/drivers/irqchip/irq-gic-v3.c
++index 984c3ec..f0511a6 100644
++--- a/drivers/irqchip/irq-gic-v3.c
+++++ b/drivers/irqchip/irq-gic-v3.c
++@@ -59,6 +59,9 @@ struct gic_chip_data {
++ 	struct partition_desc	*ppi_descs[16];
++ };
++ 
+++/* ACS SDEI Patch */
+++struct irq_domain *sdei_acs_irq_domain = NULL;
+++
++ static struct gic_chip_data gic_data __read_mostly;
++ static struct static_key supports_deactivate = STATIC_KEY_INIT_TRUE;
++ 
++@@ -71,6 +74,14 @@ static struct gic_kvm_info gic_v3_kvm_info;
++ /* Our default, arbitrary priority value. Linux only uses one anyway. */
++ #define DEFAULT_PMR_VALUE	0xf0
++ 
+++struct irq_domain* sdei_acs_get_irq_domain(void)
+++{
+++   if (sdei_acs_irq_domain)
+++	   return sdei_acs_irq_domain;
+++   return 0;
+++}
+++EXPORT_SYMBOL(sdei_acs_get_irq_domain);
+++
++ static inline unsigned int gic_irq(struct irq_data *d)
++ {
++ 	return d->hwirq;
++@@ -844,6 +855,11 @@ static int gic_irq_domain_alloc(struct irq_domain *domain, unsigned int virq,
++ 			return ret;
++ 	}
++ 
+++	/* ACS SDEI Patch */
+++   if (domain) {
+++	   sdei_acs_irq_domain = domain;
+++   }
+++
++ 	return 0;
++ }
++ 
++diff --git a/include/linux/irqdomain.h b/include/linux/irqdomain.h
++index cac77a5..b408182 100644
++--- a/include/linux/irqdomain.h
+++++ b/include/linux/irqdomain.h
++@@ -565,4 +565,6 @@ static inline bool irq_domain_check_msi_remap(void)
++ }
++ #endif /* !CONFIG_IRQ_DOMAIN */
++ 
+++/* ACS SDEI Patch */
+++struct irq_domain* sdei_acs_get_irq_domain(void);
++ #endif /* _LINUX_IRQDOMAIN_H */
++diff --git a/include/linux/sbsa-iommu.h b/include/linux/sbsa-iommu.h
++new file mode 100644
++index 0000000..681d2ce
++--- /dev/null
+++++ b/include/linux/sbsa-iommu.h
++@@ -0,0 +1,51 @@
+++/*
+++ * The IOMMU-API to SBSA Architecture Compliance Suite glue layer.
+++ *
+++ * Copyright (C) 2017 ARM Ltd.
+++ *
+++ * This program is free software; you can redistribute it and/or modify
+++ * it under the terms of the GNU General Public License version 2 as
+++ * published by the Free Software Foundation.
+++ *
+++ * This program is distributed in the hope that it will be useful,
+++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+++ * GNU General Public License for more details.
+++ *
+++ * You should have received a copy of the GNU General Public License
+++ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+++ */
+++
+++#ifndef __SBSA_IOMMU_H
+++#define __SBSA_IOMMU_H
+++
+++#ifdef CONFIG_IOMMU_DMA
+++#include <linux/iommu.h>
+++
+++#include <linux/vmalloc.h>
+++
+++
+++#define SBSA_IOVA_DMA_ARRAY_LEN		4
+++
+++typedef struct _sbsa_iova_array_ {
+++	dma_addr_t	dma_addr;
+++	unsigned int	dma_len;
+++}sbsa_iova_array;
+++
+++void *sbsa_iommu_dma_get_iova(struct device *dev, unsigned long long *base, unsigned long int *size,
+++    phys_addr_t *phy_addr, void *in_node);
+++
+++void sbsa_iommu_dev_start_monitor(struct device *dev);
+++
+++void sbsa_iommu_dev_stop_monitor(struct device *dev);
+++int sbsa_is_domain_monitored(struct iommu_domain *dom);
+++
+++void sbsa_iommu_iova_save_addr(dma_addr_t addr, unsigned int length);
+++
+++unsigned int sbsa_iommu_iova_get_addr(unsigned int index, dma_addr_t *addr);
+++
+++enum dev_dma_attr sbsa_dev_get_dma_attr(struct device *dev);
+++
+++#endif
+++#endif
+++
++diff --git a/kernel/irq/irqdomain.c b/kernel/irq/irqdomain.c
++index f1f2514..d38c125 100644
++--- a/kernel/irq/irqdomain.c
+++++ b/kernel/irq/irqdomain.c
++@@ -1447,6 +1447,7 @@ int __irq_domain_alloc_irqs(struct irq_domain *domain, int irq_base,
++ 	irq_free_descs(virq, nr_irqs);
++ 	return ret;
++ }
+++EXPORT_SYMBOL(__irq_domain_alloc_irqs);
++ 
++ /**
++  * irq_domain_free_irqs - Free IRQ number and associated data structures
++-- 
++2.7.4
++
 diff --git a/meta-luv/recipes-kernel/linux/linux-yocto-efi-test_4.14.bb b/meta-luv/recipes-kernel/linux/linux-yocto-efi-test_4.14.bb
-index f02dfa5..b4b590e 100644
+index f02dfa5465..b4b590efa7 100644
 --- a/meta-luv/recipes-kernel/linux/linux-yocto-efi-test_4.14.bb
 +++ b/meta-luv/recipes-kernel/linux/linux-yocto-efi-test_4.14.bb
 @@ -59,7 +59,7 @@ KERNEL_FEATURES_remove= " features/debug/printk.scc"
@@ -1239,7 +1766,7 @@ index f02dfa5..b4b590e 100644
  
  COMMON_CFG_x86 = " file://qemux86/modules.cfg \
 diff --git a/meta/conf/bitbake.conf b/meta/conf/bitbake.conf
-index 9696273..11d8888 100644
+index 9696273acc..11d8888bea 100644
 --- a/meta/conf/bitbake.conf
 +++ b/meta/conf/bitbake.conf
 @@ -763,7 +763,7 @@ INITRAMFS_FSTYPES ?= "cpio.gz"
@@ -1253,7 +1780,7 @@ index 9696273..11d8888 100644
  MACHINE_TASK_PROVIDER ?= "${DEFAULT_TASK_PROVIDER}"
 diff --git a/sbsa_setup.sh b/sbsa_setup.sh
 new file mode 100755
-index 0000000..505cdc1
+index 0000000000..505cdc1c89
 --- /dev/null
 +++ b/sbsa_setup.sh
 @@ -0,0 +1,41 @@
@@ -1298,6 +1825,51 @@ index 0000000..505cdc1
 +
 +cd $TMPDIR/..
 +rm -rf $TMPDIR
--- 
-2.7.4
-
+diff --git a/sdei_setup.sh b/sdei_setup.sh
+new file mode 100644
+index 0000000000..cca9661aad
+--- /dev/null
++++ b/sdei_setup.sh
+@@ -0,0 +1,42 @@
++
++#!/bin/bash
++# Copyright (c) 2017, ARM Limited or its affiliates. All rights reserved.
++#
++# Licensed under the Apache License, Version 2.0 (the "License");
++# you may not use this file except in compliance with the License.
++# You may obtain a copy of the License at
++#
++#  http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing, software
++# distributed under the License is distributed on an "AS IS" BASIS,
++# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++# See the License for the specific language governing permissions and
++# limitations under the License.
++
++#create tmp directory
++TMPDIR=$PWD/tmp
++LUVDIR=$PWD
++rm -rf $TMPDIR
++mkdir $TMPDIR
++cd $TMPDIR
++#clone linux-acs repo
++git clone git://linux-arm.org/linux-acs.git
++cd linux-acs
++#copy .bb and source files to relevant places
++rm -rf $LUVDIR/meta-luv/recipes-core/sdei-acs-drv
++mv -f sdei-acs-drv $LUVDIR/meta-luv/recipes-core/
++mv -f kernel/src/0001-Enterprise-acs-linux-v4.13.patch $LUVDIR/meta-luv/recipes-kernel/linux/linux-yocto-efi-test/
++
++cd $TMPDIR
++git clone https://github.com/ARM-software/arm-enterprise-acs.git
++cd arm-enterprise-acs/sdei
++mv -f val $LUVDIR/meta-luv/recipes-core/sdei-acs-drv/files/
++mv -f test_pool $LUVDIR/meta-luv/recipes-core/sdei-acs-drv/files/
++
++rm -rf $LUVDIR/meta-luv/recipes-utils/sdei-acs-app
++mkdir -p $LUVDIR/meta-luv/recipes-utils/sdei-acs-app
++mv -f linux_app/* $LUVDIR/meta-luv/recipes-utils/sdei-acs-app
++
++cd $TMPDIR/..
++rm -rf $TMPDIR
