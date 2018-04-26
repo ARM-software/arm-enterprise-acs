@@ -21,14 +21,12 @@
 #include "pal_interface.h"
 #include "val_test_infra.h"
 #ifdef TARGET_LINUX
-  #include "pal_linux.h"
   #define TRUE 1
   #define FALSE 0
   #define CLIENT_EL 0x1
 #else
   #define CLIENT_EL 0x2
 #endif
-
 #include "val_pe.h"
 #define val_print(verbosity, fmt, ...) pal_print(verbosity, fmt, ##__VA_ARGS__)
 #define val_print_raw(string, data) pal_print_raw(string, data)
