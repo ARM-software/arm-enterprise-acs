@@ -1,0 +1,181 @@
+#!/usr/bin/env python
+# Copyright (c) 2017, ARM Limited or its affiliates. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#  http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import sys
+import os
+import re
+import codecs
+
+def log_fwts(d):
+    testCategory = ""
+    testName = ""
+    testPasses = 0
+    testFails = 0
+    testSkips = 0
+    totalPasses = 0
+    totalFails = 0
+    totalSkips = 0
+
+    # Finding latest FWTS results directory.
+    directory = os.listdir(d)
+    fwtsDir = ""
+    for folder in directory:
+        if "luv-results-" in folder and folder > fwtsDir:
+            fwtsDir = folder
+
+    # Opening FWTS raw output file.
+    fwtsRawPath = os.path.join(d, fwtsDir, "raw", "fwts")
+    try:
+        fwtsRaw = open(fwtsRawPath, "r")
+    except IOError:
+        print ("FWTS raw results file \"%s\" could not be opened, skipping." % fwtsRawPath)
+        return -1
+
+    # Printing .MD file header for FWTS results.
+    outFile.write("# FWTS Test Results\n")
+    logs = fwtsRaw.read()
+    outFile.write(logs)
+
+
+def log_sbbr(d):
+    testCategory = ""
+    testName = ""
+    testCase = ""
+    testDescription = ""
+    testPasses = 0
+    testWarnings = 0
+    testErrors = 0
+    totalPasses = 0
+    totalWarnings = 0
+    totalErrors = 0
+
+    # Finding SCT test results.
+    sbbrDir = os.path.join(d, "SCT", "Log")
+    if os.path.isdir(sbbrDir) == False:
+        print ("SBBR SCT results directory \"%s\" not found.  Skipping." % sbbrDir)
+        return -1
+
+    # Printing .MD file header for SCT results.
+    outFile.write("# UEFI SBBR SCT Test Results\n")
+    outFile.write("| Category | Test File | Test Case | Description | Passes | Warnings | Errors |\n")
+    outFile.write("| :--- | :--- | :--- | :--- | ---: | ---: | ---: |\n")
+
+    # Recursively walking through SBBR results folders.
+    for dirpath, dirnames, filenames in os.walk(sbbrDir):
+        for entry in filenames:
+            if ".log" in entry:
+                path, testName = os.path.split(dirpath)
+                testName = testName.split("0")[0]
+                path, testCategory = os.path.split(path)
+                with codecs.open(os.path.join(dirpath, entry), mode="r", encoding="utf-16") as logfile:
+                    i = 1
+                    while True:
+                        line = logfile.readline()
+                        if line == "":
+                            break
+                        if i == 2:
+                            testCase = line.rstrip()
+                        if i == 11:
+                            testDescription = line.rstrip()
+                        if "Passes..........." in line:
+                            testPasses = int(line.split()[1])
+                        if "Warnings........." in line:
+                            testWarnings = int(line.split()[1])
+                        if "Errors..........." in line:
+                            testErrors = int(line.split()[1])
+                        i = i + 1
+                    outFile.write("| %s | %s | %s | %s | %d | %d | %d |\n" % (testCategory, testName, testCase, testDescription, testPasses, testWarnings, testErrors))
+                    totalPasses = totalPasses + testPasses
+                    totalWarnings = totalWarnings + testWarnings
+                    totalErrors = totalErrors + testErrors
+
+    # Print totals.
+    outFile.write("| Total | | | | %d | %d | %d |" % (totalPasses, totalWarnings, totalErrors))
+
+def log_sbsa(d):
+    sbsaDir = os.path.join(d, "sbsa_results")
+    if os.path.isdir(sbsaDir) == False:
+        print ("SBSA results results directory \"%s\" not found.  Skipping." % sbsaDir)
+        return -1
+
+    uefi = "not found";
+    linux = "not found";
+    for entry in os.listdir(sbsaDir):
+        if(entry == "uefi"):
+            sbsaUefiLogs = os.path.join(sbsaDir, "uefi", "SbsaResults.log")
+            try:
+                f = open(sbsaUefiLogs, "r")
+            except IOError:
+                print ("SBSA UEFI results file \"%s\" could not be opened, skipping." % sbsaUefiLogs)
+                continue
+            logs = f.read()
+            outFile.write("\n\nSBSA UEFI Test Results\n\n")
+            outFile.write(logs)
+            uefi = "collected"
+        if(entry == "linux"):
+            sbsaLinuxLogs = os.path.join(sbsaDir, "linux", "SbsaResults.log")
+            try:
+                f = open(sbsaLinuxLogs, "r")
+            except IOError:
+                print ("SBSA Linux results file \"%s\" could not be opened, skipping." % sbsaLinuxLogs)
+                continue
+            logs = f.read()
+            outFile.write("\n\nSBSA Linux Test Results\n\n")
+            outFile.write(logs)
+            linux = "collected"
+    print ("SBSA Results for linux %s\n" % linux)
+    print ("SBSA Results for UEFI %s\n" % uefi)
+
+# Script entry point.
+
+# This script needs to be run on a stripped out yocto distribution so we can't use argparse.
+if "-h" in sys.argv or "--help" in sys.argv:
+    print ("Usage:")
+    print (" python %s [-h] LUV_RESULTS OUTPUT_FILE" % sys.argv[0])
+    print ("Options:")
+    print (" -h, --help              Display this help and exit.")
+    print (" LUV_RESULTS             Path to luv-results directory/drive.")
+    print (" OUTPUT_FILE             File for script output, must have .md file extension.")
+    exit()
+
+arg_directory = sys.argv[1]
+arg_output = sys.argv[2]
+
+# Validating parameter and opening output file.
+filename, fileext = os.path.splitext(arg_output)
+if fileext != ".md" and fileext != ".MD":
+    print ("Output file must have .md file extension. Exiting.")
+    exit()
+try:
+    outFile = open(arg_output, "w")
+except IOError:
+    print ("Could not open \"%s\" for writing. Exiting." % arg_output)
+    exit()
+
+# Scanning FWTS.
+print ("Gathering FWTS test results...")
+log_fwts(arg_directory)
+
+# Scanning SBBR.
+print ("Gathering UEFI SBBR SCT test results...")
+log_sbbr(arg_directory)
+
+# Scanning SBSA.
+print ("Gathering SBSA test results...")
+log_sbsa(arg_directory)
+
+outFile.close()
+
+print ("Done, test results can be found in \"%s\"" % arg_output)

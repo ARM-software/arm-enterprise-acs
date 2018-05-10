@@ -1,13 +1,9 @@
-# SBSA ACS Testcase checklist
-Please refer https://github.com/ARM-software/sbsa-acs/blob/master/docs/testcase-checklist.md
+# SBBR ACS Testcase checklist <br/>
 
-
-# SBBR ACS Testcase checklist
 
 | Component | Test assertion | SCT/FWTS | SBBR Section |
 | :--- | ---: | ---: | ---: |
 | UEFI - BOOT SERVICES | Memory map will be identified. | SCT | 3.4.1 |
-| UEFI - BOOT SERVICES | All devices and memories that are described in the UEFI memory map must be 64Kb aligned. | SCT | 3.4.1 |
 | UEFI - BOOT SERVICES | Default RAM attribute must be EFI_MEMORY_WB. | SCT | 3.4.1 |
 | UEFI - BOOT SERVICES | EFI_ACPI_60_TABLE_GUID must be present in system configuration table. | SCT, FWTS | 3.4.4 |
 | UEFI - BOOT SERVICES | SMBIOS3_TABLE_GUID must be present in system configuration table. | SCT, FWTS | 3.4.4 |
@@ -24,7 +20,6 @@ Please refer https://github.com/ARM-software/sbsa-acs/blob/master/docs/testcase-
 | UEFI - BOOT SERVICES | EFI_FREE_PAGES tests | SCT | Appendix A  5.1.2.2.* |
 | UEFI - BOOT SERVICES | EFI_GET_MEMORY_MAP tests | SCT | Appendix A  5.1.2.3.* |
 | UEFI - BOOT SERVICES | EFI_ALLOCATE_POOL tests | SCT | Appendix A  5.1.2.4.* |
-| UEFI - BOOT SERVICES | EFI_FREE_POOL tests | SCT | Appendix A  5.1.2.5* |
 | UEFI - BOOT SERVICES | EFI_INSTALL_PROTOCOL_INTERFACE tests | SCT | Appendix A  5.1.3.1.* |
 | UEFI - BOOT SERVICES | EFI_UNINSTALL_PROTOCL_INTERFACE tests | SCT | Appendix A  5.1.3.2.* |
 | UEFI - BOOT SERVICES | EFI_REINSTALL_PROTOCOL_INTERFACE tests |  SCT | Appendix A  5.1.3.3.* |
@@ -113,9 +108,10 @@ Please refer https://github.com/ARM-software/sbsa-acs/blob/master/docs/testcase-
 | UEFI - PROTOCOLS | EFI_UDP6_SERVICE_BINDING_PROTOCOL | SCT | Appendix D  5.26.3.1-8.* |
 | UEFI - PROTOCOLS | EFI_VLAN_CONFIG_PROTOCOL | SCT | Appendix D  5.27.1.1-3.* |
 | UEFI - PROTOCOLS | EFI_ISCSI_INITIATOR_NAME_PROTOCOL | SCT | Appendix D  5.17.1-2.1.* |
-| UEFI - PROTOCOLS | EFI_EBC_PROTOCOL | SCT | Appendix D  5.15.1.1-4.* |
-| ACPI | ACPI must be compliant with version 5.1 or later. | FWTS | 4.1 |
-| ACPI | ACPI must be compliant with version 6.0 or later. | FWTS | 4.1 |
+| UEFI - PROTOCOLS | EFI_GRAPHICS_OUTPUT_PROTOCOL | SCT | 3.3.5 |
+| UEFI - PROTOCOLS | EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL | SCT | 3.3.6 |
+| UEFI - PROTOCOLS | EFI_PCI_IO_PROTOCOL | SCT | 3.3.6 |
+| ACPI | ACPI must be compliant with version 6.2 or later. | FWTS | 4.1 |
 | ACPI | Implement the HW-Reduced ACPI model. | FWTS | 4.1 |
 | ACPI | Warn if legacy HW interfaces are supported as it should be HW reduced platform. | FWTS | 4.1/4.2.1.3 |
 | ACPI | Provide GPIO signalled events for runtime notifications to OSPM. | FWTS | 4.1 |
@@ -138,8 +134,16 @@ Please refer https://github.com/ARM-software/sbsa-acs/blob/master/docs/testcase-
 | ACPI | WARN if SPMI is not present. | FWTS | Appendix E  4.2.2 |
 | ACPI | WARN if SLIT is not present. | FWTS | Appendix E  4.2.2 |
 | ACPI | WARN if SRAT is not present. | FWTS | Appendix E  4.2.2 |
-| ACPI | WARN if MPST is not present. | FWTS | Appendix E  4.2.2 |
 | ACPI | WARN if PCCT is not present. | FWTS | Appendix E  4.2.2 |
+| ACPI | WARN if SPMI is not present. | FWTS | Appendix E  4.2.2 |
+| ACPI | WARN if IORT is not present. | FWTS | Appendix E  4.2.2 |
+| ACPI | WARN if SDEI is not present. | FWTS | Appendix E  4.2.2 |
+| ACPI | WARN if IORT is not present. | FWTS | Appendix E  4.2.2 |
+| ACPI | WARN if PPTT is not present. | FWTS | Appendix E  4.2.2 |
+| ACPI | WARN if PDTT is not present. | FWTS | Appendix E  4.2.2 |
+| ACPI | WARN if PDTT is not present. | FWTS | Appendix E  4.2.2 |
+| ACPI | WARN if NFIT is not present. | FWTS | Appendix E  4.2.2 |
+| ACPI | WARN if HMAT is not present. | FWTS | Appendix E  4.2.2 |
 | ACPI | Platforms define processors as devices (not using Processor keyword) in under the _SB namespace. | FWTS | 4.4.1 |
 | ACPI | The _PR namespace is not used to define processors. | FWTS | 4.4.1 |
 | ACPI | _SST must be provided. | FWTS | 4.4.1 |
@@ -157,10 +161,16 @@ Please refer https://github.com/ARM-software/sbsa-acs/blob/master/docs/testcase-
 | ACPI | WARN if there are no _PXM is present. | FWTS | Appendix F |
 | ACPI | WARN if there are no _SLI is present. | FWTS | Appendix F |
 | ACPI | WARN if there are no _CID is present. | FWTS | Appendix F |
+| ACPI | WARN if there are no _HMA is present. | FWTS | Appendix F |
 | ACPI | Warn for devices that lack an _INI. | FWTS | Appendix F |
 | ACPI | Warn is _MLS or _STR are lacking in a device. | FWTS | Appendix F |
 | ACPI | Warn is _PRS is missing for a device. | FWTS | Appendix F |
 | ACPI | Warn if _SRS is missing for a device. | FWTS | Appendix F |
+| ACPI | Interrupt-signaled Events or GPIO-Signaled Events must be provided | FWTS | 4.1 |
+| ACPI | _AEI and _EVT methods must be provided for GPIO-signaled event | FWTS | 4.4.3 |
+| ACPI | Generic Event Devices with _CRS and _EVT methods for Interrupt-signaled events | FWTS | 4.4.4 |
+| ACPI | No WordIo type Address space descriptor for Host to PCI I/O bus. Translation type should be TypeTranslation. | FWTS | 4.4.5 |
+| ACPI | SDEI notification type support in APEI HEST table | FWTS | 4.5 |
 | SMBIOS | UEFI uses SMBIOS_TABLE_GUID to identify the SMBIOS table. | SCT | 5.1.1 |
 | SMBIOS | UEFI uses SMBIOS3_TABLE_GUID to identify the SMBIOS table. | SCT | 5.1.1 |
 | SMBIOS | UEFI uses the EfiRuntimeServicesData type for the system memory region containing the SMBIOS tables. | SCT | 5.1.1 |
@@ -180,5 +190,6 @@ Please refer https://github.com/ARM-software/sbsa-acs/blob/master/docs/testcase-
 | SMBIOS | Type32: System Boot Information (REQUIRED) | FWTS | 5.2.15 |
 | SMBIOS | Type38: IPMI Device Information (REQUIRED for platforms with IPMI BMC Host Interface) | FWTS | 5.2.16 |
 | SMBIOS | Type41: Onboard Devices Extended Information (RECOMMENDED) | FWTS | 5.2.17 |
+| SMBIOS | Redfish Host interface support (RECOMMENDED) | FWTS | 5.2.18 |
 | ACPI | FADT.ARM boot flags.PSCI xor MADT.GICC.PPV must be present. | FWTS | 6 |
 

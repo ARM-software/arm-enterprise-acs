@@ -1,4 +1,4 @@
-#! /bin/bash
+#!/bin/bash
 # Copyright (c) 2017, ARM Limited or its affiliates. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,27 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-./check_deps.sh
-if [ $? != 0 ]
-then
-    echo -e "\nDependencies have not been met to successfully download the software."
-    echo -e "\nWould you like to install the dependencies? [Y/N]"
-    read input
-    INSTALL=${input^^}
-    if [ "${INSTALL}" == "Y" ]
-    then
-        echo -e "Installing dependencies."
-        sudo ./check_deps.sh -ip
-        if [ $? != 0 ]
-        then
-            echo -e "$(tput setaf 1)Dependencies install failed. Exiting.$(tput sgr 0)"
-            exit
-        fi
-    else
-        exit
-    fi
-fi
-
-./luvos/scripts/setup.sh
-./sbbr/scripts/setup.sh
-./sbsa/scripts/setup.sh
+LUVDIR=$PWD/luv
+TOPDIR=$PWD
+rm -rf $LUVDIR
+git clone https://github.com/intel/luv-yocto.git luv
+cd $LUVDIR
+git checkout -b v2.2 v2.2
+git am $TOPDIR/luvos/patches/luvos.patch
+cd $TOPDIR
+ln -s $TOPDIR/luvos/scripts/luv-collect-results $LUVDIR/meta-luv/recipes-core/luv-test/luv-test/luv-collect-results
+ln -s $TOPDIR/luvos/scripts/luv-sbsa-test $LUVDIR/meta-luv/recipes-core/luv-test/luv-test/luv-sbsa-test
+ln -s $TOPDIR/luvos/patches/0001-Enterprise-acs-linux-v4.13.patch $LUVDIR/meta-luv/recipes-kernel/linux/linux-yocto-efi-test/

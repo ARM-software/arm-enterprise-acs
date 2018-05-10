@@ -1,4 +1,4 @@
-#! /bin/bash
+#!/bin/bash
 # Copyright (c) 2017, ARM Limited or its affiliates. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,27 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-./check_deps.sh
-if [ $? != 0 ]
-then
-    echo -e "\nDependencies have not been met to successfully download the software."
-    echo -e "\nWould you like to install the dependencies? [Y/N]"
-    read input
-    INSTALL=${input^^}
-    if [ "${INSTALL}" == "Y" ]
-    then
-        echo -e "Installing dependencies."
-        sudo ./check_deps.sh -ip
-        if [ $? != 0 ]
-        then
-            echo -e "$(tput setaf 1)Dependencies install failed. Exiting.$(tput sgr 0)"
-            exit
-        fi
-    else
-        exit
-    fi
-fi
+LUVDIR=$PWD/luv
 
-./luvos/scripts/setup.sh
-./sbbr/scripts/setup.sh
-./sbsa/scripts/setup.sh
+rm -rf $LUVDIR/meta-luv/recipes-bsp/sbbr
+mkdir -p $LUVDIR/meta-luv/recipes-bsp/sbbr/files
+ln -s $PWD/sbbr/scripts/sbbr.bb $LUVDIR/meta-luv/recipes-bsp/sbbr/sbbr.bb
+ln -s $PWD/sbbr/patches/sbbr-sct.patch $LUVDIR/meta-luv/recipes-bsp/sbbr/files/sbbr-sct.patch
+ln -s $PWD/sbbr/patches/sbbr-fwts.patch $LUVDIR/meta-luv/recipes-core/fwts/fwts/sbbr-fwts.patch

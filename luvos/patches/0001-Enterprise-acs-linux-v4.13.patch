@@ -1,0 +1,445 @@
+From fc3522aafe399798231a402b90398d60b26bbd3c Mon Sep 17 00:00:00 2001
+From: Mahesh Bireddy <mahesh.reddybireddy@arm.com>
+Date: Tue, 20 Feb 2018 10:54:07 +0530
+Subject: [PATCH] Enterprise acs linux-v4.13
+
+Signed-off-by: Mahesh Bireddy <mahesh.reddybireddy@arm.com>
+---
+ drivers/ata/libahci.c          |   4 +
+ drivers/ata/sata_sil24.c       |   4 +
+ drivers/iommu/Makefile         |   1 +
+ drivers/iommu/dma-iommu.c      |   7 ++
+ drivers/iommu/iommu.c          |   4 +
+ drivers/iommu/sbsa-dma-iommu.c | 198 +++++++++++++++++++++++++++++++++++++++++
+ drivers/irqchip/irq-gic-v3.c   |  16 ++++
+ include/linux/irqdomain.h      |   2 +
+ include/linux/sbsa-iommu.h     |  51 +++++++++++
+ kernel/irq/irqdomain.c         |   1 +
+ 10 files changed, 288 insertions(+)
+ create mode 100644 drivers/iommu/sbsa-dma-iommu.c
+ create mode 100644 include/linux/sbsa-iommu.h
+
+diff --git a/drivers/ata/libahci.c b/drivers/ata/libahci.c
+index 3e286d8..92726e3 100644
+--- a/drivers/ata/libahci.c
++++ b/drivers/ata/libahci.c
+@@ -1586,6 +1586,9 @@ static void ahci_postreset(struct ata_link *link, unsigned int *class)
+ 	}
+ }
+ 
++void
++sbsa_scsi_sata_fill_dma_addr(struct scatterlist *sg);
++
+ static unsigned int ahci_fill_sg(struct ata_queued_cmd *qc, void *cmd_tbl)
+ {
+ 	struct scatterlist *sg;
+@@ -1597,6 +1600,7 @@ static unsigned int ahci_fill_sg(struct ata_queued_cmd *qc, void *cmd_tbl)
+ 	/*
+ 	 * Next, the S/G list.
+ 	 */
++	sbsa_scsi_sata_fill_dma_addr(qc->sg);
+ 	for_each_sg(qc->sg, sg, qc->n_elem, si) {
+ 		dma_addr_t addr = sg_dma_address(sg);
+ 		u32 sg_len = sg_dma_len(sg);
+diff --git a/drivers/ata/sata_sil24.c b/drivers/ata/sata_sil24.c
+index 4b1995e..3a9f6be 100644
+--- a/drivers/ata/sata_sil24.c
++++ b/drivers/ata/sata_sil24.c
+@@ -776,6 +776,9 @@ static int sil24_hardreset(struct ata_link *link, unsigned int *class,
+ 	return -EIO;
+ }
+ 
++void
++sbsa_scsi_sata_fill_dma_addr(struct scatterlist *sg);
++
+ static inline void sil24_fill_sg(struct ata_queued_cmd *qc,
+ 				 struct sil24_sge *sge)
+ {
+@@ -783,6 +786,7 @@ static inline void sil24_fill_sg(struct ata_queued_cmd *qc,
+ 	struct sil24_sge *last_sge = NULL;
+ 	unsigned int si;
+ 
++	sbsa_scsi_sata_fill_dma_addr(qc->sg);
+ 	for_each_sg(qc->sg, sg, qc->n_elem, si) {
+ 		sge->addr = cpu_to_le64(sg_dma_address(sg));
+ 		sge->cnt = cpu_to_le32(sg_dma_len(sg));
+diff --git a/drivers/iommu/Makefile b/drivers/iommu/Makefile
+index 195f7b9..5a3dc9a 100644
+--- a/drivers/iommu/Makefile
++++ b/drivers/iommu/Makefile
+@@ -2,6 +2,7 @@ obj-$(CONFIG_IOMMU_API) += iommu.o
+ obj-$(CONFIG_IOMMU_API) += iommu-traces.o
+ obj-$(CONFIG_IOMMU_API) += iommu-sysfs.o
+ obj-$(CONFIG_IOMMU_DMA) += dma-iommu.o
++obj-$(CONFIG_IOMMU_DMA) += sbsa-dma-iommu.o
+ obj-$(CONFIG_IOMMU_IO_PGTABLE) += io-pgtable.o
+ obj-$(CONFIG_IOMMU_IO_PGTABLE_ARMV7S) += io-pgtable-arm-v7s.o
+ obj-$(CONFIG_IOMMU_IO_PGTABLE_LPAE) += io-pgtable-arm.o
+diff --git a/drivers/iommu/dma-iommu.c b/drivers/iommu/dma-iommu.c
+index 9d1cebe..857e07d 100644
+--- a/drivers/iommu/dma-iommu.c
++++ b/drivers/iommu/dma-iommu.c
+@@ -56,6 +56,13 @@ struct iommu_dma_cookie {
+ 	spinlock_t			msi_lock;
+ };
+ 
++struct iova_domain *cookie_iovad_sbsa(struct iommu_domain *domain)
++{
++    if (domain)
++	    return &((struct iommu_dma_cookie *)domain->iova_cookie)->iovad;
++    return NULL;
++}
++
+ static inline size_t cookie_msi_granule(struct iommu_dma_cookie *cookie)
+ {
+ 	if (cookie->type == IOMMU_DMA_IOVA_COOKIE)
+diff --git a/drivers/iommu/iommu.c b/drivers/iommu/iommu.c
+index 3f6ea16..fbcd10c 100644
+--- a/drivers/iommu/iommu.c
++++ b/drivers/iommu/iommu.c
+@@ -34,6 +34,8 @@
+ #include <linux/property.h>
+ #include <trace/events/iommu.h>
+ 
++#include <linux/sbsa-iommu.h>
++
+ static struct kset *iommu_group_kset;
+ static DEFINE_IDA(iommu_group_ida);
+ static unsigned int iommu_def_domain_type = IOMMU_DOMAIN_DMA;
+@@ -1530,6 +1532,8 @@ int iommu_map(struct iommu_domain *domain, unsigned long iova,
+ 	}
+ 
+ 	pr_debug("map: iova 0x%lx pa %pa size 0x%zx\n", iova, &paddr, size);
++	if (sbsa_is_domain_monitored(domain))
++		sbsa_iommu_iova_save_addr((dma_addr_t)iova, (unsigned int)size);
+ 
+ 	while (size) {
+ 		size_t pgsize = iommu_pgsize(domain, iova | paddr, size);
+diff --git a/drivers/iommu/sbsa-dma-iommu.c b/drivers/iommu/sbsa-dma-iommu.c
+new file mode 100644
+index 0000000..88d9df1
+--- /dev/null
++++ b/drivers/iommu/sbsa-dma-iommu.c
+@@ -0,0 +1,198 @@
++/*
++ * The IOMMU-API to SBSA Architecture Compliance Suite glue layer.
++ *
++ * Copyright (C) 2017 ARM Ltd.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
++ */
++
++#include <linux/debugfs.h>
++#include <linux/device.h>
++#include <linux/dma-iommu.h>
++#include <linux/gfp.h>
++#include <linux/huge_mm.h>
++#include <linux/iommu.h>
++#include <linux/iova.h>
++#include <linux/irq.h>
++#include <linux/memblock.h>
++#include <linux/mm.h>
++#include <linux/pci.h>
++#include <linux/scatterlist.h>
++#include <linux/vmalloc.h>
++#include <linux/property.h>
++#include <linux/libata.h>
++
++#include <linux/sbsa-iommu.h>
++
++
++sbsa_iova_array	g_sbsa_iova_array[SBSA_IOVA_DMA_ARRAY_LEN];
++
++struct iommu_domain *g_sbsa_iommu_domain;
++
++struct iova_domain *cookie_iovad_sbsa(struct iommu_domain *domain);
++
++/**
++  @brief   This API returns the DMA address for a given index from the active IOVA table.
++           1. Caller       -  Platform Abstraction Layer.
++           2. Prerequisite -  None
++  @param   dev   - device whose domain IOVA table is checked
++  @param   base     - return DMA address base
++  @param   in_node  - return first entry if NULL, else continue from in_node
++  @return  length of the DMA range
++**/
++void *
++sbsa_iommu_dma_get_iova(struct device *dev, unsigned long long *base, unsigned long int *size,
++    phys_addr_t *phy_addr, void *in_node)
++{
++	struct iova_domain *iovad = cookie_iovad_sbsa(iommu_get_domain_for_dev(dev));
++	unsigned long shift;
++	struct rb_node *node;
++
++    if(!iovad)
++        return NULL;
++
++    shift = iova_shift(iovad);
++
++	if (in_node == NULL)
++		node = rb_last(&iovad->rbroot);
++	else
++		node = rb_prev((struct rb_node *)in_node);
++
++	while (node)
++	{
++		struct iova *iova = container_of(node, struct iova, node);
++		unsigned long pfn_lo = iova->pfn_lo;
++		unsigned long pfn_hi = iova->pfn_hi + 1;
++		phys_addr_t phys = iommu_iova_to_phys(iommu_get_domain_for_dev(dev),
++					pfn_lo << shift);
++
++		if (phys) {
++			*base = pfn_lo << shift;
++			*size = (pfn_hi - pfn_lo) << shift;
++			*phy_addr = phys;
++			break;
++		}
++		node = rb_prev(node);
++	}
++	return (void *)node;
++}
++EXPORT_SYMBOL(sbsa_iommu_dma_get_iova);
++
++/**
++  @brief   This API is used to indicate which device IOMMU transactions are to be monitored.
++           1. Caller       -  Platform Abstraction Layer.
++           2. Prerequisite -  None
++  @param   dev   - device whose domain IOVA table is checked
++  @return  None
++**/
++void
++sbsa_iommu_dev_start_monitor(struct device *dev)
++{
++	/* We only monitor 1 domain for now */
++
++	g_sbsa_iommu_domain = iommu_get_domain_for_dev(dev);
++}
++EXPORT_SYMBOL(sbsa_iommu_dev_start_monitor);
++
++void
++sbsa_iommu_dev_stop_monitor(struct device *dev)
++{
++	g_sbsa_iommu_domain = NULL;
++}
++EXPORT_SYMBOL(sbsa_iommu_dev_stop_monitor);
++
++int
++sbsa_is_domain_monitored(struct iommu_domain *dom)
++{
++	if (g_sbsa_iommu_domain == dom)
++		return 1;
++
++	return 0;
++}
++
++void
++sbsa_iommu_iova_save_addr(dma_addr_t addr, unsigned int length)
++{
++
++	static unsigned int index = 0;
++
++	g_sbsa_iova_array[index].dma_addr = addr;
++	g_sbsa_iova_array[index].dma_len = length;
++
++	index++;
++
++	if (index >= SBSA_IOVA_DMA_ARRAY_LEN)
++		index = 0;
++}
++
++/**
++  @brief   This API returns the DMA address for a given index from the saved IOVA addresses.
++           1. Caller       -  Platform Abstraction Layer.
++           2. Prerequisite -  sbsa_iommu_iova_save_addr.
++  @param   index  - index of the entry
++  @param   addr   - dma address returned
++  @return  length of the DMA range
++**/
++unsigned int
++sbsa_iommu_iova_get_addr(unsigned int index, dma_addr_t *addr)
++{
++
++	if (index >= SBSA_IOVA_DMA_ARRAY_LEN)
++		return 0;
++
++	*addr = g_sbsa_iova_array[index].dma_addr;
++
++	return g_sbsa_iova_array[index].dma_len;
++
++}
++EXPORT_SYMBOL(sbsa_iommu_iova_get_addr);
++
++/**
++  @brief   This API gets the DMA attributes of a device.
++           1. Caller       -  Platform Abstraction Layer.
++           2. Prerequisite -  None.
++  @param   dev  - device structure.
++  @return  Coherent or Not.
++**/
++enum
++dev_dma_attr sbsa_dev_get_dma_attr(struct device *dev)
++{
++
++	return device_get_dma_attr(dev);
++}
++EXPORT_SYMBOL(sbsa_dev_get_dma_attr);
++
++/* SBSA ACS Hook functions to export the DMA address used by the controller */
++dma_addr_t sbsa_dma_addr;
++unsigned int sbsa_dma_len;
++
++int
++sbsa_scsi_sata_get_dma_addr(struct ata_port *ap, dma_addr_t *dma_addr, unsigned int *dma_len)
++{
++        //Not used struct sil24_port_priv *pp = ap->private_data;
++
++        *dma_addr = sbsa_dma_addr;
++        *dma_len  = sbsa_dma_len;
++
++        return 0;
++}
++EXPORT_SYMBOL(sbsa_scsi_sata_get_dma_addr);
++
++void
++sbsa_scsi_sata_fill_dma_addr(struct scatterlist *sg)
++{
++
++        sbsa_dma_addr = cpu_to_le64(sg_dma_address(sg));
++        sbsa_dma_len  = cpu_to_le32(sg_dma_len(sg));
++}
++EXPORT_SYMBOL(sbsa_scsi_sata_fill_dma_addr);
+diff --git a/drivers/irqchip/irq-gic-v3.c b/drivers/irqchip/irq-gic-v3.c
+index 984c3ec..f0511a6 100644
+--- a/drivers/irqchip/irq-gic-v3.c
++++ b/drivers/irqchip/irq-gic-v3.c
+@@ -59,6 +59,9 @@ struct gic_chip_data {
+ 	struct partition_desc	*ppi_descs[16];
+ };
+ 
++/* ACS SDEI Patch */
++struct irq_domain *sdei_acs_irq_domain = NULL;
++
+ static struct gic_chip_data gic_data __read_mostly;
+ static struct static_key supports_deactivate = STATIC_KEY_INIT_TRUE;
+ 
+@@ -71,6 +74,14 @@ static struct gic_kvm_info gic_v3_kvm_info;
+ /* Our default, arbitrary priority value. Linux only uses one anyway. */
+ #define DEFAULT_PMR_VALUE	0xf0
+ 
++struct irq_domain* sdei_acs_get_irq_domain(void)
++{
++   if (sdei_acs_irq_domain)
++	   return sdei_acs_irq_domain;
++   return 0;
++}
++EXPORT_SYMBOL(sdei_acs_get_irq_domain);
++
+ static inline unsigned int gic_irq(struct irq_data *d)
+ {
+ 	return d->hwirq;
+@@ -844,6 +855,11 @@ static int gic_irq_domain_alloc(struct irq_domain *domain, unsigned int virq,
+ 			return ret;
+ 	}
+ 
++	/* ACS SDEI Patch */
++   if (domain) {
++	   sdei_acs_irq_domain = domain;
++   }
++
+ 	return 0;
+ }
+ 
+diff --git a/include/linux/irqdomain.h b/include/linux/irqdomain.h
+index cac77a5..b408182 100644
+--- a/include/linux/irqdomain.h
++++ b/include/linux/irqdomain.h
+@@ -565,4 +565,6 @@ static inline bool irq_domain_check_msi_remap(void)
+ }
+ #endif /* !CONFIG_IRQ_DOMAIN */
+ 
++/* ACS SDEI Patch */
++struct irq_domain* sdei_acs_get_irq_domain(void);
+ #endif /* _LINUX_IRQDOMAIN_H */
+diff --git a/include/linux/sbsa-iommu.h b/include/linux/sbsa-iommu.h
+new file mode 100644
+index 0000000..681d2ce
+--- /dev/null
++++ b/include/linux/sbsa-iommu.h
+@@ -0,0 +1,51 @@
++/*
++ * The IOMMU-API to SBSA Architecture Compliance Suite glue layer.
++ *
++ * Copyright (C) 2017 ARM Ltd.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
++ */
++
++#ifndef __SBSA_IOMMU_H
++#define __SBSA_IOMMU_H
++
++#ifdef CONFIG_IOMMU_DMA
++#include <linux/iommu.h>
++
++#include <linux/vmalloc.h>
++
++
++#define SBSA_IOVA_DMA_ARRAY_LEN		4
++
++typedef struct _sbsa_iova_array_ {
++	dma_addr_t	dma_addr;
++	unsigned int	dma_len;
++}sbsa_iova_array;
++
++void *sbsa_iommu_dma_get_iova(struct device *dev, unsigned long long *base, unsigned long int *size,
++    phys_addr_t *phy_addr, void *in_node);
++
++void sbsa_iommu_dev_start_monitor(struct device *dev);
++
++void sbsa_iommu_dev_stop_monitor(struct device *dev);
++int sbsa_is_domain_monitored(struct iommu_domain *dom);
++
++void sbsa_iommu_iova_save_addr(dma_addr_t addr, unsigned int length);
++
++unsigned int sbsa_iommu_iova_get_addr(unsigned int index, dma_addr_t *addr);
++
++enum dev_dma_attr sbsa_dev_get_dma_attr(struct device *dev);
++
++#endif
++#endif
++
+diff --git a/kernel/irq/irqdomain.c b/kernel/irq/irqdomain.c
+index f1f2514..d38c125 100644
+--- a/kernel/irq/irqdomain.c
++++ b/kernel/irq/irqdomain.c
+@@ -1447,6 +1447,7 @@ int __irq_domain_alloc_irqs(struct irq_domain *domain, int irq_base,
+ 	irq_free_descs(virq, nr_irqs);
+ 	return ret;
+ }
++EXPORT_SYMBOL(__irq_domain_alloc_irqs);
+ 
+ /**
+  * irq_domain_free_irqs - Free IRQ number and associated data structures
+-- 
+2.7.4
+

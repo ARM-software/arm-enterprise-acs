@@ -1,4 +1,4 @@
-#! /bin/bash
+#!/usr/bin/env bash
 # Copyright (c) 2017, ARM Limited or its affiliates. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,27 +13,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-./check_deps.sh
-if [ $? != 0 ]
-then
-    echo -e "\nDependencies have not been met to successfully download the software."
-    echo -e "\nWould you like to install the dependencies? [Y/N]"
-    read input
-    INSTALL=${input^^}
-    if [ "${INSTALL}" == "Y" ]
-    then
-        echo -e "Installing dependencies."
-        sudo ./check_deps.sh -ip
-        if [ $? != 0 ]
-        then
-            echo -e "$(tput setaf 1)Dependencies install failed. Exiting.$(tput sgr 0)"
-            exit
-        fi
-    else
-        exit
-    fi
-fi
+cd ${1}/edk2
 
-./luvos/scripts/setup.sh
-./sbbr/scripts/setup.sh
-./sbsa/scripts/setup.sh
+export GCC49_AARCH64_PREFIX=${1}/gcc-linaro-5.3.1-2016.05-x86_64_aarch64-linux-gnu/bin/aarch64-linux-gnu-
+
+echo "do_compile: Initializing EDK2 for building."
+set --
+source edksetup.sh
+
+echo "do_compile: Building BaseTools."
+make -C BaseTools/Source/C
+
+echo "do_compile: Building SBSA."
+source AppPkg/Applications/sbsa-acs/tools/scripts/avsbuild.sh
