@@ -1,12 +1,11 @@
-
-# ARM Enterprise ACS - Architecture Compliance Suite
+# Arm Enterprise ACS - Architecture Compliance Suite
 
 ## Architecture Compliance Suite
-Architecture Compliance Suite (ACS) is used to ensure architectural compliance across different implementations of the architecture. ARM Enterprise ACS includes a set of examples of the invariant behaviours that are provided by a set of specifications for enterprise systems (e.g. SBSA, SBBR, etc.), so that implementers can verify if these behaviours have been interpreted correctly. ACS is delivered with tests in source form along with a build script, the output of the build being a bootable Linux UEFI Validation (LUV) OS image that can run all tests required by these specifications.
+Architecture Compliance Suite (ACS) is used to ensure architectural compliance across different implementations of the architecture. Arm Enterprise ACS includes a set of examples of the invariant behaviours that are provided by a set of specifications for enterprise systems (e.g. SBSA, SBBR, etc.), so that implementers can verify if these behaviours have been interpreted correctly. ACS is delivered with tests in source form along with a build script, the output of the build being a bootable Linux UEFI Validation (LUV) OS image that can run all tests required by these specifications.
 
-ARM Enterprise ACS tests are available open source. The tests and the corresponding abstraction layers are available with an Apache v2 license allowing for external contribution.
+Arm Enterprise ACS tests are available open source. The tests and the corresponding abstraction layers are available with an Apache v2 license allowing for external contribution.
 
-In summary, the ARM Enterprise ACS product contains the following: <ol>
+In summary, the Arm Enterprise ACS product contains the following: <ol>
 1. Scripts to build, construct, and run the test images. <br />
 2. A bootable LUV OS image capable of running all tests. <br />
 3. Documentation on running the tests. <br /> </ol>
@@ -16,7 +15,7 @@ These tests are split between UEFI and Linux (supported by corresponding kernel 
 ## Release details
  - Code Quality: DEV v2.0
  - The compliance suite is not a substitute for design verification.
- - To review the ACS logs, ARM licensees can contact ARM directly through their partner managers.
+ - To review the ACS logs, Arm licensees can contact Arm directly through their partner managers.
 
 ## GitHub branch
 - To pick up the release version of the code, checkout the release branch with the appropriate tag.
@@ -41,10 +40,10 @@ Perform the following steps to start the ACS build:
 
 1. Create a directory that is your workspace and `cd' into it. <br />
    $ mkdir &lt;work_dir&gt; && cd &lt;work_dir&gt; <br />
-2. Clone the ARM Enterprise ACS source code. <br />
+2. Clone the Arm Enterprise ACS source code. <br />
    $ git clone https://github.com/ARM-software/arm-enterprise-acs.git <br />
    $ cd arm-enterprise-acs <br />
-   $ git checkout master <br />
+   $ git checkout v2.0_dev <br />
 3. Download and patch LUV OS source code. <br />
    $ ./acs_sync.sh <br />
 4. Build LUV OS and test binaries. <br />
@@ -89,7 +88,7 @@ Note: Replace '/dev/sdX' with the handle corresponding to your
 
 ### Fixed Virtual Platform (FVP) environment
 
-The steps for running the ARM Enterprise ACS on an FVP are the
+The steps for running the Arm Enterprise ACS on an FVP are the
 same as those for running on Juno but with a few exceptions:
 
 - Follow the different instructions [here](https://community.arm.com/dev-platforms/b/documents/posts/using-linaros-deliverables-on-an-fvp) to install an EDK2 (UEFI) prebuilt configuration on your FVP.
@@ -135,11 +134,11 @@ Note: <br /> You must be a member of [UEFI-SCT](https://github.com/UEFI/UEFI-SCT
 
 ## License
 
-ARM Enterprise ACS is distributed under Apache v2.0 License.
+Arm Enterprise ACS is distributed under Apache v2.0 License.
 
 ## Feedback, contributions, and support
 
  - For feedback, use the GitHub Issue Tracker that is associated with this repository.
  - For support, please send an email to "support-enterprise-acs@arm.com" with details.
- - ARM licensees can contact ARM directly through their partner managers.
- - ARM welcomes code contributions through GitHub pull requests. For details, see "docs/Contributions.txt".
+ - Arm licensees can contact Arm directly through their partner managers.
+ - Arm welcomes code contributions through GitHub pull requests. For details, see "docs/Contributions.txt".

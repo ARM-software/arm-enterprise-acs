@@ -48,12 +48,14 @@ then
 	bitbake -c cleanall sbbr
 fi
 bitbake -c cleanall sbsa
+bitbake -c cleanall sdei
 bitbake -c cleanall luv-live-image
 if [ "$SCTOPTIONAL" = "no" ]
 then
 	bitbake sbbr
 fi
 bitbake sbsa
+bitbake sdei
 bitbake luv-live-image
 unset BB_ENV_EXTRAWHITE
 unset SCTOPTIONAL

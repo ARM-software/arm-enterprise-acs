@@ -37,3 +37,4 @@ fi
 ./luvos/scripts/setup.sh
 ./sbbr/scripts/setup.sh
 ./sbsa/scripts/setup.sh
+./sdei/scripts/setup.sh

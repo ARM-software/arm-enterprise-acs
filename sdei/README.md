@@ -7,7 +7,7 @@
 For more information, download the [SDEI Platform Design Document](http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.den0054a/index.html).
 
 ## Release details
- - Code Quality: Beta v0.6
+ - Code Quality: REL v1.0
  - Code Completed: 48 out of 52.
  - The tests are written for version 1.0 of the SDEI Platform Design Document.
 

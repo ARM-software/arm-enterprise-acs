@@ -138,6 +138,40 @@ def log_sbsa(d):
     print ("SBSA Results for linux %s\n" % linux)
     print ("SBSA Results for UEFI %s\n" % uefi)
 
+def log_sdei(d):
+    sdeiDir = os.path.join(d, "sdei_results")
+    if os.path.isdir(sdeiDir) == False:
+        print ("SDEI results results directory \"%s\" not found.  Skipping." % sdeiDir)
+        return -1
+
+    uefi = "not found";
+    linux = "not found";
+    for entry in os.listdir(sdeiDir):
+        if(entry == "uefi"):
+            sdeiUefiLogs = os.path.join(sdeiDir, "uefi", "SdeiResults.log")
+            try:
+                f = open(sdeiUefiLogs, "r")
+            except IOError:
+                print ("SDEI UEFI results file \"%s\" could not be opened, skipping." % sdeiUefiLogs)
+                continue
+            logs = f.read()
+            outFile.write("\n\nSDEI UEFI Test Results\n\n")
+            outFile.write(logs)
+            uefi = "collected"
+        if(entry == "linux"):
+            sdeiLinuxLogs = os.path.join(sdeiDir, "linux", "SdeiResults.log")
+            try:
+                f = open(sdeiLinuxLogs, "r")
+            except IOError:
+                print ("SDEI Linux results file \"%s\" could not be opened, skipping." % sdeiLinuxLogs)
+                continue
+            logs = f.read()
+            outFile.write("\n\nSDEI Linux Test Results\n\n")
+            outFile.write(logs)
+            linux = "collected"
+    print ("SDEI Results for linux %s\n" % linux)
+    print ("SDEI Results for UEFI %s\n" % uefi)
+
 # Script entry point.
 
 # This script needs to be run on a stripped out yocto distribution so we can't use argparse.
@@ -175,6 +209,10 @@ log_sbbr(arg_directory)
 # Scanning SBSA.
 print ("Gathering SBSA test results...")
 log_sbsa(arg_directory)
+
+# Scanning SBSA.
+print ("Gathering SDEI test results...")
+log_sdei(arg_directory)
 
 outFile.close()
 

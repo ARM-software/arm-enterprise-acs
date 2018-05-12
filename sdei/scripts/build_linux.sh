@@ -21,17 +21,20 @@ then
 fi
 
 echo "Building SDEI ACS for Linux"
-if [ ! -d linux-acs ]
-then
-    git clone git://linux-arm.org/linux-acs.git
-fi
+
+#if [ ! -d linux-acs ]
+#then
+#   git clone git://linux-arm.org/linux-acs.git
+#fi
+
+
 if [ ! -d linux ]
 then
     git clone https://kernel.googlesource.com/pub/scm/linux/kernel/git/torvalds/linux
     cd linux
     git checkout -b v4.13 v4.13
-    git apply ${W}/linux-acs/kernel/src/0001-Enterprise-acs-linux-v4.13.patch
-    cd ${W}
+    git apply ${S}/kernel/patches/0001-Enterprise-acs-linux-v4.13.patch
+   cd ${W}
 fi
 cd linux
 export ARCH=arm64
@@ -39,18 +42,38 @@ export CROSS_COMPILE=${W}/gcc-linaro-6.3.1-2017.05-x86_64_aarch64-linux-gnu/bin/
 make defconfig
 make -j16
 cp arch/arm64/boot/Image ../output
-cd ${W}/linux-acs/sdei-acs-drv/files
-./setup.sh ${S}
+
+#Creating temporary directories for compilation
+mkdir ${W}/drv
+mkdir ${W}/drv/pal
+mkdir ${W}/drv/val
+mkdir -p  ${W}/drv/test_pool/val/include
+#Copying files to the temporary directories
+cp -r ${S}/sdei-acs-drv/sdei-acs-drv/files/* ${W}/drv
+cp -r ${S}/sdei-acs-drv/sdei-acs-pal/files/* ${W}/drv/pal/
+cp -r ${S}/val/*  ${W}/drv/val/
+cp -r ${S}/val/include/* ${W}/drv/test_pool/val/include/
+cp -r ${S}/test_pool/ ${W}/drv/
+cp ${W}/drv/val/include/pal_interface.h ${W}/drv/pal/include/
+
 export KERNEL_SRC=${W}/linux
-cd platform/pal_linux
+cd ${W}/drv/pal
 make
-cd ../../val
+cp sdei_acs_pal.o ../
+
+cd ${W}/drv/val
 make
-cd ../
+cp sdei_acs_val.o ../
+
+cd ${W}/drv/test_pool
+make
+cp sdei_acs_test.o ../
+
+cd ${W}/drv
 make
 cp sdei_acs.ko ${W}/output
 
-cd ${S}/linux_app/
+cd ${S}/linux_app/sdei-acs-app/files/
 make
 cp sdei ${W}/output
 cd ${S}

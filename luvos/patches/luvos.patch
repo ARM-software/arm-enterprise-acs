@@ -1,26 +1,26 @@
-From 8922966d6719fec5f11441ed416d30495d1dbeac Mon Sep 17 00:00:00 2001
+From c836cefc1dafa993822fd8d0cdb923a59ef8c248 Mon Sep 17 00:00:00 2001
 From: Sakar Arora <sakar.arora@arm.com>
 Date: Wed, 18 Apr 2018 12:16:57 +0530
 Subject: [PATCH] luvos
 
 ---
- .templateconf                                      |  2 +-
- meta-luv/classes/luv-efi.bbclass                   | 71 +++++++++++++++++++++-
- meta-luv/conf/distro/luv.conf                      |  2 +-
- meta-luv/conf/local.conf.sample                    |  5 +-
- meta-luv/recipes-core/efivarfs/efivarfs-test.bb    |  1 -
- meta-luv/recipes-core/fwts/fwts_git.bb             |  8 +--
- .../images/core-image-efi-initramfs.bb             |  2 +-
- meta-luv/recipes-core/images/luv-image.inc         |  3 +-
- meta-luv/recipes-core/images/luv-live-image.bb     |  8 ++-
- meta-luv/recipes-core/images/luv-netboot-image.bb  |  5 +-
- .../kernel_efi_warnings/kernel-efi-warnings_0.1.bb |  2 -
- meta-luv/recipes-core/luv-test/luv-test.bb         |  6 ++
- .../recipes-core/luv-test/luv-test/luv-message     |  2 +-
- .../luv-test/luv-test/luv-test-manager             |  5 ++
- .../linux/linux-yocto-efi-test_4.14.bb             |  3 +-
- meta/conf/bitbake.conf                             |  2 +-
- 16 files changed, 107 insertions(+), 20 deletions(-)
+ .templateconf                                      |   2 +-
+ meta-luv/classes/luv-efi.bbclass                   | 102 ++++++++++++++++++++-
+ meta-luv/conf/distro/luv.conf                      |   2 +-
+ meta-luv/conf/local.conf.sample                    |   5 +-
+ meta-luv/recipes-core/efivarfs/efivarfs-test.bb    |   1 -
+ meta-luv/recipes-core/fwts/fwts_git.bb             |   8 +-
+ .../images/core-image-efi-initramfs.bb             |   2 +-
+ meta-luv/recipes-core/images/luv-image.inc         |   3 +-
+ meta-luv/recipes-core/images/luv-live-image.bb     |   9 +-
+ meta-luv/recipes-core/images/luv-netboot-image.bb  |   5 +-
+ .../kernel_efi_warnings/kernel-efi-warnings_0.1.bb |   2 -
+ meta-luv/recipes-core/luv-test/luv-test.bb         |   8 ++
+ .../recipes-core/luv-test/luv-test/luv-message     |   2 +-
+ .../luv-test/luv-test/luv-test-manager             |  10 ++
+ .../linux/linux-yocto-efi-test_4.14.bb             |   3 +-
+ meta/conf/bitbake.conf                             |   2 +-
+ 16 files changed, 146 insertions(+), 20 deletions(-)
 
 diff --git a/.templateconf b/.templateconf
 index 0fe6f82..dce51a4 100644
@@ -31,7 +31,7 @@ index 0fe6f82..dce51a4 100644
 -TEMPLATECONF=${TEMPLATECONF:-meta-poky/conf}
 +TEMPLATECONF=${TEMPLATECONF:-meta-luv/conf}
 diff --git a/meta-luv/classes/luv-efi.bbclass b/meta-luv/classes/luv-efi.bbclass
-index 8c1b892..7a1807d 100644
+index 8c1b892..a72ff0a 100644
 --- a/meta-luv/classes/luv-efi.bbclass
 +++ b/meta-luv/classes/luv-efi.bbclass
 @@ -16,6 +16,13 @@ def get_bits_depends(d):
@@ -48,7 +48,7 @@ index 8c1b892..7a1807d 100644
  do_bootimg[depends] += "${MLPREFIX}grub-efi:do_deploy \
                          sbsigntool-native:do_populate_sysroot"
  
-@@ -55,7 +62,13 @@ efi_populate() {
+@@ -55,7 +62,14 @@ efi_populate() {
      # Install grub2 in EFI directory
      if [ "${TARGET_ARCH}" = "aarch64" ]; then
  		install -m 0644 ${DEPLOY_DIR_IMAGE}/${GRUB_EFI_LOADER_IMAGE} ${DEST}${EFIDIR}/${DEST_EFI_LOADER_IMAGE}
@@ -60,10 +60,11 @@ index 8c1b892..7a1807d 100644
 +            efi_populate_startup ${DEST}
 +            echo "SCTOPTIONAL=${SCTOPTIONAL}"
 +            efi_populate_sbsa ${DEST}
++            efi_populate_sdei ${DEST}
  
      # TODO: need conditional signing; e.g., if (DISTRO_FEATURES contains secure_boot)
      # shim bootloader does not seem to work with i386. Thus we don't use it for 32-bit
-@@ -92,6 +105,52 @@ efi_populate() {
+@@ -92,6 +106,82 @@ efi_populate() {
      install -m 0644 ${LUV_CFG} ${DEST}
  }
  
@@ -80,7 +81,7 @@ index 8c1b892..7a1807d 100644
 +          for %i in 0 1 2 3 4 5 6 7 8 9 A B C D E F then
 +            if exist FS%i:\sbsa_results then
 +              FS%i:
-+              cd sbsa_results
++              cd FS%i:\sbsa_results
 +              if not exist uefi then
 +                mkdir uefi
 +              endif
@@ -96,6 +97,33 @@ index 8c1b892..7a1807d 100644
 +          endfor
 +          echo \"LUV-RESULTS partition not found\"
 +          :Done" > ${DEST}${EFIDIR}/sbsa/sbsa.nsh
++
++}
++
++efi_populate_sdei() {
++    DEST=$1
++    cp -r ${DEPLOY_DIR_IMAGE}/sdei ${DEST}${EFIDIR}/sdei
++    cp ${DEST}${EFIDIR}/sdei/Shell.efi ${DEST}${EFIDIR}/Shell.efi
++    echo "echo -off
++          for %i in 0 1 2 3 4 5 6 7 8 9 A B C D E F then
++            if exist FS%i:\sdei_results then
++              FS%i:
++              cd FS%i:\sdei_results
++              if not exist uefi then
++                mkdir uefi
++              endif
++              cd uefi
++              for %j in 0 1 2 3 4 5 6 7 8 9 A B C D E F then
++                if exist FS%j:\EFI\BOOT\sdei\Sdei.efi then
++                  FS%j:\EFI\BOOT\sdei\Sdei.efi -f SdeiResults.log
++                  goto Done
++                endif
++              endfor
++              echo \"Sdei.efi not found\"
++            endif
++          endfor
++          echo \"LUV-RESULTS partition not found\"
++          :Done" > ${DEST}${EFIDIR}/sdei/sdei.nsh
 +}
 +
 +efi_populate_startup() {
@@ -104,6 +132,9 @@ index 8c1b892..7a1807d 100644
 +          for %i in 0 1 2 3 4 5 6 7 8 9 A B C D E F then
 +            if exist FS%i:\EFI\BOOT\sbsa\sbsa.nsh then
 +              FS%i:\EFI\BOOT\sbsa\sbsa.nsh
++            endif
++            if exist FS%i:\EFI\BOOT\sdei\sdei.nsh then
++              FS%i:\EFI\BOOT\sdei\sdei.nsh
 +              goto Done
 +            endif
 +          endfor
@@ -116,7 +147,7 @@ index 8c1b892..7a1807d 100644
  BITS_EFI_LOADER_IMAGE = "${DEST_EFI_LOADER_IMAGE}"
  efi_populate_bits() {
      DEST=$1
-@@ -172,6 +231,11 @@ python build_efi_cfg() {
+@@ -172,6 +262,11 @@ python build_efi_cfg() {
         cfgfile.write('default=bits\n')
         cfgfile.write('fallback=0\n')
  
@@ -128,7 +159,7 @@ index 8c1b892..7a1807d 100644
      cfgfile.write('menuentry \'luv\' {\n')
      cfgfile.write('linux /vmlinuz ')
  
-@@ -199,6 +263,11 @@ python build_efi_cfg() {
+@@ -199,6 +294,11 @@ python build_efi_cfg() {
         cfgfile.write('chainloader /EFI/BOOT/bits/%s\n' % loader)
         cfgfile.write('}\n')
  
@@ -209,7 +240,7 @@ index 62d2430..2a75686 100644
  FILES_${PN} += "${libdir}/fwts/lib*${SOLIBS}"
  FILES_${PN} += "/lib/modules/${KERNEL_VERSION}/extra/efi_runtime.ko"
 diff --git a/meta-luv/recipes-core/images/core-image-efi-initramfs.bb b/meta-luv/recipes-core/images/core-image-efi-initramfs.bb
-index 9529534..8a62075 100644
+index 9529534..868d37c 100644
 --- a/meta-luv/recipes-core/images/core-image-efi-initramfs.bb
 +++ b/meta-luv/recipes-core/images/core-image-efi-initramfs.bb
 @@ -8,7 +8,7 @@ IMAGE_INSTALL = "\
@@ -217,7 +248,7 @@ index 9529534..8a62075 100644
      shadow util-linux procps efivarfs-test pstore-test \
      plymouth plymouth-set-default-theme kernel-efi-warnings linux-firmware-luv kexec \
 -    acpixtract iasl \
-+    acpixtract iasl sbsa-acs-drv sbsa-acs-app \
++    acpixtract iasl sbsa-acs-drv sbsa-acs-app sdei-acs-drv sdei-acs-app \
      "
  
  X86_ADDITIONS = "chipsec python-codecs python-subprocess vmcore-dmesg bits \
@@ -243,7 +274,7 @@ index b851709..55275e6 100644
  CMDLINE_append_x86-64 = "${COMMON_CMDLINE_x86}"
  
 diff --git a/meta-luv/recipes-core/images/luv-live-image.bb b/meta-luv/recipes-core/images/luv-live-image.bb
-index b7a0f66..1cefc5d 100644
+index b7a0f66..1bf7b54 100644
 --- a/meta-luv/recipes-core/images/luv-live-image.bb
 +++ b/meta-luv/recipes-core/images/luv-live-image.bb
 @@ -9,7 +9,7 @@ MACHINE_FEATURES += "efi"
@@ -266,12 +297,13 @@ index b7a0f66..1cefc5d 100644
      VFAT_RESULTS_SPACE=$(expr $VFAT_RESULTS_SPACE_MiB \* $MiB)
      VFAT_RESULTS_BLOCKS=$(expr $VFAT_RESULTS_SPACE / 1024)
      # TODO: do we need to dynamically generate the UUID?
-@@ -51,6 +51,8 @@ build_img() {
+@@ -51,6 +51,9 @@ build_img() {
      mkdosfs -C ${VFAT_RESULTS} -S ${BYTES_PER_SECTOR} -i ${VFAT_RESULTS_UUID} \
              -n ${VFAT_RESULTS_LABEL} $VFAT_RESULTS_BLOCKS
  
 +    mmd -i ${VFAT_RESULTS} ::/sbsa_results
 +
++    mmd -i ${VFAT_RESULTS} ::/sdei_results
      dd if=/dev/zero of=${IMG} bs=${BYTES_PER_SECTOR} count=1
  
      # Now that we are calculating sizes in MiB make sure that the value
@@ -309,25 +341,27 @@ index a0fde3c..85eec50 100644
 -LUV_TEST="kernel-efi-warnings"
 -LUV_TEST_ARGS=""
 diff --git a/meta-luv/recipes-core/luv-test/luv-test.bb b/meta-luv/recipes-core/luv-test/luv-test.bb
-index 164a616..0ca0fc1 100644
+index 164a616..98875a5 100644
 --- a/meta-luv/recipes-core/luv-test/luv-test.bb
 +++ b/meta-luv/recipes-core/luv-test/luv-test.bb
-@@ -36,6 +36,8 @@ SRC_URI += "file://luv-test-manager file://luv-test-parser \
+@@ -36,6 +36,9 @@ SRC_URI += "file://luv-test-manager file://luv-test-parser \
              file://luv-reboot-poweroff.service \
              file://luv-reboot-poweroff \
              file://luv-message \
 +            file://luv-collect-results \
++            file://luv-sdei-test \
 +            file://luv-sbsa-test \
            "
  
  RDEPENDS_${PN}+= "kernel-modules curl iputils iproute2 bash init-ifupdown dhcp-client gzip"
-@@ -84,6 +86,10 @@ do_install_append() {
+@@ -84,6 +87,11 @@ do_install_append() {
         install -m 0644 ${WORKDIR}/luv-scripts ${D}${datadir}/luv/html
         install -m 0644 ${WORKDIR}/luv-css-styles ${D}${datadir}/luv/html
  
 +       # Install luv-collect-results script
 +       install -m 755 ${WORKDIR}/luv-collect-results ${D}${sysconfdir}/
 +       install -m 755 ${WORKDIR}/luv-sbsa-test ${D}${sysconfdir}/
++       install -m 755 ${WORKDIR}/luv-sdei-test ${D}${sysconfdir}/
 +
         install -d ${D}${systemd_unitdir}/system
  
@@ -346,15 +380,20 @@ index 50edf1f..fa3f95a 100755
  
      echo "$1" >&2
 diff --git a/meta-luv/recipes-core/luv-test/luv-test/luv-test-manager b/meta-luv/recipes-core/luv-test/luv-test/luv-test-manager
-index f1e2176..cbf6a31 100644
+index f1e2176..caa327d 100644
 --- a/meta-luv/recipes-core/luv-test/luv-test/luv-test-manager
 +++ b/meta-luv/recipes-core/luv-test/luv-test/luv-test-manager
-@@ -289,6 +289,11 @@ cat ${LUV_SAVE_RESULTS_DIR}/luv.results | awk '/\[\+/  { units += 1 }
+@@ -289,6 +289,16 @@ cat ${LUV_SAVE_RESULTS_DIR}/luv.results | awk '/\[\+/  { units += 1 }
  cat /tmp/testsuites | html_inline ${LUV_HTML_REPORT} | tee -a /tmp/luv.results \
           ${LUV_SAVE_RESULTS_DIR}/luv.results
  
++
++#test SDEI compliance on luv
++sh /etc/luv-sdei-test ${LUV_STORAGE}
++
 +# test SBSA compliance on luv
 +sh /etc/luv-sbsa-test ${LUV_STORAGE}
++
 +# collecting test results
 +python3 /etc/luv-collect-results ${LUV_STORAGE} ${LUV_STORAGE}/results.md
 +
