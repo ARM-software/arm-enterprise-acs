@@ -1,6 +1,6 @@
 ## Documentation
 
-- [SBSA ACS](https://github.com/ARM-software/sbsa-acs/blob/master/docs)
+- [SBSA ACS](https://github.com/ARM-software/sbsa-acs/tree/v2.0_dev/docs)
 
 - [SBBR ACS](../sbbr/docs)
 
