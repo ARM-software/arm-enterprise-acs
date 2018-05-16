@@ -1,5 +1,7 @@
-## Testcase checklists/Scenario documents
+## Documentation
 
-- [SBSA ACS Testcase checklist](https://github.com/ARM-software/sbsa-acs/blob/master/docs/testcase-checklist.md)
+- [SBSA ACS](https://github.com/ARM-software/sbsa-acs/blob/master/docs)
 
-- [SBBR ACS Testcase checklist](../sbbr/docs/testcase-checklist.md)
+- [SBBR ACS](../sbbr/docs)
+
+- [SDEI ACS](../sdei/docs)
