@@ -22,7 +22,7 @@ These tests are split between a UEFI application and a Linux driver that togethe
 and SBBR specifications. These tests are further described in detail.
 
 ## Release details
- - Code Quality: REL v1.4
+ - Code Quality: REL v1.5
  - The SBSA tests are written for version 3.0 of the SBSA specification.
  - The SBBR tests are written for version 1.0 of the SBBR specification.
  - The compliance suite is not a substitute for design verification.
@@ -200,7 +200,7 @@ Enter the following commands after installation of SCT:
  #To run all tests
 - FS2:\SCT>SCT.efi -a -v
 
-User can select and run tests based on available choices. For information about running the tests, see [SCT User Guide](http://http://www.uefi.org/testtools).
+User can select and run tests based on available choices. For information about running the tests, see [SCT User Guide](http://www.uefi.org/testtools).
 
 
 ### 3. LUV OS FWTS tests
