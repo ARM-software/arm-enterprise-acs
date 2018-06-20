@@ -1,6 +1,6 @@
-From cdeea7577f9eee82ac0b72fe138d7af76f263134 Mon Sep 17 00:00:00 2001
+From 9675ce291f9e1718ed91f7546658a019b5abb129 Mon Sep 17 00:00:00 2001
 From: Sakar Arora <Sakar.Arora@arm.com>
-Date: Wed, 14 Mar 2018 17:41:28 +0530
+Date: Wed, 20 Jun 2018 11:13:15 +0530
 Subject: [PATCH] luvos
 
 ---
@@ -27,8 +27,8 @@ Subject: [PATCH] luvos
  .../luv-test/luv-test/luv-test-manager             |   5 +
  .../linux/linux-yocto-efi-test_4.14.bb             |   3 +-
  meta/conf/bitbake.conf                             |   2 +-
- sbsa_setup.sh                                      |  41 +++
- 24 files changed, 1004 insertions(+), 16 deletions(-)
+ sbsa_setup.sh                                      |  43 +++
+ 24 files changed, 1006 insertions(+), 16 deletions(-)
  create mode 100755 build_luvos.sh
  create mode 100644 meta-luv/recipes-bsp/sbbr/sbbr/README.md
  create mode 100644 meta-luv/recipes-bsp/sbbr/sbbr/sbbr-sct.patch
@@ -732,7 +732,7 @@ index 0000000..fae365c
 +source AppPkg/Applications/sbsa-acs/tools/scripts/avsbuild.sh
 diff --git a/meta-luv/recipes-bsp/sbsa/sbsa.bb b/meta-luv/recipes-bsp/sbsa/sbsa.bb
 new file mode 100644
-index 0000000..efabeb8
+index 0000000..692b759
 --- /dev/null
 +++ b/meta-luv/recipes-bsp/sbsa/sbsa.bb
 @@ -0,0 +1,107 @@
@@ -760,7 +760,7 @@ index 0000000..efabeb8
 +           file://compile.sh"
 +
 +PV = "1.0+git${SRCPV}"
-+SRCREV = "591f70565d1f88f7d6447e2e4f38885a008fbc6e"
++SRCREV = "4a415ff16d90f278bc30d1aa07493d3f1b543d10"
 +
 +# GCC checksum.
 +SRC_URI[md5sum] = "24ac2e26f50f49f3043f281440b41bba"
@@ -1297,7 +1297,7 @@ index 9696273..11d8888 100644
  MACHINE_TASK_PROVIDER ?= "${DEFAULT_TASK_PROVIDER}"
 diff --git a/sbsa_setup.sh b/sbsa_setup.sh
 new file mode 100755
-index 0000000..1228d96
+index 0000000..b7a0a5a
 --- /dev/null
 +++ b/sbsa_setup.sh
 @@ -0,0 +1,43 @@
@@ -1326,7 +1326,7 @@ index 0000000..1228d96
 +git clone git://linux-arm.org/linux-acs.git
 +cd linux-acs
 +#copy .bb and source files to relevant places
-+git checkout -b v18.03_REL1.4 v18.03_REL1.4
++git checkout -b v18.06_REL1.5 v18.06_REL1.5
 +rm -rf $LUVDIR/meta-luv/recipes-core/sbsa-acs-drv
 +mv -f sbsa-acs-drv $LUVDIR/meta-luv/recipes-core/
 +mv -f kernel/src/0001-Enterprise-acs-linux-v4.13.patch $LUVDIR/meta-luv/recipes-kernel/linux/linux-yocto-efi-test/
@@ -1334,7 +1334,7 @@ index 0000000..1228d96
 +cd $TMPDIR
 +git clone https://github.com/ARM-software/sbsa-acs.git
 +cd sbsa-acs
-+git checkout -b v18.03_REL1.4 v18.03_REL1.4
++git checkout -b v18.06_REL1.5 v18.06_REL1.5
 +mv -f val $LUVDIR/meta-luv/recipes-core/sbsa-acs-drv/files/
 +mv -f test_pool $LUVDIR/meta-luv/recipes-core/sbsa-acs-drv/files/
 +
