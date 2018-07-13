@@ -20,7 +20,7 @@ so that implementations can verify if these behaviors have been interpreted corr
   - To know about the gaps in the test coverage, see [Scenario Document](docs/Mpam_ACS_Scenario_document.pdf).
 
 ## GitHub branch
-  - To get the latest version of the code with bug fixes, use the master branch.
+  - To get the latest version of the code with bug fixes, use the v2.0_dev branch.
 
 ## Target platforms
 Any AARCH64 Enterprise Platform that boots UEFI
@@ -38,10 +38,11 @@ Perform following steps before starting the ACS build:
 
 1.  cd local_edk2_path
 2.  git clone https://github.com/ARM-software/arm-enterprise-acs.git AppPkg/Applications/mpam
-3.  Add following two libraries to [LibraryClasses.common] section in path/to/edk2/ShellPkg/ShellPkg.dsc
-    - MpamValLib|AppPkg/Applications/mpam/val/MpamValLib.inf
-    - MpamPalLib|AppPkg/Applications/mpam/platform/pal_uefi_acpi_override/MpamPalLib.inf
-4.  Add AppPkg/Applications/mpam/uefi_app/MpamAcs.inf in [Components] section in path/to/edk2/ShellPkg/ShellPkg.dsc
+3.  git checkout remotes/origin/v2.0_dev
+4.  Add following two libraries to [LibraryClasses.common] section in path/to/edk2/ShellPkg/ShellPkg.dsc
+    - MpamValLib|AppPkg/Applications/mpam/mpam/val/MpamValLib.inf
+    - MpamPalLib|AppPkg/Applications/mpam/mpam/platform/pal_uefi_acpi_override/MpamPalLib.inf
+5.  Add AppPkg/Applications/mpam/mpam/uefi_app/MpamAcs.inf in [Components] section in path/to/edk2/ShellPkg/ShellPkg.dsc
 
 ### Linux build environment
 Perform the following steps to build ACS in Linux environment.
@@ -49,7 +50,7 @@ Perform the following steps to build ACS in Linux environment.
 1.  export GCC49_AARCH64_PREFIX=GCC 7.1 or later toolchain path pointing to /bin/aarch64-linux-gnu-
 2.  source edksetup.sh
 3.  make -C BaseTools/Source/C
-4.  source AppPkg/Applications/mpam/scripts/acsbuild.sh
+4.  source AppPkg/Applications/mpam/mpam/scripts/acsbuild.sh
 
 ### Build output
 
