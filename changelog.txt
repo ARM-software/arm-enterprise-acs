@@ -1,3 +1,7 @@
+v18.08_REL1.6
+
+* SBSA: Update tag/commit information to include latest bug fixes in sbsa-acs.
+
 v18.06_REL1.5
 
 * SCT: Bug fix ExitBootServices_Conf test.
