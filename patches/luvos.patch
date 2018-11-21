@@ -1,6 +1,6 @@
-From cdeea7577f9eee82ac0b72fe138d7af76f263134 Mon Sep 17 00:00:00 2001
-From: Sakar Arora <Sakar.Arora@arm.com>
-Date: Tue, 6 Feb 2018 14:19:21 +0530
+From 448819482390b95e2d9c801d7eec43cffe0584af Mon Sep 17 00:00:00 2001
+From: Sakar Arora <sakar.arora@arm.com>
+Date: Wed, 21 Nov 2018 12:33:53 +0530
 Subject: [PATCH] luvos
 
 ---
@@ -732,7 +732,7 @@ index 0000000..fae365c
 +source AppPkg/Applications/sbsa-acs/tools/scripts/avsbuild.sh
 diff --git a/meta-luv/recipes-bsp/sbsa/sbsa.bb b/meta-luv/recipes-bsp/sbsa/sbsa.bb
 new file mode 100644
-index 0000000..8b1af24
+index 0000000..3f6adfe
 --- /dev/null
 +++ b/meta-luv/recipes-bsp/sbsa/sbsa.bb
 @@ -0,0 +1,107 @@
@@ -755,7 +755,7 @@ index 0000000..8b1af24
 +
 +# SCT files placed in ${WORKDIR}/git
 +# GCC files placed in ${WORKDIR}/gcc-linaro-5.3.1-2016.05-x86_64_aarch64-linux-gnu
-+SRC_URI = "git://github.com/ARM-software/sbsa-acs.git;protocol=https \
++SRC_URI = "git://github.com/ARM-software/sbsa-acs.git;protocol=https;branch=REL1.6+ \
 +           https://releases.linaro.org/components/toolchain/binaries/5.3-2016.05/aarch64-linux-gnu/gcc-linaro-5.3.1-2016.05-x86_64_aarch64-linux-gnu.tar.xz \
 +           file://compile.sh"
 +
@@ -1297,7 +1297,7 @@ index 9696273..11d8888 100644
  MACHINE_TASK_PROVIDER ?= "${DEFAULT_TASK_PROVIDER}"
 diff --git a/sbsa_setup.sh b/sbsa_setup.sh
 new file mode 100755
-index 0000000..505cdc1
+index 0000000..7032b0b
 --- /dev/null
 +++ b/sbsa_setup.sh
 @@ -0,0 +1,41 @@
@@ -1323,7 +1323,7 @@ index 0000000..505cdc1
 +mkdir $TMPDIR
 +cd $TMPDIR
 +#clone linux-acs repo
-+git clone git://linux-arm.org/linux-acs.git
++git clone -b REL1.6+ git://linux-arm.org/linux-acs.git
 +cd linux-acs
 +#copy .bb and source files to relevant places
 +rm -rf $LUVDIR/meta-luv/recipes-core/sbsa-acs-drv
@@ -1331,7 +1331,7 @@ index 0000000..505cdc1
 +mv -f kernel/src/0001-Enterprise-acs-linux-v4.13.patch $LUVDIR/meta-luv/recipes-kernel/linux/linux-yocto-efi-test/
 +
 +cd $TMPDIR
-+git clone https://github.com/ARM-software/sbsa-acs.git
++git clone -b REL1.6+ https://github.com/ARM-software/sbsa-acs.git
 +cd sbsa-acs
 +mv -f val $LUVDIR/meta-luv/recipes-core/sbsa-acs-drv/files/
 +mv -f test_pool $LUVDIR/meta-luv/recipes-core/sbsa-acs-drv/files/
