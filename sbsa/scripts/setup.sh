@@ -20,11 +20,11 @@ SRCDIR=$PWD/src
 LUVDIR=$PWD/luv
 rm -rf $SRCDIR
 
-git clone -b v2.0_dev https://github.com/ARM-software/sbsa-acs.git src
-git clone -b v2.0_dev git://linux-arm.org/linux-acs.git
+git clone https://github.com/ARM-software/sbsa-acs.git src
+git clone git://linux-arm.org/linux-acs.git
 mv linux-acs/sbsa-acs-drv/files/platform/pal_linux $SRCDIR/platform/
 mv linux-acs/sbsa-acs-drv $SRCDIR
-mv linux-acs/kernel/src/0001-Enterprise-acs-linux-v4.13.patch $LUVDIR/meta-luv/recipes-kernel/linux/linux-yocto-efi-test/
+mv linux-acs/kernel/src/0001-Enterprise-acs-linux-v4.18.patch $LUVDIR/meta-luv/recipes-kernel/linux/linux-luv/
 rm -rf linux-acs
 cd $TOPDIR
 

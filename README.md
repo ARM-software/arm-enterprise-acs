@@ -43,7 +43,6 @@ Perform the following steps to start the ACS build:
 2. Clone the Arm Enterprise ACS source code. <br />
    $ git clone https://github.com/ARM-software/arm-enterprise-acs.git <br />
    $ cd arm-enterprise-acs <br />
-   $ git checkout v2.0_dev <br />
 3. Download and patch LUV OS source code. <br />
    $ ./acs_sync.sh <br />
 4. Build LUV OS and test binaries. <br />

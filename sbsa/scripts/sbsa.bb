@@ -18,7 +18,7 @@ LIC_FILES_CHKSUM = ""
 
 # SCT files placed in ${WORKDIR}/git
 # GCC files placed in ${WORKDIR}/gcc-linaro-5.3.1-2016.05-x86_64_aarch64-linux-gnu
-SRC_URI = "git://blr-gerrit-1.blr.arm.com/avk/syscomp_sbsa.git;protocol=https \
+SRC_URI = "git://github.com/ARM-software/sbsa-acs.git;protocol=https \
            https://releases.linaro.org/components/toolchain/binaries/5.3-2016.05/aarch64-linux-gnu/gcc-linaro-5.3.1-2016.05-x86_64_aarch64-linux-gnu.tar.xz \
            file://compile.sh"
 

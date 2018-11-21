@@ -1,11 +1,12 @@
-From c836cefc1dafa993822fd8d0cdb923a59ef8c248 Mon Sep 17 00:00:00 2001
-From: Sakar Arora <sakar.arora@arm.com>
-Date: Wed, 18 Apr 2018 12:16:57 +0530
-Subject: [PATCH] luvos
+From 5f7110a730e839156e345ce5a49ac0495ee4972b Mon Sep 17 00:00:00 2001
+From: Mahesh Bireddy <mahesh.reddybireddy@arm.com>
+Date: Fri, 9 Nov 2018 13:23:59 +0530
+Subject: [PATCH] Luvos v2.3 ACS patch
 
+Signed-off-by: Mahesh Bireddy <mahesh.reddybireddy@arm.com>
 ---
  .templateconf                                      |   2 +-
- meta-luv/classes/luv-efi.bbclass                   | 102 ++++++++++++++++++++-
+ meta-luv/classes/luv-efi.bbclass                   | 105 ++++++++++++++++++++-
  meta-luv/conf/distro/luv.conf                      |   2 +-
  meta-luv/conf/local.conf.sample                    |   5 +-
  meta-luv/recipes-core/efivarfs/efivarfs-test.bb    |   1 -
@@ -13,14 +14,14 @@ Subject: [PATCH] luvos
  .../images/core-image-efi-initramfs.bb             |   2 +-
  meta-luv/recipes-core/images/luv-image.inc         |   3 +-
  meta-luv/recipes-core/images/luv-live-image.bb     |   9 +-
- meta-luv/recipes-core/images/luv-netboot-image.bb  |   5 +-
+ meta-luv/recipes-core/images/luv-netboot-image.bb  |  10 +-
  .../kernel_efi_warnings/kernel-efi-warnings_0.1.bb |   2 -
  meta-luv/recipes-core/luv-test/luv-test.bb         |   8 ++
- .../recipes-core/luv-test/luv-test/luv-message     |   2 +-
- .../luv-test/luv-test/luv-test-manager             |  10 ++
- .../linux/linux-yocto-efi-test_4.14.bb             |   3 +-
+ .../luv-test/luv-test/luv-test-manager             |   9 ++
+ meta-luv/recipes-kernel/linux/linux-luv_4.18.bb    |   4 +-
  meta/conf/bitbake.conf                             |   2 +-
- 16 files changed, 146 insertions(+), 20 deletions(-)
+ .../systemd-serialgetty/serial-getty@.service      |   2 +-
+ 16 files changed, 154 insertions(+), 20 deletions(-)
 
 diff --git a/.templateconf b/.templateconf
 index 0fe6f82..dce51a4 100644
@@ -31,7 +32,7 @@ index 0fe6f82..dce51a4 100644
 -TEMPLATECONF=${TEMPLATECONF:-meta-poky/conf}
 +TEMPLATECONF=${TEMPLATECONF:-meta-luv/conf}
 diff --git a/meta-luv/classes/luv-efi.bbclass b/meta-luv/classes/luv-efi.bbclass
-index 8c1b892..a72ff0a 100644
+index 86b3649..639ae7e 100644
 --- a/meta-luv/classes/luv-efi.bbclass
 +++ b/meta-luv/classes/luv-efi.bbclass
 @@ -16,6 +16,13 @@ def get_bits_depends(d):
@@ -48,11 +49,10 @@ index 8c1b892..a72ff0a 100644
  do_bootimg[depends] += "${MLPREFIX}grub-efi:do_deploy \
                          sbsigntool-native:do_populate_sysroot"
  
-@@ -55,7 +62,14 @@ efi_populate() {
-     # Install grub2 in EFI directory
+@@ -56,10 +63,18 @@ efi_populate() {
      if [ "${TARGET_ARCH}" = "aarch64" ]; then
  		install -m 0644 ${DEPLOY_DIR_IMAGE}/${GRUB_EFI_LOADER_IMAGE} ${DEST}${EFIDIR}/${DEST_EFI_LOADER_IMAGE}
--                echo "${DEST_EFI_LOADER_IMAGE}" > ${DEST}${EFIDIR}/startup.nsh
+                 echo "${DEST_EFI_LOADER_IMAGE}" > ${DEST}${EFIDIR}/startup.nsh
 +            if [ "${SCTOPTIONAL}" = "no" ]; then
 +                echo "Including UEFI-SCT"
 +                efi_populate_sbbr ${DEST}
@@ -64,7 +64,21 @@ index 8c1b892..a72ff0a 100644
  
      # TODO: need conditional signing; e.g., if (DISTRO_FEATURES contains secure_boot)
      # shim bootloader does not seem to work with i386. Thus we don't use it for 32-bit
-@@ -92,6 +106,82 @@ efi_populate() {
+-    elif [ "${TARGET_ARCH}" = "x86_64" ] ; then
++    elif [ "${TARGET_ARCH}" = "x86_64" ] && [ "${LUV_FOR_NETBOOT}" = "0"  ]; then
+                 # sign grub2 bootloader
+                 sbsign --key ${DEPLOY_DIR_IMAGE}/LUV.key --cert ${DEPLOY_DIR_IMAGE}/LUV.crt \
+                        --output ${DEPLOY_DIR_IMAGE}/grubx64.efi ${DEPLOY_DIR_IMAGE}/${GRUB_EFI_LOADER_IMAGE}
+@@ -75,6 +90,8 @@ efi_populate() {
+ 
+                 # restore files to leave all in good shape for all the callers of the funciton
+                 cp ${DEPLOY_DIR_IMAGE}/${DEST_EFI_LOADER_IMAGE} ${DEPLOY_DIR_IMAGE}/shim.efi
++    else
++		install -m 0644 ${DEPLOY_DIR_IMAGE}/${GRUB_EFI_LOADER_IMAGE} ${DEST}${EFIDIR}/${DEST_EFI_LOADER_IMAGE}
+     fi
+ 
+     if echo "${TARGET_ARCH}" | grep -q "i.86" || [ "${TARGET_ARCH}" = "x86_64" ]; then
+@@ -90,6 +107,82 @@ efi_populate() {
      install -m 0644 ${LUV_CFG} ${DEST}
  }
  
@@ -147,7 +161,7 @@ index 8c1b892..a72ff0a 100644
  BITS_EFI_LOADER_IMAGE = "${DEST_EFI_LOADER_IMAGE}"
  efi_populate_bits() {
      DEST=$1
-@@ -172,6 +262,11 @@ python build_efi_cfg() {
+@@ -170,6 +263,11 @@ python build_efi_cfg() {
         cfgfile.write('default=bits\n')
         cfgfile.write('fallback=0\n')
  
@@ -157,9 +171,9 @@ index 8c1b892..a72ff0a 100644
 +       cfgfile.write('fallback=0\n')
 +
      cfgfile.write('menuentry \'luv\' {\n')
-     cfgfile.write('linux /vmlinuz ')
- 
-@@ -199,6 +294,11 @@ python build_efi_cfg() {
+     kernel = d.getVar('KERNEL_IMAGETYPE')
+     cfgfile.write('linux /%s ' % (kernel))
+@@ -200,6 +298,11 @@ python build_efi_cfg() {
         cfgfile.write('chainloader /EFI/BOOT/bits/%s\n' % loader)
         cfgfile.write('}\n')
  
@@ -172,15 +186,15 @@ index 8c1b892..a72ff0a 100644
  }
  
 diff --git a/meta-luv/conf/distro/luv.conf b/meta-luv/conf/distro/luv.conf
-index fb0a833..55ddcfe 100644
+index 9b5b5fd..b664710 100644
 --- a/meta-luv/conf/distro/luv.conf
 +++ b/meta-luv/conf/distro/luv.conf
 @@ -17,4 +17,4 @@ VIRTUAL-RUNTIME_init_manager = "systemd"
  VIRTUAL-RUNTIME_initscripts = ""
  DISTRO_FEATURES_BACKFILL_CONSIDERED += "sysvinit"
  
--INITRAMFS_MAXSIZE = "235000"
-+INITRAMFS_MAXSIZE = "400000"
+-INITRAMFS_MAXSIZE = "260000"
++INITRAMFS_MAXSIZE = "600000"
 diff --git a/meta-luv/conf/local.conf.sample b/meta-luv/conf/local.conf.sample
 index c1cbcc1..a488094 100644
 --- a/meta-luv/conf/local.conf.sample
@@ -202,26 +216,26 @@ index c1cbcc1..a488094 100644
 +EXTRA_IMAGE_FEATURES += "dev-pkgs"
 +BB_NUMBER_THREADS ?= "16"
 diff --git a/meta-luv/recipes-core/efivarfs/efivarfs-test.bb b/meta-luv/recipes-core/efivarfs/efivarfs-test.bb
-index 0853e52..190d683 100644
+index 9f185fd..2a1e1c2 100644
 --- a/meta-luv/recipes-core/efivarfs/efivarfs-test.bb
 +++ b/meta-luv/recipes-core/efivarfs/efivarfs-test.bb
-@@ -71,4 +71,3 @@ do_install() {
- }
+@@ -73,4 +73,3 @@ do_install() {
  
  LUV_TEST_LOG_PARSER="luv-parser-efivarfs"
+ LUV_TEST_JSON="efivarfs.json"
 -LUV_TEST="efivarfs"
 diff --git a/meta-luv/recipes-core/fwts/fwts_git.bb b/meta-luv/recipes-core/fwts/fwts_git.bb
-index 62d2430..2a75686 100644
+index 08c67ae..3d7a921 100644
 --- a/meta-luv/recipes-core/fwts/fwts_git.bb
 +++ b/meta-luv/recipes-core/fwts/fwts_git.bb
 @@ -4,11 +4,12 @@ HOMEPAGE = "https://wiki.ubuntu.com/Kernel/Reference/fwts"
  LICENSE = "GPLv2+"
  LIC_FILES_CHKSUM = "file://src/main.c;beginline=1;endline=16;md5=31da590f3e9f3bd34dcdb9e4db568519"
  
--PV = "V17.12.00+git${SRCPV}"
+-PV = "V18.09.00+git${SRCPV}"
 +PV = "V18.02.00+git${SRCPV}"
  
--SRCREV = "df2784c6fbff02288c736f85354b22f46dc193f4"
+-SRCREV = "55ecee114fd2a91ba01750914cff8efed77f58d4"
 +SRCREV = "f0afecfc709d9970c7cebee352cd5154db3e52f7"
  SRC_URI = "git://kernel.ubuntu.com/hwe/fwts.git \
             file://luv-parser-fwts \
@@ -253,13 +267,13 @@ index 9529534..868d37c 100644
  
  X86_ADDITIONS = "chipsec python-codecs python-subprocess vmcore-dmesg bits \
 diff --git a/meta-luv/recipes-core/images/luv-image.inc b/meta-luv/recipes-core/images/luv-image.inc
-index b851709..55275e6 100644
+index def2344..62b55d1 100644
 --- a/meta-luv/recipes-core/images/luv-image.inc
 +++ b/meta-luv/recipes-core/images/luv-image.inc
 @@ -3,6 +3,7 @@ LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/MIT;md5=0835ade698e0bcf8506ecda
  
- DEPENDS_append_x86 = " grub-efi bits"
- DEPENDS_append_x86-64 = " grub-efi bits"
+ DEPENDS_append_x86 = " bits"
+ DEPENDS_append_x86-64 = " bits"
 +DEPENDS_${PN} = "bits sbbr"
  
  HDDDIR = "${S}/hddimg"
@@ -274,10 +288,10 @@ index b851709..55275e6 100644
  CMDLINE_append_x86-64 = "${COMMON_CMDLINE_x86}"
  
 diff --git a/meta-luv/recipes-core/images/luv-live-image.bb b/meta-luv/recipes-core/images/luv-live-image.bb
-index b7a0f66..1bf7b54 100644
+index b105b7b..ef2dc6d 100644
 --- a/meta-luv/recipes-core/images/luv-live-image.bb
 +++ b/meta-luv/recipes-core/images/luv-live-image.bb
-@@ -9,7 +9,7 @@ MACHINE_FEATURES += "efi"
+@@ -11,7 +11,7 @@ MACHINE_FEATURES += "efi"
  
  CMDLINE = "${CMDLINE_BASE}"
  
@@ -286,7 +300,7 @@ index b7a0f66..1bf7b54 100644
  
  inherit image-live
  
-@@ -31,8 +31,8 @@ build_img() {
+@@ -33,8 +33,8 @@ build_img() {
      BYTES_PER_SECTOR=512
      MiB=$(expr 1024 \* 1024)
      VFAT_RESULTS=${DEPLOY_DIR_IMAGE}/${PN}-results.hddimg
@@ -297,18 +311,18 @@ index b7a0f66..1bf7b54 100644
      VFAT_RESULTS_SPACE=$(expr $VFAT_RESULTS_SPACE_MiB \* $MiB)
      VFAT_RESULTS_BLOCKS=$(expr $VFAT_RESULTS_SPACE / 1024)
      # TODO: do we need to dynamically generate the UUID?
-@@ -51,6 +51,9 @@ build_img() {
+@@ -53,6 +53,9 @@ build_img() {
      mkdosfs -C ${VFAT_RESULTS} -S ${BYTES_PER_SECTOR} -i ${VFAT_RESULTS_UUID} \
              -n ${VFAT_RESULTS_LABEL} $VFAT_RESULTS_BLOCKS
  
 +    mmd -i ${VFAT_RESULTS} ::/sbsa_results
-+
 +    mmd -i ${VFAT_RESULTS} ::/sdei_results
++
      dd if=/dev/zero of=${IMG} bs=${BYTES_PER_SECTOR} count=1
  
      # Now that we are calculating sizes in MiB make sure that the value
 diff --git a/meta-luv/recipes-core/images/luv-netboot-image.bb b/meta-luv/recipes-core/images/luv-netboot-image.bb
-index d6eca7b..77dde4f 100644
+index cb4105b..78394ef 100644
 --- a/meta-luv/recipes-core/images/luv-netboot-image.bb
 +++ b/meta-luv/recipes-core/images/luv-netboot-image.bb
 @@ -25,7 +25,8 @@ do_mkimage[depends] += "dosfstools-native:do_populate_sysroot \
@@ -316,20 +330,25 @@ index d6eca7b..77dde4f 100644
                          cdrtools-native:do_populate_sysroot \
                          virtual/kernel:do_deploy \
 -			${_BITSDEPENDS}"
-+                        ${_BITSDEPENDS} \
++			            ${_BITSDEPENDS} \
 +                        ${_SBBRDEPENDS}"
  
  do_bootimg[noexec] = "1"
  
-@@ -33,6 +34,8 @@ do_populate_image() {
- 	install -d ${HDDDIR}${EFIDIR}
- 	if [ "${TARGET_ARCH}" = "aarch64" ]; then
- 		echo "${DEST_EFI_LOADER_IMAGE}" > ${HDDDIR}${EFIDIR}/startup.nsh
-+		efi_populate_sbbr ${HDDDIR}
-+		efi_populate_sbsa ${HDDDIR}
- 		install -m 0644 ${DEPLOY_DIR_IMAGE}/${GRUB_EFI_LOADER_IMAGE} ${HDDDIR}${EFIDIR}/${DEST_EFI_LOADER_IMAGE}
+@@ -36,6 +37,13 @@ do_populate_image() {
+ 	if [ "${TARGET_ARCH}" != "aarch64" ]; then
+ 		efi_populate_bits ${HDDDIR}
  	fi
- 	install -m 0644 ${GRUBCFG} ${HDDDIR}${EFIDIR}
++    if [ "${TARGET_ARCH}" = "aarch64" ]; then
++        echo "${DEST_EFI_LOADER_IMAGE}" > ${HDDDIR}${EFIDIR}/startup.nsh
++        efi_populate_sbbr ${HDDDIR}
++        efi_populate_sbsa ${HDDDIR}
++        install -m 0644 ${DEPLOY_DIR_IMAGE}/${GRUB_EFI_LOADER_IMAGE} ${HDDDIR}${EFIDIR}/${DEST_EFI_LOADER_IMAGE}
++    fi
++
+ 	build_hddimg
+ }
+ 
 diff --git a/meta-luv/recipes-core/kernel_efi_warnings/kernel-efi-warnings_0.1.bb b/meta-luv/recipes-core/kernel_efi_warnings/kernel-efi-warnings_0.1.bb
 index a0fde3c..85eec50 100644
 --- a/meta-luv/recipes-core/kernel_efi_warnings/kernel-efi-warnings_0.1.bb
@@ -341,10 +360,10 @@ index a0fde3c..85eec50 100644
 -LUV_TEST="kernel-efi-warnings"
 -LUV_TEST_ARGS=""
 diff --git a/meta-luv/recipes-core/luv-test/luv-test.bb b/meta-luv/recipes-core/luv-test/luv-test.bb
-index 164a616..98875a5 100644
+index e6263d9..922435f 100644
 --- a/meta-luv/recipes-core/luv-test/luv-test.bb
 +++ b/meta-luv/recipes-core/luv-test/luv-test.bb
-@@ -36,6 +36,9 @@ SRC_URI += "file://luv-test-manager file://luv-test-parser \
+@@ -42,6 +42,9 @@ SRC_URI += "file://luv-test-manager \
              file://luv-reboot-poweroff.service \
              file://luv-reboot-poweroff \
              file://luv-message \
@@ -354,9 +373,9 @@ index 164a616..98875a5 100644
            "
  
  RDEPENDS_${PN}+= "kernel-modules curl iputils iproute2 bash init-ifupdown dhcp-client gzip"
-@@ -84,6 +87,11 @@ do_install_append() {
-        install -m 0644 ${WORKDIR}/luv-scripts ${D}${datadir}/luv/html
-        install -m 0644 ${WORKDIR}/luv-css-styles ${D}${datadir}/luv/html
+@@ -97,6 +100,11 @@ do_install_append() {
+        install -m 0644 ${WORKDIR}/icon_fail3.png ${D}${datadir}/luv/html
+        install -m 0644 ${WORKDIR}/icon_failunk.png ${D}${datadir}/luv/html
  
 +       # Install luv-collect-results script
 +       install -m 755 ${WORKDIR}/luv-collect-results ${D}${sysconfdir}/
@@ -366,28 +385,14 @@ index 164a616..98875a5 100644
         install -d ${D}${systemd_unitdir}/system
  
         install -m 0644 ${WORKDIR}/luv-test-manager.service ${D}${systemd_unitdir}/system
-diff --git a/meta-luv/recipes-core/luv-test/luv-test/luv-message b/meta-luv/recipes-core/luv-test/luv-test/luv-message
-index 50edf1f..fa3f95a 100755
---- a/meta-luv/recipes-core/luv-test/luv-test/luv-message
-+++ b/meta-luv/recipes-core/luv-test/luv-test/luv-message
-@@ -8,7 +8,7 @@ luv_msg_write() {
- 
-     if [ $# == 2 ]; then
-          sleep $2
--         plymouth_hide "$1"
-+         /bin/plymouth hide-message --text="$1"
-     fi
- 
-     echo "$1" >&2
 diff --git a/meta-luv/recipes-core/luv-test/luv-test/luv-test-manager b/meta-luv/recipes-core/luv-test/luv-test/luv-test-manager
-index f1e2176..caa327d 100644
+index ffb197c..7ed9401 100644
 --- a/meta-luv/recipes-core/luv-test/luv-test/luv-test-manager
 +++ b/meta-luv/recipes-core/luv-test/luv-test/luv-test-manager
-@@ -289,6 +289,16 @@ cat ${LUV_SAVE_RESULTS_DIR}/luv.results | awk '/\[\+/  { units += 1 }
- cat /tmp/testsuites | html_inline ${LUV_HTML_REPORT} | tee -a /tmp/luv.results \
-          ${LUV_SAVE_RESULTS_DIR}/luv.results
+@@ -385,6 +385,15 @@ result=$(cat /tmp/testsuites)
+ echo -e '\n'$result | tee -a /tmp/luv.results ${LUV_SAVE_RESULTS_DIR}/luv.results | \
+         html_inline ${LUV_HTML_REPORT}
  
-+
 +#test SDEI compliance on luv
 +sh /etc/luv-sdei-test ${LUV_STORAGE}
 +
@@ -397,35 +402,36 @@ index f1e2176..caa327d 100644
 +# collecting test results
 +python3 /etc/luv-collect-results ${LUV_STORAGE} ${LUV_STORAGE}/results.md
 +
- result=$(cat /tmp/testsuites)
  luv_msg_write "$result"
  sleep 2
-diff --git a/meta-luv/recipes-kernel/linux/linux-yocto-efi-test_4.14.bb b/meta-luv/recipes-kernel/linux/linux-yocto-efi-test_4.14.bb
-index f02dfa5..b4b590e 100644
---- a/meta-luv/recipes-kernel/linux/linux-yocto-efi-test_4.14.bb
-+++ b/meta-luv/recipes-kernel/linux/linux-yocto-efi-test_4.14.bb
-@@ -59,7 +59,7 @@ KERNEL_FEATURES_remove= " features/debug/printk.scc"
+ 
+diff --git a/meta-luv/recipes-kernel/linux/linux-luv_4.18.bb b/meta-luv/recipes-kernel/linux/linux-luv_4.18.bb
+index 3d58d44..b6d30bd 100644
+--- a/meta-luv/recipes-kernel/linux/linux-luv_4.18.bb
++++ b/meta-luv/recipes-kernel/linux/linux-luv_4.18.bb
+@@ -61,7 +61,8 @@ KERNEL_FEATURES_remove= " features/debug/printk.scc \
  
  # Override SRC_URI in a bbappend file to point at a different source
  # tree if you do not want to build from Linus' tree.
 -SRC_URI = "git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git;protocol=git;branch=${KBRANCH};name=machine"
++#SRC_URI = "git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git;protocol=git;branch=${KBRANCH};name=machine"
 +SRC_URI = "git://kernel.googlesource.com/pub/scm/linux/kernel/git/torvalds/linux;protocol=https;branch=${KBRANCH};name=machine"
  
  # These patches are under discussion on ML
  SRC_URI += "file://0001-serial-SPCR-check-bit-width-for-the-16550-UART.patch  \
-@@ -80,6 +80,7 @@ SRC_URI += "file://0001-PCI-Vulcan-AHCI-PCI-bar-fix-for-Broadcom-Vulcan-earl.pat
+@@ -82,6 +83,7 @@ SRC_URI += "file://0001-PCI-Vulcan-AHCI-PCI-bar-fix-for-Broadcom-Vulcan-earl.pat
              file://0001-selftests-change-reboot-flag-location.patch \
              file://0001-pstore-test-remove-log-directory.patch \
              file://0001-x86-mttr-Update-only-valid-variable-range-MTRRs.patch \
-+            file://0001-Enterprise-acs-linux-v4.13.patch \
++            file://0001-Enterprise-acs-linux-v4.18.patch \
             "
  
  COMMON_CFG_x86 = " file://qemux86/modules.cfg \
 diff --git a/meta/conf/bitbake.conf b/meta/conf/bitbake.conf
-index 9696273..11d8888 100644
+index ecc43a4..f045d74 100644
 --- a/meta/conf/bitbake.conf
 +++ b/meta/conf/bitbake.conf
-@@ -763,7 +763,7 @@ INITRAMFS_FSTYPES ?= "cpio.gz"
+@@ -769,7 +769,7 @@ INITRAMFS_FSTYPES ?= "cpio.gz"
  # The maximum size in Kbytes for the generated initramfs image size.
  # Usually, it should be less than 1/2 of ram size, or you may fail to
  # boot it.
@@ -434,6 +440,19 @@ index 9696273..11d8888 100644
  
  DEFAULT_TASK_PROVIDER ?= "packagegroup-base"
  MACHINE_TASK_PROVIDER ?= "${DEFAULT_TASK_PROVIDER}"
+diff --git a/meta/recipes-core/systemd/systemd-serialgetty/serial-getty@.service b/meta/recipes-core/systemd/systemd-serialgetty/serial-getty@.service
+index e8b027e..1611bfe 100644
+--- a/meta/recipes-core/systemd/systemd-serialgetty/serial-getty@.service
++++ b/meta/recipes-core/systemd/systemd-serialgetty/serial-getty@.service
+@@ -21,7 +21,7 @@ IgnoreOnIsolate=yes
+ 
+ [Service]
+ Environment="TERM=xterm"
+-ExecStart=-/sbin/agetty -8 -L %I @BAUDRATE@ $TERM
++ExecStart=-/sbin/agetty -8 --autologin root --noclear -L %I @BAUDRATE@ $TERM
+ Type=idle
+ Restart=always
+ RestartSec=0
 -- 
 2.7.4
 

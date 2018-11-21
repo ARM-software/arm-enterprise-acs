@@ -18,10 +18,10 @@ TOPDIR=$PWD
 rm -rf $LUVDIR
 git clone https://github.com/intel/luv-yocto.git luv
 cd $LUVDIR
-git checkout -b v2.2 v2.2
-git am $TOPDIR/luvos/patches/luvos.patch
+git checkout -b v2.3 v2.3
+git am $TOPDIR/luvos/patches/luvos_v2.3.patch
 cd $TOPDIR
 ln -s $TOPDIR/luvos/scripts/luv-collect-results $LUVDIR/meta-luv/recipes-core/luv-test/luv-test/luv-collect-results
 ln -s $TOPDIR/luvos/scripts/luv-sbsa-test $LUVDIR/meta-luv/recipes-core/luv-test/luv-test/luv-sbsa-test
 ln -s $TOPDIR/luvos/scripts/luv-sdei-test $LUVDIR/meta-luv/recipes-core/luv-test/luv-test/luv-sdei-test
-ln -s $TOPDIR/luvos/patches/0001-Enterprise-acs-linux-v4.13.patch $LUVDIR/meta-luv/recipes-kernel/linux/linux-yocto-efi-test/
+ln -s $TOPDIR/luvos/patches/0001-Enterprise-acs-linux-v4.18.patch $LUVDIR/meta-luv/recipes-kernel/linux/linux-luv/
