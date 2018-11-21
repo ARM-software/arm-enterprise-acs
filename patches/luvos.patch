@@ -1,6 +1,6 @@
-From 448819482390b95e2d9c801d7eec43cffe0584af Mon Sep 17 00:00:00 2001
-From: Sakar Arora <sakar.arora@arm.com>
-Date: Wed, 21 Nov 2018 12:33:53 +0530
+From 566ede34e68884d8705bce103ed24ce838596847 Mon Sep 17 00:00:00 2001
+From: Sakar Arora <Sakar.Arora@arm.com>
+Date: Wed, 21 Nov 2018 23:07:06 +0530
 Subject: [PATCH] luvos
 
 ---
@@ -27,8 +27,9 @@ Subject: [PATCH] luvos
  .../luv-test/luv-test/luv-test-manager             |   5 +
  .../linux/linux-yocto-efi-test_4.14.bb             |   3 +-
  meta/conf/bitbake.conf                             |   2 +-
+ .../systemd-serialgetty/serial-getty@.service      |   2 +-
  sbsa_setup.sh                                      |  41 +++
- 24 files changed, 1004 insertions(+), 16 deletions(-)
+ 25 files changed, 1005 insertions(+), 17 deletions(-)
  create mode 100755 build_luvos.sh
  create mode 100644 meta-luv/recipes-bsp/sbbr/sbbr/README.md
  create mode 100644 meta-luv/recipes-bsp/sbbr/sbbr/sbbr-sct.patch
@@ -1295,6 +1296,19 @@ index 9696273..11d8888 100644
  
  DEFAULT_TASK_PROVIDER ?= "packagegroup-base"
  MACHINE_TASK_PROVIDER ?= "${DEFAULT_TASK_PROVIDER}"
+diff --git a/meta/recipes-core/systemd/systemd-serialgetty/serial-getty@.service b/meta/recipes-core/systemd/systemd-serialgetty/serial-getty@.service
+index e8b027e..1611bfe 100644
+--- a/meta/recipes-core/systemd/systemd-serialgetty/serial-getty@.service
++++ b/meta/recipes-core/systemd/systemd-serialgetty/serial-getty@.service
+@@ -21,7 +21,7 @@ IgnoreOnIsolate=yes
+ 
+ [Service]
+ Environment="TERM=xterm"
+-ExecStart=-/sbin/agetty -8 -L %I @BAUDRATE@ $TERM
++ExecStart=-/sbin/agetty -8 --autologin root --noclear -L %I @BAUDRATE@ $TERM
+ Type=idle
+ Restart=always
+ RestartSec=0
 diff --git a/sbsa_setup.sh b/sbsa_setup.sh
 new file mode 100755
 index 0000000..7032b0b
