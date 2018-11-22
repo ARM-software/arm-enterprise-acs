@@ -18,7 +18,7 @@
 #ifndef __SDEI_AVS_LEVEL_H__
 #define __SDEI_AVS_LEVEL_H__
 
-  #define SDEI_ACS_MAJOR_VER 0
-  #define SDEI_ACS_MINOR_VER 1
+  #define SDEI_ACS_MAJOR_VER 1
+  #define SDEI_ACS_MINOR_VER 0
 
 #endif

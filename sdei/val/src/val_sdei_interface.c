@@ -477,6 +477,7 @@ int32_t val_sdei_initialization(void)
 
     if (!pal_acpi_present()) {
         val_print(ACS_LOG_WARN, "\n        SDEI entry not found in ACPI table");
+        return -1;
     }
 
     conduit = pal_conduit_get();

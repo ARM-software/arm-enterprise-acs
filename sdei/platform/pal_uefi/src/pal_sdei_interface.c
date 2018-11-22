@@ -25,6 +25,7 @@
 #include "Foundation/Efi/Guid/Acpi/Acpi.h"
 #include <Protocol/AcpiTable.h>
 #include "Include/IndustryStandard/Acpi61.h"
+#include "Include/IndustryStandard/Acpi62.h"
 
 #include "pal_uefi.h"
 #include "pal_sdei_interface.h"
@@ -37,9 +38,9 @@
  */
 void (*sdei_firmware_call)(ARM_SMC_ARGS *args);
 typedef struct {
-    UINT32 a; //TODO to remove once supported
-} EFI_ACPI_6_2_SOFTWARE_DELEGATION_EXCEPTION_INTERFACE;
-static EFI_ACPI_6_2_SOFTWARE_DELEGATION_EXCEPTION_INTERFACE *gSdeiHdr; //TODO ADD SDEI SPECIFIC SIGNATURE
+    EFI_ACPI_DESCRIPTION_HEADER Header;
+} EFI_ACPI_6_2_SOFTWARE_DELEGATED_EXCEPTIONS_INTERFACE_TABLE_HEADER;
+static EFI_ACPI_6_2_SOFTWARE_DELEGATED_EXCEPTIONS_INTERFACE_TABLE_HEADER *gSdeiHdr;
 
 UINT64
 pal_get_sdei_ptr();
@@ -59,22 +60,6 @@ void
 ArmCallHvc (
   IN OUT ARM_SMC_ARGS *Args
   );
-
-int pal_pe_get_mpidr_cpu_id(int cpu, UINT64 *fw_cpu)
-{
-    int err = SDEI_STATUS_INVALID;
-    //TODO
-
-    return err;
-}
-
-int pal_pe_get_cpu_id_mpidr(UINT64 fw_cpu, int *cpu)
-{
-    int err = SDEI_STATUS_INVALID;
-    //TODO
-
-    return err;
-}
 
 int pal_sdei_to_uefi_errno(unsigned long sdei_err)
 {
@@ -140,11 +125,6 @@ int pal_invoke_sdei_fn(unsigned long function_id, unsigned long arg0,
     return err;
 }
 
-void pal_execute_eachpe(void *func, void *info, int wait){
-
-    //TODO;
-}
-
 void *pal_intf_alloc(int size){
     return 0;
 }
@@ -155,7 +135,6 @@ void pal_intf_free(void *handle) {
 
 unsigned int pal_smp_pe_id(void) {
 
-    //TODO;
     return 0;
 }
 
@@ -196,7 +175,7 @@ int pal_conduit_get(void)
 
 int pal_acpi_present(void)
 {
-    gSdeiHdr = (EFI_ACPI_6_2_SOFTWARE_DELEGATION_EXCEPTION_INTERFACE *) pal_get_sdei_ptr(); //TODO ADD SDEI SPECIFIC SIGNATURE
+    gSdeiHdr = (EFI_ACPI_6_2_SOFTWARE_DELEGATED_EXCEPTIONS_INTERFACE_TABLE_HEADER *) pal_get_sdei_ptr();
 
     if (gSdeiHdr == NULL) {
       pal_print(ACS_LOG_ERR, "\n        SDEI entry not found in ACPI table");

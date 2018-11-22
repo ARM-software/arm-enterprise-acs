@@ -21,7 +21,6 @@
 #include "pal_interface.h"
 #include "val_test_infra.h"
 #ifdef TARGET_LINUX
-  #include "pal_linux.h"
   #define TRUE 1
   #define FALSE 0
   #define CLIENT_EL 0x1

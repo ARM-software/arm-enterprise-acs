@@ -19,10 +19,9 @@ export CROSS_COMPILE ?= aarch64-linux-gnu-
 export ARCH ?= arm64
 
 #since we have copied the files locally
-ACS_DIR ?= ../
+ACS_DIR ?= ./
 
-VAL_SRC = $(ACS_DIR)/val/src
-TEST_POOL = $(ACS_DIR)/test_pool
+VAL_SRC = $(ACS_DIR)/src
 
 obj-m += sdei_acs_val.o
 sdei_acs_val-objs += $(VAL_SRC)/val_pe.o \
@@ -37,57 +36,8 @@ sdei_acs_val-objs += $(VAL_SRC)/val_pe.o \
     $(VAL_SRC)/AArch64/PeRegSysSupport.o \
     $(VAL_SRC)/AArch64/ArchTimerSupport.o \
     $(VAL_SRC)/AArch64/event_handler.o \
-    $(TEST_POOL)/test_001.o \
-    $(TEST_POOL)/test_002.o \
-    $(TEST_POOL)/test_003.o \
-    $(TEST_POOL)/test_004.o \
-    $(TEST_POOL)/test_005.o \
-    $(TEST_POOL)/test_006.o \
-    $(TEST_POOL)/test_007.o \
-    $(TEST_POOL)/test_008.o \
-    $(TEST_POOL)/test_009.o \
-    $(TEST_POOL)/test_010.o \
-    $(TEST_POOL)/test_011.o \
-    $(TEST_POOL)/test_012.o \
-    $(TEST_POOL)/test_013.o \
-    $(TEST_POOL)/test_014.o \
-    $(TEST_POOL)/test_015.o \
-    $(TEST_POOL)/test_016.o \
-    $(TEST_POOL)/test_017.o \
-    $(TEST_POOL)/test_018.o \
-    $(TEST_POOL)/test_019.o \
-    $(TEST_POOL)/test_020.o \
-    $(TEST_POOL)/test_021.o \
-    $(TEST_POOL)/test_022.o \
-    $(TEST_POOL)/test_023.o \
-    $(TEST_POOL)/test_024.o \
-    $(TEST_POOL)/test_025.o \
-    $(TEST_POOL)/test_026.o \
-    $(TEST_POOL)/test_027.o \
-    $(TEST_POOL)/test_028.o \
-    $(TEST_POOL)/test_029.o \
-    $(TEST_POOL)/test_030.o \
-    $(TEST_POOL)/test_031.o \
-    $(TEST_POOL)/test_032.o \
-    $(TEST_POOL)/test_033.o \
-    $(TEST_POOL)/test_034.o \
-    $(TEST_POOL)/test_035.o \
-    $(TEST_POOL)/test_036.o \
-    $(TEST_POOL)/test_037.o \
-    $(TEST_POOL)/test_038.o \
-    $(TEST_POOL)/test_039.o \
-    $(TEST_POOL)/test_040.o \
-    $(TEST_POOL)/test_041.o \
-    $(TEST_POOL)/test_042.o \
-    $(TEST_POOL)/test_043.o \
-    $(TEST_POOL)/test_044.o \
-    $(TEST_POOL)/test_045.o \
-    $(TEST_POOL)/test_046.o \
-    $(TEST_POOL)/test_047.o \
-    $(TEST_POOL)/test_048.o \
-    $(TEST_POOL)/test_049.o
 
-ccflags-y=-I$(PWD)/$(ACS_DIR)/val/include -I$(PWD)/$(ACS_DIR)/platform/pal_linux/include -I$(PWD)/$(ACS_DIR)/ -DTARGET_LINUX -Wall -Werror
+ccflags-y=-I$(PWD)/$(ACS_DIR)/include  -I$(PWD)/$(ACS_DIR)/ -DTARGET_LINUX -Wall -Werror
 
 all:
 ifeq ($(KERNEL_SRC),)

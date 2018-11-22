@@ -268,6 +268,13 @@ ShellAppMain (
      HelpMsg();
      return 0;
   }
+ 
+  Status = val_sdei_initialization();
+  if (Status) {
+      val_print(ACS_LOG_ERR, "SDEI initialization failed\n");
+      return Status;
+  }
+
   Status = createPeInfoTable();
   if (Status)
     return Status;
@@ -287,12 +294,6 @@ ShellAppMain (
   Status = createTimerInfoTable();
   if (Status)
     return Status;
-
-  Status = val_sdei_initialization();
-  if (Status) {
-      val_print(ACS_LOG_ERR, "SDEI initialization failed\n");
-      return Status;
-  }
 
   val_shared_mem_alloc();
 
