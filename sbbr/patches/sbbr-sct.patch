@@ -24,7 +24,7 @@ index 10d9e8c..9deb345 100644
 +  gEfiTestRecoveryLibraryGuid
    gBlackBoxEfiHIIPackageListProtocolGuid
 diff --git a/SctPkg/TestCase/UEFI/EFI/BootServices/ImageServices/BlackBoxTest/ImageBBTestConformance.c b/SctPkg/TestCase/UEFI/EFI/BootServices/ImageServices/BlackBoxTest/ImageBBTestConformance.c
-index 4c63a08..6bd92ec 100644
+index 4c63a08..e19c609 100644
 --- a/SctPkg/TestCase/UEFI/EFI/BootServices/ImageServices/BlackBoxTest/ImageBBTestConformance.c
 +++ b/SctPkg/TestCase/UEFI/EFI/BootServices/ImageServices/BlackBoxTest/ImageBBTestConformance.c
 @@ -809,6 +809,7 @@ BBTestExitBootServicesConsistencyTest (
@@ -39,14 +39,17 @@ index 4c63a08..6bd92ec 100644
    UINTN                                DataSize;
    UINT8                                Data[MAX_BUFFER_SIZE];
    EFI_STATUS                           ReturnStatus;
-+  UINTN                                RecoveryData[2], RecoveryDataSize;
++  UINTN                                RecoveryData, RecoveryDataSize;
  
    //
    // Init
-@@ -834,6 +836,16 @@ BBTestExitBootServicesConsistencyTest (
+@@ -834,6 +836,19 @@ BBTestExitBootServicesConsistencyTest (
      return Status;
    }
  
++  //
++  // Get the Recovery Library Interface
++  //
 +  RecoveryLib = NULL;
 +
 +  Status = gtBS->HandleProtocol (
@@ -60,13 +63,9 @@ index 4c63a08..6bd92ec 100644
    Status = ImageTestCheckForCleanEnvironment (&Numbers);
    if (EFI_ERROR(Status)) {
      StandardLib->RecordAssertion (
-@@ -849,18 +861,12 @@ BBTestExitBootServicesConsistencyTest (
-                    );
+@@ -850,26 +865,14 @@ BBTestExitBootServicesConsistencyTest (
      return Status;
    }
-+  
-+  RecoveryDataSize = sizeof(RecoveryData);
-+  Status = RecoveryLib->ReadResetRecord(RecoveryLib, &RecoveryDataSize, RecoveryData);
  
 -  DataSize = MAX_BUFFER_SIZE;
 -  Status = gtRT->GetVariable (
@@ -76,15 +75,39 @@ index 4c63a08..6bd92ec 100644
 -                 &DataSize,                                   // DataSize
 -                 &ReturnStatus                                // Data
 -                 );
--
++  RecoveryDataSize = sizeof(RecoveryData);
++  Status = RecoveryLib->ReadResetRecord(RecoveryLib, &RecoveryDataSize, &RecoveryData);
+ 
 -  if (Status == EFI_SUCCESS) {
 -    goto CheckResult;
-+  if (!EFI_ERROR(Status) && RecoveryData[0] == 1) {
++  if (!EFI_ERROR(Status) && RecoveryData == 1) {
 +      goto CheckResult;
    }
  
    //
-@@ -899,19 +905,10 @@ BBTestExitBootServicesConsistencyTest (
+-  // Print out some information to avoid the user thought it is an error
+-  //
+-  SctPrint (L"System will cold reset after 2 second. please run this test again...");
+-  gtBS->Stall (2000000);
+-
+-  //
+   // Checkpoint 1:
+   // 3.5.2.1  ExitBootServices should not succeed with an invalid MapKey
+   //
+@@ -892,26 +895,26 @@ BBTestExitBootServicesConsistencyTest (
+                    );
+     return Status;
+   }
+-
+   MapKey += MapKey;
+ 
++  RecoveryData = 1;
++  RecoveryLib->WriteResetRecord (RecoveryLib, sizeof(RecoveryData), &RecoveryData);
++
++  SctPrint (L"System will cold reset after 1 second. please run this test again...");
++  gtBS->Stall (1000000);
++
+   ReturnStatus = gtBS->ExitBootServices (
                           mImageHandle,
                           MapKey
                           );
@@ -93,7 +116,7 @@ index 4c63a08..6bd92ec 100644
 -  } else {
 -    AssertionType = EFI_TEST_ASSERTION_FAILED;
 -  }
--
+ 
 -  Status = gtRT->SetVariable (
 -                     L"ExitBootServicesTestVariable",                                                           // VariableName
 -                     &gTestVendor1Guid,                                                                         // VendorGuid
@@ -101,31 +124,52 @@ index 4c63a08..6bd92ec 100644
 -                     sizeof(EFI_STATUS),                        // DataSize
 -                     &ReturnStatus                              // Data
 -                     );
-+  
-+  RecoveryData[0] = 1;
-+  RecoveryData[1] = ReturnStatus;
-+  RecoveryLib->WriteResetRecord (RecoveryLib, sizeof(RecoveryData), RecoveryData);
++  Status = gtRT->SetVariable (
++                     L"ExitBootServicesTestVariable",                                                           // VariableName
++                     &gTestVendor1Guid,                                                                         // VendorGuid
++                     EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS, // Attributes
++                     sizeof(EFI_STATUS),                        // DataSize
++                     &ReturnStatus                              // Data
++                     );
  
    //reset system
    gtRT->ResetSystem (EfiResetCold, EFI_SUCCESS, 0, NULL);
-@@ -919,7 +916,7 @@ BBTestExitBootServicesConsistencyTest (
+@@ -919,6 +922,30 @@ BBTestExitBootServicesConsistencyTest (
    // get var to get the status
  CheckResult:
  
--  if (ReturnStatus == EFI_INVALID_PARAMETER) {
-+  if (RecoveryData[1] == EFI_INVALID_PARAMETER) {
++  DataSize = MAX_BUFFER_SIZE;
++  Status = gtRT->GetVariable (
++                 L"ExitBootServicesTestVariable",             // VariableName
++                 &gTestVendor1Guid,                           // VendorGuid
++                 NULL,                                        // Attributes
++                 &DataSize,                                   // DataSize
++                 &ReturnStatus                                // Data
++                 );
++
++  if (EFI_ERROR(Status)) {
++    AssertionType = EFI_TEST_ASSERTION_FAILED;
++    StandardLib->RecordAssertion (
++                 StandardLib,
++                 AssertionType,
++                 gConsistencyTestAssertionGuid009,
++                 L"BS.ExitBootServices - ConsistencyTestCheckpoint1",
++                 L"%a:%d: GetVariable service routine failed - %r",
++                 __FILE__,
++                 (UINTN)__LINE__,
++                 Status
++                 );
++    goto Done;
++  }
++
+   if (ReturnStatus == EFI_INVALID_PARAMETER) {
      AssertionType = EFI_TEST_ASSERTION_PASSED;
    } else {
-     AssertionType = EFI_TEST_ASSERTION_FAILED;
-@@ -933,18 +930,10 @@ CheckResult:
-                  L"%a:%d: the Status is - %r, expected status is %r",
-                  __FILE__,
-                  (UINTN)__LINE__,
--                 ReturnStatus,
-+                 RecoveryData[1],
+@@ -936,14 +963,7 @@ CheckResult:
+                  ReturnStatus,
                   EFI_INVALID_PARAMETER
                   );
- 
+-
 -  Status = gtRT->SetVariable (
 -                     L"ExitBootServicesTestVariable",                                                           // VariableName
 -                     &gTestVendor1Guid,                                                                         // VendorGuid
@@ -133,11 +177,11 @@ index 4c63a08..6bd92ec 100644
 -                     0,                               // DataSize
 -                     Data                             // Data
 -                     );
--
++Done:
+ 
    Status = ImageTestCheckForCleanEnvironment (&Numbers);
    if (EFI_ERROR(Status)) {
-     StandardLib->RecordAssertion (
-@@ -961,4 +950,3 @@ CheckResult:
+@@ -961,4 +981,3 @@ CheckResult:
    }
    return EFI_SUCCESS;
  }
@@ -171,7 +215,7 @@ index da3277b..5457565 100644
  typedef struct {
    VOID          *Registration;
 diff --git a/SctPkg/TestCase/UEFI/EFI/BootServices/MemoryAllocationServices/BlackBoxTest/MemoryAllocationServicesBBTestConformance.c b/SctPkg/TestCase/UEFI/EFI/BootServices/MemoryAllocationServices/BlackBoxTest/MemoryAllocationServicesBBTestConformance.c
-index 1a73c99..23ae7a1 100644
+index 61e4f31..a3fefc5 100644
 --- a/SctPkg/TestCase/UEFI/EFI/BootServices/MemoryAllocationServices/BlackBoxTest/MemoryAllocationServicesBBTestConformance.c
 +++ b/SctPkg/TestCase/UEFI/EFI/BootServices/MemoryAllocationServices/BlackBoxTest/MemoryAllocationServicesBBTestConformance.c
 @@ -1110,81 +1110,3 @@ BBTestAllocatePoolConsistencyTest (
@@ -418,33 +462,25 @@ index 619af38..02cfcd2 100644
    {
      MEMORY_ALLOCATION_SERVICES_GETMEMORYMAP_STRESS_TEST_GUID,
 diff --git a/SctPkg/TestCase/UEFI/EFI/BootServices/SbbrBootServices/BlackBoxTest/SbbrBootServicesBBTestFunction.c b/SctPkg/TestCase/UEFI/EFI/BootServices/SbbrBootServices/BlackBoxTest/SbbrBootServicesBBTestFunction.c
-index c88d60b..782d5a5 100644
+index c88d60b..6fbd11a 100644
 --- a/SctPkg/TestCase/UEFI/EFI/BootServices/SbbrBootServices/BlackBoxTest/SbbrBootServicesBBTestFunction.c
 +++ b/SctPkg/TestCase/UEFI/EFI/BootServices/SbbrBootServices/BlackBoxTest/SbbrBootServicesBBTestFunction.c
-@@ -233,23 +233,6 @@ BBTestMemoryMapTest (
+@@ -235,6 +235,7 @@ BBTestMemoryMapTest (
+     //
+     // Checking for 64KB alignment
+     //
++	/*
+     if (MemoryMapDescriptor->PhysicalStart & (SIZE_64KB - 1)) {
+       StandardLib->RecordAssertion (
+                   StandardLib,
+@@ -248,6 +249,7 @@ BBTestMemoryMapTest (
+                   );
+       error = TRUE;
      }
++	*/
  
      //
--    // Checking for 64KB alignment
--    //
--    if (MemoryMapDescriptor->PhysicalStart & (SIZE_64KB - 1)) {
--      StandardLib->RecordAssertion (
--                  StandardLib,
--                  EFI_TEST_ASSERTION_FAILED,
--                  gSbbrBootServicesAssertion001Guid,
--                  L"MemoryMap",
--                  L"%a:%d - MemoryMap 0x%X Not Aligned to 64KB",
--                  __FILE__,
--                  __LINE__,
--                  MemoryMapDescriptor
--                  );
--      error = TRUE;
--    }
--
--    //
      // No issues found
-     //
-     if (error == FALSE) {
 diff --git a/SctPkg/TestCase/UEFI/EFI/Generic/EfiCompliant/BlackBoxTest/Dependency/Config/EfiCompliant.ini b/SctPkg/TestCase/UEFI/EFI/Generic/EfiCompliant/BlackBoxTest/Dependency/Config/EfiCompliant.ini
 index 72e959d..e37a8d6 100644
 --- a/SctPkg/TestCase/UEFI/EFI/Generic/EfiCompliant/BlackBoxTest/Dependency/Config/EfiCompliant.ini
@@ -809,7 +845,7 @@ index b42fae0..be1cd8b 100644
 \ No newline at end of file
 +#endif /* _SYSENVCONFIG_BB_TEST_FUNCTION_H_ */
 diff --git a/SctPkg/TestCase/UEFI/EFI/Generic/SbbrSysEnvConfig/BlackBoxTest/SysEnvConfigBBTestMain.c b/SctPkg/TestCase/UEFI/EFI/Generic/SbbrSysEnvConfig/BlackBoxTest/SysEnvConfigBBTestMain.c
-index 9ed7cf8..0444526 100644
+index 9ed7cf8..5269f92 100644
 --- a/SctPkg/TestCase/UEFI/EFI/Generic/SbbrSysEnvConfig/BlackBoxTest/SysEnvConfigBBTestMain.c
 +++ b/SctPkg/TestCase/UEFI/EFI/Generic/SbbrSysEnvConfig/BlackBoxTest/SysEnvConfigBBTestMain.c
 @@ -82,15 +82,6 @@ EFI_BB_TEST_ENTRY_FIELD gBBTestEntryField[] = {
@@ -828,7 +864,7 @@ index 9ed7cf8..0444526 100644
      SYSENVCONFIG_OS_DISK_FORMAT_GUID,
      L"OsDiskFormat",
      L"Checking that the operating system disk contains a GPT partition table with an EFI partition.",
-@@ -99,15 +90,6 @@ EFI_BB_TEST_ENTRY_FIELD gBBTestEntryField[] = {
+@@ -99,15 +90,7 @@ EFI_BB_TEST_ENTRY_FIELD gBBTestEntryField[] = {
      EFI_TEST_CASE_AUTO,
      BBTestOsDiskFormatTest
    },
@@ -841,10 +877,11 @@ index 9ed7cf8..0444526 100644
 -    EFI_TEST_CASE_AUTO,
 -    BBTestEbcInterfacePresentTest
 -  },
++ 
    EFI_NULL_GUID
  };
  
-@@ -154,4 +136,4 @@ InitializeBBTestSysEnvConfig (
+@@ -154,4 +137,4 @@ InitializeBBTestSysEnvConfig (
             BBTestSysEnvConfigUnload,
             &gBBTestProtocolInterface
             );
