@@ -19,7 +19,7 @@ rm -rf $LUVDIR
 git clone https://github.com/intel/luv-yocto.git luv
 cd $LUVDIR
 git checkout -b v2.3 v2.3
-git am $TOPDIR/luvos/patches/luvos_v2.3.patch
+git am $TOPDIR/luvos/patches/luvos.patch
 cd $TOPDIR
 ln -s $TOPDIR/luvos/scripts/luv-collect-results $LUVDIR/meta-luv/recipes-core/luv-test/luv-test/luv-collect-results
 ln -s $TOPDIR/luvos/scripts/luv-sbsa-test $LUVDIR/meta-luv/recipes-core/luv-test/luv-test/luv-sbsa-test
