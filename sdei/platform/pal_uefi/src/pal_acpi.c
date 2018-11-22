@@ -24,10 +24,10 @@
 #include "Foundation/Efi/Guid/Acpi/Acpi.h"
 #include <Protocol/AcpiTable.h>
 #include "Include/IndustryStandard/Acpi61.h"
+#include "Include/IndustryStandard/Acpi62.h"
 
 #include "pal_uefi.h"
 
-#define EFI_ACPI_6_2_SOFTWARE_DELEGATION_EXCEPTION_INTERFACE_SIGNATURE ((('S') | ('D' << 8)) | ((('E') | ('I' << 8)) << 16))
 /**
   @brief   Use UEFI System Table to look up Acpi20TableGuid and returns the Xsdt Address
 
@@ -115,7 +115,7 @@ pal_get_sdei_ptr()
   Entry64  = (UINT64 *)(Xsdt + 1);
   Entry64Num = (Xsdt->Length - sizeof(EFI_ACPI_DESCRIPTION_HEADER)) >> 3;
   for (Idx = 0; Idx < Entry64Num; Idx++) {
-    if (*(UINT32 *)(UINTN)(Entry64[Idx]) == EFI_ACPI_6_2_SOFTWARE_DELEGATION_EXCEPTION_INTERFACE_SIGNATURE) {//TODO ADD SDEI SPECIFIC SIGNATURE
+    if (*(UINT32 *)(UINTN)(Entry64[Idx]) == EFI_ACPI_6_2_SOFTWARE_DELEGATED_EXCEPTIONS_INTERFACE_TABLE_SIGNATURE) {
         return(UINT64)(Entry64[Idx]);
     }
   }

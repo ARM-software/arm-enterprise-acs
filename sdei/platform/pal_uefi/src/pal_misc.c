@@ -110,7 +110,7 @@ pal_print_raw(CHAR8 *string, UINT64 data)
 {
     UINT8 j, buffer[16];
     INT8  i=0;
-    /* TODO : Fix THis */
+    /* For Internal Debugging */
     UINT64 addr = BASE_FVP_UART_BASE;
     for (;*string!='\0';++string) {
         if (*string == '%') {
