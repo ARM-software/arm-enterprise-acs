@@ -21,7 +21,13 @@ LUVDIR=$PWD/luv
 rm -rf $SRCDIR
 
 git clone https://github.com/ARM-software/sbsa-acs.git src
+cd src
+git checkout -b v18.11_REL2.0 v18.11_REL2.0
+cd ..
 git clone git://linux-arm.org/linux-acs.git
+cd linux-acs
+git checkout -b v18.11_REL2.0 v18.11_REL2.0
+cd ..
 mv linux-acs/sbsa-acs-drv/files/platform/pal_linux $SRCDIR/platform/
 mv linux-acs/sbsa-acs-drv $SRCDIR
 mv linux-acs/kernel/src/0001-Enterprise-acs-linux-v4.18.patch $LUVDIR/meta-luv/recipes-kernel/linux/linux-luv/

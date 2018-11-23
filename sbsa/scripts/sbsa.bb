@@ -18,12 +18,12 @@ LIC_FILES_CHKSUM = ""
 
 # SCT files placed in ${WORKDIR}/git
 # GCC files placed in ${WORKDIR}/gcc-linaro-5.3.1-2016.05-x86_64_aarch64-linux-gnu
-SRC_URI = "git://github.com/ARM-software/sbsa-acs.git;protocol=https \
+SRC_URI = "git://github.com/ARM-software/sbsa-acs.git;protocol=https;branch=release \
            https://releases.linaro.org/components/toolchain/binaries/5.3-2016.05/aarch64-linux-gnu/gcc-linaro-5.3.1-2016.05-x86_64_aarch64-linux-gnu.tar.xz \
            file://compile.sh"
 
 PV = "1.0+git${SRCPV}"
-SRCREV = "${AUTOREV}"
+SRCREV = "e49b7b23203948d750623d59535cce9e8bc52285"
 
 # GCC checksum.
 SRC_URI[md5sum] = "24ac2e26f50f49f3043f281440b41bba"

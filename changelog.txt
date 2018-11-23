@@ -1,3 +1,10 @@
+v18.11_REL2.0
+
+* SBSA: v5.0 compliance tests added.
+* SBBR: v1.1 compliance tests added. 
+* SDEI: v1.0 compliance tests added.
+* MPAM: v1.0 compliance tests added. The code quality is alpha. Not included in luvos build.
+
 v18.08_REL1.6
 
 * SBSA: Update tag/commit information to include latest bug fixes in sbsa-acs.
