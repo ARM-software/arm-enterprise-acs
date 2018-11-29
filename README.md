@@ -30,7 +30,7 @@ and SBBR specifications. These tests are further described in detail.
   
 ## GitHub branch
 - To pick up the release version of the code, checkout the release branch with the appropriate tag.
-- To get the latest version of the code with bug fixes and new features, use the master branch.
+- To get the latest version of the code with bug fixes and new features, use the REL1.6+ branch.
 
 
 ## Server Base System Architecture - Architecture Compliance Suite
@@ -94,7 +94,7 @@ Perform the following steps to start the ACS build:
 2. Clone the ARM Enterprise ACS source code. <br />
    $ git clone https://github.com/ARM-software/arm-enterprise-acs.git <br />
    $ cd arm-enterprise-acs <br />
-   $ git checkout master <br />
+   $ git checkout REL1.6+ <br />
 3. Download and patch LUV OS source code. <br />
    $ ./acs_sync.sh <br />
    $ cd luv <br />
@@ -173,7 +173,7 @@ The live image boots to UEFI Shell. The different test applications can be run i
 - Shell>FS2:
 - FS2:>FS3:\EFI\BOOT\sbsa\sbsa.nsh
 
-If any failures are encountered, see [SBSA User Guide](https://github.com/ARM-software/sbsa-acs/raw/master/docs/SBSA_ACS_User_Guide.pdf) for debug options.
+If any failures are encountered, see [SBSA User Guide](https://github.com/ARM-software/sbsa-acs/blob/REL1.6%2B/docs/SBSA_ACS_User_Guide.pdf) for debug options.
 Power reset the system after completion of this test and continue with the next step. <br />
 
 Note:
