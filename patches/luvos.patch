@@ -1,6 +1,6 @@
-From 566ede34e68884d8705bce103ed24ce838596847 Mon Sep 17 00:00:00 2001
+From 61d4b47c4297772f9678a85d91951b3eb27013ff Mon Sep 17 00:00:00 2001
 From: Sakar Arora <Sakar.Arora@arm.com>
-Date: Wed, 21 Nov 2018 23:07:06 +0530
+Date: Tue, 18 Dec 2018 16:57:14 +0530
 Subject: [PATCH] luvos
 
 ---
@@ -13,7 +13,7 @@ Subject: [PATCH] luvos
  meta-luv/recipes-bsp/sbsa/files/compile.sh         |  28 ++
  meta-luv/recipes-bsp/sbsa/sbsa.bb                  | 107 +++++++
  meta-luv/recipes-core/efivarfs/efivarfs-test.bb    |   1 -
- meta-luv/recipes-core/fwts/fwts/sbbr-fwts.patch    |  17 ++
+ meta-luv/recipes-core/fwts/fwts/sbbr-fwts.patch    | 112 +++++++
  meta-luv/recipes-core/fwts/fwts_git.bb             |   4 +-
  .../images/core-image-efi-initramfs.bb             |   2 +-
  meta-luv/recipes-core/images/luv-image.inc         |   3 +-
@@ -29,7 +29,7 @@ Subject: [PATCH] luvos
  meta/conf/bitbake.conf                             |   2 +-
  .../systemd-serialgetty/serial-getty@.service      |   2 +-
  sbsa_setup.sh                                      |  41 +++
- 25 files changed, 1005 insertions(+), 17 deletions(-)
+ 25 files changed, 1100 insertions(+), 17 deletions(-)
  create mode 100755 build_luvos.sh
  create mode 100644 meta-luv/recipes-bsp/sbbr/sbbr/README.md
  create mode 100644 meta-luv/recipes-bsp/sbbr/sbbr/sbbr-sct.patch
@@ -855,10 +855,10 @@ index 0853e52..190d683 100644
 -LUV_TEST="efivarfs"
 diff --git a/meta-luv/recipes-core/fwts/fwts/sbbr-fwts.patch b/meta-luv/recipes-core/fwts/fwts/sbbr-fwts.patch
 new file mode 100644
-index 0000000..69e92fe
+index 0000000..6c2dd0f
 --- /dev/null
 +++ b/meta-luv/recipes-core/fwts/fwts/sbbr-fwts.patch
-@@ -0,0 +1,17 @@
+@@ -0,0 +1,112 @@
 +diff --git a/src/acpi/method/method.c b/src/acpi/method/method.c
 +index 1715a39..a325b8a 100644
 +--- a/src/acpi/method/method.c
@@ -874,6 +874,101 @@ index 0000000..69e92fe
 +-		return method_evaluate_method(fw, METHOD_OPTIONAL,
 ++	return method_evaluate_method(fw, METHOD_OPTIONAL,
 + 			"_AEI", NULL, 0, method_test_AEI_return, NULL);
++ }
++ 
++diff --git a/src/dmi/dmicheck/dmicheck.c b/src/dmi/dmicheck/dmicheck.c
++index 567fa33..0730b2d 100644
++--- a/src/dmi/dmicheck/dmicheck.c
+++++ b/src/dmi/dmicheck/dmicheck.c
++@@ -301,26 +301,26 @@ static const fwts_dmi_used_by_kernel dmi_used_by_kernel_table[] = {
++ 	{ TYPE_EOD, 0xff },
++ };
++ 
++-static int dmi_load_file(const char* filename, void *buf, size_t size)
+++static int dmi_load_file(const char* filename, void *buf, size_t *size)
++ {
++ 	int fd;
++ 	ssize_t ret;
++ 
++-	(void)memset(buf, 0, size);
+++	(void)memset(buf, 0, *size);
++ 
++ 	if ((fd = open(filename, O_RDONLY)) < 0)
++ 		return FWTS_ERROR;
++-	ret = read(fd, buf, size);
+++	ret = read(fd, buf, *size);
++ 	(void)close(fd);
++-	if (ret != (ssize_t)size)
++-		return FWTS_ERROR;
+++
+++	*size = ret;
++ 	return FWTS_OK;
++ }
++ 
++ static void* dmi_table_smbios(fwts_framework *fw, fwts_smbios_entry *entry)
++ {
++ 	off_t addr = (off_t)entry->struct_table_address;
++-	size_t length = (size_t)entry->struct_table_length;
+++	size_t length = (size_t)entry->struct_table_length, ret_len;
++ 	void *table;
++ 	void *mem;
++ 	char anchor[8];
++@@ -347,12 +347,17 @@ static void* dmi_table_smbios(fwts_framework *fw, fwts_smbios_entry *entry)
++ 		return table;
++ 	}
++ 
++-	if (dmi_load_file("/sys/firmware/dmi/tables/smbios_entry_point", anchor, 4) == FWTS_OK
+++	ret_len = 4;
+++
+++	if (dmi_load_file("/sys/firmware/dmi/tables/smbios_entry_point", anchor, &ret_len) == FWTS_OK
++ 			&& strncmp(anchor, "_SM_", 4) == 0) {
++ 		table = malloc(length);
++ 		if (!table)
++ 			return NULL;
++-		if (dmi_load_file("/sys/firmware/dmi/tables/DMI", table, length) == FWTS_OK) {
+++
+++		ret_len = length;
+++		if (dmi_load_file("/sys/firmware/dmi/tables/DMI", table, &ret_len) == FWTS_OK
+++			&& ret_len == length) {
++ 			fwts_log_info(fw, "SMBIOS table loaded from /sys/firmware/dmi/tables/DMI\n");
++ 			return table;
++ 		}
++@@ -367,7 +372,7 @@ static void* dmi_table_smbios(fwts_framework *fw, fwts_smbios_entry *entry)
++ static void* dmi_table_smbios30(fwts_framework *fw, fwts_smbios30_entry *entry)
++ {
++ 	off_t addr = (off_t)entry->struct_table_address;
++-	size_t length = (size_t)entry->struct_table_max_size;
+++	size_t length = (size_t)entry->struct_table_max_size, ret_len;
++ 	void *table;
++ 	void *mem;
++ 	char anchor[8];
++@@ -394,20 +399,24 @@ static void* dmi_table_smbios30(fwts_framework *fw, fwts_smbios30_entry *entry)
++ 		return table;
++ 	}
++ 
++-	if (dmi_load_file("/sys/firmware/dmi/tables/smbios_entry_point", anchor, 5) == FWTS_OK
+++	ret_len = 5;
+++
+++	if (dmi_load_file("/sys/firmware/dmi/tables/smbios_entry_point", anchor, &ret_len) == FWTS_OK
++ 			&& strncmp(anchor, "_SM3_", 5) == 0) {
++ 		table = malloc(length);
++ 		if (!table)
++ 			return NULL;
++-		if (dmi_load_file("/sys/firmware/dmi/tables/DMI", table, length) == FWTS_OK) {
+++
+++		ret_len = length;
+++		if (dmi_load_file("/sys/firmware/dmi/tables/DMI", table, &ret_len) == FWTS_OK) {
++ 			fwts_log_info(fw, "SMBIOS30 table loaded from /sys/firmware/dmi/tables/DMI\n");
++ 			return table;
++ 		}
++ 		free(table);
++ 	}
++ 
++-	fwts_log_error(fw, "Cannot mmap SMBIOS 3.0 table from %16.16" PRIx64 "..%16.16" PRIx64 ".",
++-			entry->struct_table_address, entry->struct_table_address + entry->struct_table_max_size);
+++	fwts_log_error(fw, "Cannot mmap SMBIOS 3.0 table from %16.16" PRIx64 "..%16.16" PRIx64 ". actual sz=%lu. max sz=%lu",
+++			entry->struct_table_address, entry->struct_table_address + entry->struct_table_max_size, ret_len, length);
++ 	return NULL;
 + }
 + 
 diff --git a/meta-luv/recipes-core/fwts/fwts_git.bb b/meta-luv/recipes-core/fwts/fwts_git.bb
