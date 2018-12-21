@@ -1,6 +1,6 @@
-From 4d57d93c3de7dcc766e7dfcb81e3431aa894070a Mon Sep 17 00:00:00 2001
+From 0b3dbf63487e99f81043cc3fbbce2a6f5895ccac Mon Sep 17 00:00:00 2001
 From: Sakar Arora <Sakar.Arora@arm.com>
-Date: Tue, 18 Dec 2018 16:57:14 +0530
+Date: Fri, 21 Dec 2018 16:07:48 +0530
 Subject: [PATCH] luvos
 
 ---
@@ -28,8 +28,8 @@ Subject: [PATCH] luvos
  .../linux/linux-yocto-efi-test_4.14.bb             |   3 +-
  meta/conf/bitbake.conf                             |   2 +-
  .../systemd-serialgetty/serial-getty@.service      |   2 +-
- sbsa_setup.sh                                      |  41 +++
- 25 files changed, 1100 insertions(+), 17 deletions(-)
+ sbsa_setup.sh                                      |  43 +++
+ 25 files changed, 1102 insertions(+), 17 deletions(-)
  create mode 100755 build_luvos.sh
  create mode 100644 meta-luv/recipes-bsp/sbbr/sbbr/README.md
  create mode 100644 meta-luv/recipes-bsp/sbbr/sbbr/sbbr-sct.patch
@@ -733,7 +733,7 @@ index 0000000..fae365c
 +source AppPkg/Applications/sbsa-acs/tools/scripts/avsbuild.sh
 diff --git a/meta-luv/recipes-bsp/sbsa/sbsa.bb b/meta-luv/recipes-bsp/sbsa/sbsa.bb
 new file mode 100644
-index 0000000..7a61ca4
+index 0000000..d821740
 --- /dev/null
 +++ b/meta-luv/recipes-bsp/sbsa/sbsa.bb
 @@ -0,0 +1,107 @@
@@ -761,7 +761,7 @@ index 0000000..7a61ca4
 +           file://compile.sh"
 +
 +PV = "1.0+git${SRCPV}"
-+SRCREV = "${AUTOREV}"
++SRCREV = "c4457f9eafc081fc90539cb77163a96dad835e1e"
 +
 +# GCC checksum.
 +SRC_URI[md5sum] = "24ac2e26f50f49f3043f281440b41bba"
@@ -1406,10 +1406,10 @@ index e8b027e..1611bfe 100644
  RestartSec=0
 diff --git a/sbsa_setup.sh b/sbsa_setup.sh
 new file mode 100755
-index 0000000..7032b0b
+index 0000000..8985c0f
 --- /dev/null
 +++ b/sbsa_setup.sh
-@@ -0,0 +1,41 @@
+@@ -0,0 +1,43 @@
 +#!/bin/bash
 +# Copyright (c) 2017, ARM Limited or its affiliates. All rights reserved.
 +#
@@ -1434,6 +1434,7 @@ index 0000000..7032b0b
 +#clone linux-acs repo
 +git clone -b REL1.6+ git://linux-arm.org/linux-acs.git
 +cd linux-acs
++git checkout -b v18.12_REL1.7 v18.12_REL1.7
 +#copy .bb and source files to relevant places
 +rm -rf $LUVDIR/meta-luv/recipes-core/sbsa-acs-drv
 +mv -f sbsa-acs-drv $LUVDIR/meta-luv/recipes-core/
@@ -1442,6 +1443,7 @@ index 0000000..7032b0b
 +cd $TMPDIR
 +git clone -b REL1.6+ https://github.com/ARM-software/sbsa-acs.git
 +cd sbsa-acs
++git checkout -b v18.12_REL1.7 v18.12_REL1.7
 +mv -f val $LUVDIR/meta-luv/recipes-core/sbsa-acs-drv/files/
 +mv -f test_pool $LUVDIR/meta-luv/recipes-core/sbsa-acs-drv/files/
 +
