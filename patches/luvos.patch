@@ -1,6 +1,6 @@
-From 0b3dbf63487e99f81043cc3fbbce2a6f5895ccac Mon Sep 17 00:00:00 2001
+From 63fd00a415d3fd47892b47395157ab9f0fe69188 Mon Sep 17 00:00:00 2001
 From: Sakar Arora <Sakar.Arora@arm.com>
-Date: Fri, 21 Dec 2018 16:07:48 +0530
+Date: Fri, 18 Jan 2019 17:39:00 +0530
 Subject: [PATCH] luvos
 
 ---
@@ -13,7 +13,7 @@ Subject: [PATCH] luvos
  meta-luv/recipes-bsp/sbsa/files/compile.sh         |  28 ++
  meta-luv/recipes-bsp/sbsa/sbsa.bb                  | 107 +++++++
  meta-luv/recipes-core/efivarfs/efivarfs-test.bb    |   1 -
- meta-luv/recipes-core/fwts/fwts/sbbr-fwts.patch    | 112 +++++++
+ meta-luv/recipes-core/fwts/fwts/sbbr-fwts.patch    | 125 ++++++++
  meta-luv/recipes-core/fwts/fwts_git.bb             |   4 +-
  .../images/core-image-efi-initramfs.bb             |   2 +-
  meta-luv/recipes-core/images/luv-image.inc         |   3 +-
@@ -29,7 +29,7 @@ Subject: [PATCH] luvos
  meta/conf/bitbake.conf                             |   2 +-
  .../systemd-serialgetty/serial-getty@.service      |   2 +-
  sbsa_setup.sh                                      |  43 +++
- 25 files changed, 1102 insertions(+), 17 deletions(-)
+ 25 files changed, 1115 insertions(+), 17 deletions(-)
  create mode 100755 build_luvos.sh
  create mode 100644 meta-luv/recipes-bsp/sbbr/sbbr/README.md
  create mode 100644 meta-luv/recipes-bsp/sbbr/sbbr/sbbr-sct.patch
@@ -855,10 +855,10 @@ index 0853e52..190d683 100644
 -LUV_TEST="efivarfs"
 diff --git a/meta-luv/recipes-core/fwts/fwts/sbbr-fwts.patch b/meta-luv/recipes-core/fwts/fwts/sbbr-fwts.patch
 new file mode 100644
-index 0000000..6c2dd0f
+index 0000000..caf7f6c
 --- /dev/null
 +++ b/meta-luv/recipes-core/fwts/fwts/sbbr-fwts.patch
-@@ -0,0 +1,112 @@
+@@ -0,0 +1,125 @@
 +diff --git a/src/acpi/method/method.c b/src/acpi/method/method.c
 +index 1715a39..a325b8a 100644
 +--- a/src/acpi/method/method.c
@@ -877,10 +877,10 @@ index 0000000..6c2dd0f
 + }
 + 
 +diff --git a/src/dmi/dmicheck/dmicheck.c b/src/dmi/dmicheck/dmicheck.c
-+index 567fa33..0730b2d 100644
++index 567fa33..b42f1c2 100644
 +--- a/src/dmi/dmicheck/dmicheck.c
 ++++ b/src/dmi/dmicheck/dmicheck.c
-+@@ -301,26 +301,26 @@ static const fwts_dmi_used_by_kernel dmi_used_by_kernel_table[] = {
++@@ -301,26 +301,38 @@ static const fwts_dmi_used_by_kernel dmi_used_by_kernel_table[] = {
 + 	{ TYPE_EOD, 0xff },
 + };
 + 
@@ -888,7 +888,10 @@ index 0000000..6c2dd0f
 ++static int dmi_load_file(const char* filename, void *buf, size_t *size)
 + {
 + 	int fd;
-+ 	ssize_t ret;
++-	ssize_t ret;
+++	void *p;
+++	ssize_t count = 0;
+++	size_t sz;
 + 
 +-	(void)memset(buf, 0, size);
 ++	(void)memset(buf, 0, *size);
@@ -896,12 +899,22 @@ index 0000000..6c2dd0f
 + 	if ((fd = open(filename, O_RDONLY)) < 0)
 + 		return FWTS_ERROR;
 +-	ret = read(fd, buf, size);
-++	ret = read(fd, buf, *size);
+++
+++	for (p = buf, sz = 0; sz < *size; p += count, sz += count) {
+++		count = read(fd, p, *size - sz);
+++		if (count == -1) {
+++			(void)close(fd);
+++			return FWTS_ERROR;
+++		}
+++		if (count == 0)
+++			break;
+++	}
+++
 + 	(void)close(fd);
 +-	if (ret != (ssize_t)size)
 +-		return FWTS_ERROR;
 ++
-++	*size = ret;
+++	*size = sz;
 + 	return FWTS_OK;
 + }
 + 
@@ -913,7 +926,7 @@ index 0000000..6c2dd0f
 + 	void *table;
 + 	void *mem;
 + 	char anchor[8];
-+@@ -347,12 +347,17 @@ static void* dmi_table_smbios(fwts_framework *fw, fwts_smbios_entry *entry)
++@@ -347,12 +359,17 @@ static void* dmi_table_smbios(fwts_framework *fw, fwts_smbios_entry *entry)
 + 		return table;
 + 	}
 + 
@@ -933,7 +946,7 @@ index 0000000..6c2dd0f
 + 			fwts_log_info(fw, "SMBIOS table loaded from /sys/firmware/dmi/tables/DMI\n");
 + 			return table;
 + 		}
-+@@ -367,7 +372,7 @@ static void* dmi_table_smbios(fwts_framework *fw, fwts_smbios_entry *entry)
++@@ -367,7 +384,7 @@ static void* dmi_table_smbios(fwts_framework *fw, fwts_smbios_entry *entry)
 + static void* dmi_table_smbios30(fwts_framework *fw, fwts_smbios30_entry *entry)
 + {
 + 	off_t addr = (off_t)entry->struct_table_address;
@@ -942,7 +955,7 @@ index 0000000..6c2dd0f
 + 	void *table;
 + 	void *mem;
 + 	char anchor[8];
-+@@ -394,20 +399,24 @@ static void* dmi_table_smbios30(fwts_framework *fw, fwts_smbios30_entry *entry)
++@@ -394,20 +411,24 @@ static void* dmi_table_smbios30(fwts_framework *fw, fwts_smbios30_entry *entry)
 + 		return table;
 + 	}
 + 
