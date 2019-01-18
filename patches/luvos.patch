@@ -1,6 +1,6 @@
-From 63fd00a415d3fd47892b47395157ab9f0fe69188 Mon Sep 17 00:00:00 2001
+From 60a7e34d0a3f483315fd5e4fb994eb34e6e51e08 Mon Sep 17 00:00:00 2001
 From: Sakar Arora <Sakar.Arora@arm.com>
-Date: Fri, 18 Jan 2019 17:39:00 +0530
+Date: Fri, 18 Jan 2019 21:17:50 +0530
 Subject: [PATCH] luvos
 
 ---
@@ -733,7 +733,7 @@ index 0000000..fae365c
 +source AppPkg/Applications/sbsa-acs/tools/scripts/avsbuild.sh
 diff --git a/meta-luv/recipes-bsp/sbsa/sbsa.bb b/meta-luv/recipes-bsp/sbsa/sbsa.bb
 new file mode 100644
-index 0000000..d821740
+index 0000000..8b8fbb7
 --- /dev/null
 +++ b/meta-luv/recipes-bsp/sbsa/sbsa.bb
 @@ -0,0 +1,107 @@
@@ -761,7 +761,7 @@ index 0000000..d821740
 +           file://compile.sh"
 +
 +PV = "1.0+git${SRCPV}"
-+SRCREV = "c4457f9eafc081fc90539cb77163a96dad835e1e"
++SRCREV = "df0ea7f3444b562dfae8c22e435b2ed032080936"
 +
 +# GCC checksum.
 +SRC_URI[md5sum] = "24ac2e26f50f49f3043f281440b41bba"
