@@ -1,3 +1,9 @@
+v19.01_REL2.1
+
+* SBSA: PCIe test enhancements and bug fixes
+* SBSA: New PCIe exerciser tests added.
+* SBBR: Bug fix in FWTS SMBIOS 3.0 loading
+
 v18.11_REL2.0
 
 * SBSA: v5.0 compliance tests added.
