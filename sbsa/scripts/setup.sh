@@ -22,12 +22,13 @@ rm -rf $SRCDIR
 
 git clone https://github.com/ARM-software/sbsa-acs.git src
 cd src
-git checkout -b v18.11_REL2.0 v18.11_REL2.0
+git checkout -b v19.01_REL2.1 v19.01_REL2.1
 cd ..
 git clone git://linux-arm.org/linux-acs.git
 cd linux-acs
-git checkout -b v18.11_REL2.0 v18.11_REL2.0
+git checkout -b v19.01_REL2.1 v19.01_REL2.1
 cd ..
+
 mv linux-acs/sbsa-acs-drv/files/platform/pal_linux $SRCDIR/platform/
 mv linux-acs/sbsa-acs-drv $SRCDIR
 mv linux-acs/kernel/src/0001-Enterprise-acs-linux-v4.18.patch $LUVDIR/meta-luv/recipes-kernel/linux/linux-luv/
@@ -58,6 +59,7 @@ rm -rf $LUVDIR/meta-luv/recipes-core/sbsa-acs-test
 mkdir -p $LUVDIR/meta-luv/recipes-core/sbsa-acs-test/files/val
 cp $TOPDIR/sbsa/scripts/sbsa-acs-test.bb $LUVDIR/meta-luv/recipes-core/sbsa-acs-test/
 cp -r $SRCDIR/test_pool/pcie $LUVDIR/meta-luv/recipes-core/sbsa-acs-test/files/
+cp -r $SRCDIR/test_pool/exerciser $LUVDIR/meta-luv/recipes-core/sbsa-acs-test/files/
 cp -r $SRCDIR/test_pool/Makefile $LUVDIR/meta-luv/recipes-core/sbsa-acs-test/files/
 cp -r $SRCDIR/val/include $LUVDIR/meta-luv/recipes-core/sbsa-acs-test/files/val/
 cp -r $SRCDIR/val/COPYING $LUVDIR/meta-luv/recipes-core/sbsa-acs-test/files/

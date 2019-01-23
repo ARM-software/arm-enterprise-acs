@@ -23,7 +23,7 @@ SRC_URI = "git://github.com/ARM-software/sbsa-acs.git;protocol=https;branch=rele
            file://compile.sh"
 
 PV = "1.0+git${SRCPV}"
-SRCREV = "e49b7b23203948d750623d59535cce9e8bc52285"
+SRCREV = "36c1d4b6822c180565f9abb67b5c02c4effa8397"
 
 # GCC checksum.
 SRC_URI[md5sum] = "24ac2e26f50f49f3043f281440b41bba"
