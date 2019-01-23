@@ -1,4 +1,4 @@
-From 5f7110a730e839156e345ce5a49ac0495ee4972b Mon Sep 17 00:00:00 2001
+From fbdf7214f8ad6c79c2de1dc774091c87feb8c4ae Mon Sep 17 00:00:00 2001
 From: Mahesh Bireddy <mahesh.reddybireddy@arm.com>
 Date: Fri, 9 Nov 2018 13:23:59 +0530
 Subject: [PATCH] Luvos v2.3 ACS patch
@@ -6,7 +6,7 @@ Subject: [PATCH] Luvos v2.3 ACS patch
 Signed-off-by: Mahesh Bireddy <mahesh.reddybireddy@arm.com>
 ---
  .templateconf                                      |   2 +-
- meta-luv/classes/luv-efi.bbclass                   | 105 ++++++++++++++++++++-
+ meta-luv/classes/luv-efi.bbclass                   | 118 ++++++++++++++++++++-
  meta-luv/conf/distro/luv.conf                      |   2 +-
  meta-luv/conf/local.conf.sample                    |   5 +-
  meta-luv/recipes-core/efivarfs/efivarfs-test.bb    |   1 -
@@ -21,7 +21,7 @@ Signed-off-by: Mahesh Bireddy <mahesh.reddybireddy@arm.com>
  meta-luv/recipes-kernel/linux/linux-luv_4.18.bb    |   4 +-
  meta/conf/bitbake.conf                             |   2 +-
  .../systemd-serialgetty/serial-getty@.service      |   2 +-
- 16 files changed, 154 insertions(+), 20 deletions(-)
+ 16 files changed, 167 insertions(+), 20 deletions(-)
 
 diff --git a/.templateconf b/.templateconf
 index 0fe6f82..dce51a4 100644
@@ -32,7 +32,7 @@ index 0fe6f82..dce51a4 100644
 -TEMPLATECONF=${TEMPLATECONF:-meta-poky/conf}
 +TEMPLATECONF=${TEMPLATECONF:-meta-luv/conf}
 diff --git a/meta-luv/classes/luv-efi.bbclass b/meta-luv/classes/luv-efi.bbclass
-index 86b3649..639ae7e 100644
+index 86b3649..4cebf70 100644
 --- a/meta-luv/classes/luv-efi.bbclass
 +++ b/meta-luv/classes/luv-efi.bbclass
 @@ -16,6 +16,13 @@ def get_bits_depends(d):
@@ -78,7 +78,7 @@ index 86b3649..639ae7e 100644
      fi
  
      if echo "${TARGET_ARCH}" | grep -q "i.86" || [ "${TARGET_ARCH}" = "x86_64" ]; then
-@@ -90,6 +107,82 @@ efi_populate() {
+@@ -90,6 +107,95 @@ efi_populate() {
      install -m 0644 ${LUV_CFG} ${DEST}
  }
  
@@ -146,22 +146,35 @@ index 86b3649..639ae7e 100644
 +          for %i in 0 1 2 3 4 5 6 7 8 9 A B C D E F then
 +            if exist FS%i:\EFI\BOOT\sbsa\sbsa.nsh then
 +              FS%i:\EFI\BOOT\sbsa\sbsa.nsh
-+            endif
-+            if exist FS%i:\EFI\BOOT\sdei\sdei.nsh then
-+              FS%i:\EFI\BOOT\sdei\sdei.nsh
-+              goto Done
++              goto DoneSbsa
 +            endif
 +          endfor
 +          echo \"sbsa.nsh not found\"
-+          :Done
-+          FS%i:
-+          vmlinuz initrd=\initrd ${CMDLINE} luv_netconsole=none luv_storage=none luv_tests=fwts" > ${DEST}${EFIDIR}/startup.nsh
++
++          :DoneSbsa
++          for %j in 0 1 2 3 4 5 6 7 8 9 A B C D E F then
++            if exist FS%j:\EFI\BOOT\sdei\sdei.nsh then
++              FS%j:\EFI\BOOT\sdei\sdei.nsh
++              goto DoneSdei
++            endif
++          endfor
++          echo \"sdei.nsh not found\"
++
++          :DoneSdei
++          for %k in 0 1 2 3 4 5 6 7 8 9 A B C D E F then
++            if exist FS%k:\Image then
++              FS%k:
++              Image initrd=\initrd ${CMDLINE} luv_netconsole=none luv_storage=none luv_tests=fwts
++            endif
++          endfor
++          echo \"Image not found\"
++          " > ${DEST}${EFIDIR}/startup.nsh
 +}
 +
  BITS_EFI_LOADER_IMAGE = "${DEST_EFI_LOADER_IMAGE}"
  efi_populate_bits() {
      DEST=$1
-@@ -170,6 +263,11 @@ python build_efi_cfg() {
+@@ -170,6 +276,11 @@ python build_efi_cfg() {
         cfgfile.write('default=bits\n')
         cfgfile.write('fallback=0\n')
  
@@ -173,7 +186,7 @@ index 86b3649..639ae7e 100644
      cfgfile.write('menuentry \'luv\' {\n')
      kernel = d.getVar('KERNEL_IMAGETYPE')
      cfgfile.write('linux /%s ' % (kernel))
-@@ -200,6 +298,11 @@ python build_efi_cfg() {
+@@ -200,6 +311,11 @@ python build_efi_cfg() {
         cfgfile.write('chainloader /EFI/BOOT/bits/%s\n' % loader)
         cfgfile.write('}\n')
  
