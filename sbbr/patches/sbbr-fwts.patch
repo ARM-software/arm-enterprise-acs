@@ -1,7 +1,7 @@
-From 4c2461194125fdf15d53638dcc689ea36475d617 Mon Sep 17 00:00:00 2001
+From e29e685d57d606a7234bb5608bb49943c9b437da Mon Sep 17 00:00:00 2001
 From: Sakar Arora <Sakar.Arora@arm.com>
 Date: Mon, 23 Apr 2018 18:53:41 +0530
-Subject: [PATCH] sbbr1.1-fwts
+Subject: [PATCH] sbbr fwts
 
 ---
  src/Makefile.am                  |   2 +
@@ -10,9 +10,9 @@ Subject: [PATCH] sbbr1.1-fwts
  src/acpi/devices/pcie/rc.c       | 180 +++++++++++++++++++++++++++++++++++++++
  src/acpi/hest/hest.c             |  36 +++++++-
  src/acpi/method/method.c         |  60 ++++++++++---
- src/dmi/dmicheck/dmicheck.c      |  17 +++-
+ src/dmi/dmicheck/dmicheck.c      |  66 ++++++++++----
  src/sbbr/acpitables/acpitables.c |   9 +-
- 8 files changed, 463 insertions(+), 17 deletions(-)
+ 8 files changed, 496 insertions(+), 31 deletions(-)
  create mode 100644 src/acpi/devices/ged/ged.c
  create mode 100644 src/acpi/devices/pcie/rc.c
 
@@ -87,7 +87,7 @@ index 5081850..ecfd95c 100644
  #endif
 diff --git a/src/acpi/devices/ged/ged.c b/src/acpi/devices/ged/ged.c
 new file mode 100644
-index 0000000..e2922d1
+index 0000000..316f15e
 --- /dev/null
 +++ b/src/acpi/devices/ged/ged.c
 @@ -0,0 +1,156 @@
@@ -249,7 +249,7 @@ index 0000000..e2922d1
 +#endif
 diff --git a/src/acpi/devices/pcie/rc.c b/src/acpi/devices/pcie/rc.c
 new file mode 100644
-index 0000000..67bc3e8
+index 0000000..fc04a6b
 --- /dev/null
 +++ b/src/acpi/devices/pcie/rc.c
 @@ -0,0 +1,180 @@
@@ -434,7 +434,7 @@ index 0000000..67bc3e8
 +
 +#endif
 diff --git a/src/acpi/hest/hest.c b/src/acpi/hest/hest.c
-index 1113148..0b7cd0c 100644
+index 1113148..4fca574 100644
 --- a/src/acpi/hest/hest.c
 +++ b/src/acpi/hest/hest.c
 @@ -590,6 +590,16 @@ static void hest_check_generic_error_source(
@@ -673,7 +673,7 @@ index 48736af..e4532bf 100644
  	{ method_test_DGS, "Test _DGS (Query Graphics State)." },
  	{ method_test_DOD, "Test _DOD (Enumerate All Devices Attached to Display Adapter)." },
 diff --git a/src/dmi/dmicheck/dmicheck.c b/src/dmi/dmicheck/dmicheck.c
-index 8d3ca5a..692f6cb 100644
+index 8d3ca5a..e6f5aad 100644
 --- a/src/dmi/dmicheck/dmicheck.c
 +++ b/src/dmi/dmicheck/dmicheck.c
 @@ -56,6 +56,8 @@
@@ -685,7 +685,111 @@ index 8d3ca5a..692f6cb 100644
  #define GET_UINT16(x) (uint16_t)(*(const uint16_t *)(x))
  #define GET_UINT32(x) (uint32_t)(*(const uint32_t *)(x))
  #define GET_UINT64(x) (uint64_t)(*(const uint64_t *)(x))
-@@ -1816,6 +1818,19 @@ static void dmicheck_entry(fwts_framework *fw,
+@@ -301,26 +303,38 @@ static const fwts_dmi_used_by_kernel dmi_used_by_kernel_table[] = {
+ 	{ TYPE_EOD, 0xff },
+ };
+ 
+-static int dmi_load_file(const char* filename, void *buf, size_t size)
++static int dmi_load_file(const char* filename, void *buf, size_t *size)
+ {
+ 	int fd;
+-	ssize_t ret;
++	void *p;
++	ssize_t count = 0;
++	size_t sz;
+ 
+-	(void)memset(buf, 0, size);
++	(void)memset(buf, 0, *size);
+ 
+ 	if ((fd = open(filename, O_RDONLY)) < 0)
+ 		return FWTS_ERROR;
+-	ret = read(fd, buf, size);
++
++	for (p = buf, sz = 0; sz < *size; p += count, sz += count) {
++		count = read(fd, p, *size - sz);
++		if (count == -1) {
++			(void)close(fd);
++			return FWTS_ERROR;
++		}
++		if (count == 0)
++			break;
++	}
++
+ 	(void)close(fd);
+-	if (ret != (ssize_t)size)
+-		return FWTS_ERROR;
++
++	*size = sz;
+ 	return FWTS_OK;
+ }
+ 
+ static void* dmi_table_smbios(fwts_framework *fw, fwts_smbios_entry *entry)
+ {
+ 	off_t addr = (off_t)entry->struct_table_address;
+-	size_t length = (size_t)entry->struct_table_length;
++	size_t length = (size_t)entry->struct_table_length, ret_len;
+ 	void *table;
+ 	void *mem;
+ 	char anchor[8];
+@@ -347,12 +361,17 @@ static void* dmi_table_smbios(fwts_framework *fw, fwts_smbios_entry *entry)
+ 		return table;
+ 	}
+ 
+-	if (dmi_load_file("/sys/firmware/dmi/tables/smbios_entry_point", anchor, 4) == FWTS_OK
++	ret_len = 4;
++
++	if (dmi_load_file("/sys/firmware/dmi/tables/smbios_entry_point", anchor, &ret_len) == FWTS_OK
+ 			&& strncmp(anchor, "_SM_", 4) == 0) {
+ 		table = malloc(length);
+ 		if (!table)
+ 			return NULL;
+-		if (dmi_load_file("/sys/firmware/dmi/tables/DMI", table, length) == FWTS_OK) {
++
++		ret_len = length;
++		if (dmi_load_file("/sys/firmware/dmi/tables/DMI", table, &ret_len) == FWTS_OK
++			&& ret_len == length) {
+ 			fwts_log_info(fw, "SMBIOS table loaded from /sys/firmware/dmi/tables/DMI\n");
+ 			return table;
+ 		}
+@@ -367,7 +386,7 @@ static void* dmi_table_smbios(fwts_framework *fw, fwts_smbios_entry *entry)
+ static void* dmi_table_smbios30(fwts_framework *fw, fwts_smbios30_entry *entry)
+ {
+ 	off_t addr = (off_t)entry->struct_table_address;
+-	size_t length = (size_t)entry->struct_table_max_size;
++	size_t length = (size_t)entry->struct_table_max_size, ret_len;
+ 	void *table;
+ 	void *mem;
+ 	char anchor[8];
+@@ -394,20 +413,24 @@ static void* dmi_table_smbios30(fwts_framework *fw, fwts_smbios30_entry *entry)
+ 		return table;
+ 	}
+ 
+-	if (dmi_load_file("/sys/firmware/dmi/tables/smbios_entry_point", anchor, 5) == FWTS_OK
++	ret_len = 5;
++
++	if (dmi_load_file("/sys/firmware/dmi/tables/smbios_entry_point", anchor, &ret_len) == FWTS_OK
+ 			&& strncmp(anchor, "_SM3_", 5) == 0) {
+ 		table = malloc(length);
+ 		if (!table)
+ 			return NULL;
+-		if (dmi_load_file("/sys/firmware/dmi/tables/DMI", table, length) == FWTS_OK) {
++
++		ret_len = length;
++		if (dmi_load_file("/sys/firmware/dmi/tables/DMI", table, &ret_len) == FWTS_OK) {
+ 			fwts_log_info(fw, "SMBIOS30 table loaded from /sys/firmware/dmi/tables/DMI\n");
+ 			return table;
+ 		}
+ 		free(table);
+ 	}
+ 
+-	fwts_log_error(fw, "Cannot mmap SMBIOS 3.0 table from %16.16" PRIx64 "..%16.16" PRIx64 ".",
+-			entry->struct_table_address, entry->struct_table_address + entry->struct_table_max_size);
++	fwts_log_error(fw, "Cannot mmap SMBIOS 3.0 table from %16.16" PRIx64 "..%16.16" PRIx64 ". actual sz=%lu. max sz=%lu",
++			entry->struct_table_address, entry->struct_table_address + entry->struct_table_max_size, ret_len, length);
+ 	return NULL;
+ }
+ 
+@@ -1816,6 +1839,19 @@ static void dmicheck_entry(fwts_framework *fw,
  					"while accessing entry '%s' @ "
  					"0x%8.8" PRIx32 ", field '%s', offset 0x%2.2x",
  					data[0x4], table, addr, "Reference Designation", 0x4);
@@ -705,7 +809,7 @@ index 8d3ca5a..692f6cb 100644
  			break;
  
  		case 43: /* 7.44 */
-@@ -1961,7 +1976,7 @@ static sbbr_test_entry sbbr_test[] = {
+@@ -1961,7 +1997,7 @@ static sbbr_test_entry sbbr_test[] = {
  	{ "Memory Device", 17, 1, 0, 0 },
  	{ "Memory Array Mapped Address", 19, 1, 0, 0 },
  	{ "System Boot Information", 32, 1, 0, 0 },
