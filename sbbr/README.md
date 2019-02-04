@@ -4,7 +4,7 @@ required for out-of-box support of any SBSA compatible operating system or hyper
 to enable booting multi-core 64-bit ARMv8 server platforms while remaining minimal enough to allow for OEM and ODM innovation, and
 market differentiation.
 
-For more information, see [SBBR specification](#).
+For more information, see [SBBR specification](http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.den0044c/index.html).
 
 This release includes both UEFI Shell and OS context tests that are packaged into a bootable LUV OS image.
 The SBBR test suites check for compliance against the SBBR specification. Like the SBSA tests, these tests are also delivered through two runtime executable environments:
