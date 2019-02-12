@@ -23,12 +23,12 @@ ARMv8 server platform, while leaving plenty of room \
 for OEM or ODM innovations and design details."
 
 # Home Page
-HOMEPAGE = "https://github.com/UEFI/UEFI-SCT"
+HOMEPAGE = "https://github.com/tianocore/edk2-test"
 
 LICENSE = "CLOSED"
 LIC_FILES_CHKSUM = ""
 
-SBBRVERSION="v1.0"
+SBBRVERSION="v1.1"
 PV="${SBBRVERSION}+git${SRCPV}"
 
 S = "${WORKDIR}/git"
@@ -36,9 +36,17 @@ S = "${WORKDIR}/git"
 inherit deploy
 
 # No information for SRC_URI yet (only an external source tree was specified)
-SRCREV  = "1ff61591f11a1b92518f2273ffeacaa90e474e5e"
-SRC_URI = "git://github.com/UEFI/UEFI-SCT.git;protocol=https;branch=sbbr;user="${SCTUSERNAME}":"${SCTPASSWORD}" \
-           file://sbbr-sct.patch \
+SRCREV  = "b558bad25479ec83d43399673d7580294c81c8f8"
+SRC_URI = "git://github.com/tianocore/edk2-test;protocol=https \
+           file://SbbrBootServices/ \
+           file://SbbrEfiSpecVerLvl/ \
+           file://SbbrRequiredUefiProtocols/ \
+           file://SbbrSmbios/ \
+           file://SbbrSysEnvConfig/ \
+           file://SBBRRuntimeServices/ \
+           file://SBBR_SCT.dsc \
+           file://build_sbbr.sh \
+           file://edk2-test-sbbr.patch \
           "
 
 # NOTE: no Makefile found, unable to determine what needs to be done
@@ -47,12 +55,23 @@ do_configure () {
 	# Specify any needed configure commands here
 	:
 	echo "do_configure()"
+	cd ${WORKDIR}
+
 	# Specify any needed configure commands here
-	rm -rf edk2
-	git clone https://github.com/tianocore/edk2
+	cp -r SbbrBootServices git/uefi-sct/SctPkg/TestCase/UEFI/EFI/BootServices/
+	cp -r SbbrEfiSpecVerLvl SbbrRequiredUefiProtocols SbbrSmbios SbbrSysEnvConfig git/uefi-sct/SctPkg/TestCase/UEFI/EFI/Generic/
+	cp -r SBBRRuntimeServices git/uefi-sct/SctPkg/TestCase/UEFI/EFI/RuntimeServices/
+	cp SBBR_SCT.dsc git/uefi-sct/SctPkg/UEFI/
+	cp build_sbbr.sh git/uefi-sct/SctPkg/
+
+	if [ ! -d ${WORKDIR}/edk2 ]
+	then
+		echo "do_configure: Cloning EDK2 repository."
+		git clone -b UDK2018 https://github.com/tianocore/edk2.git
+	fi
+
 	cd edk2
-	git checkout UDK2018
-	ln -s ../SctPkg SctPkg
+	ln -s ${WORKDIR}/git/uefi-sct/SctPkg SctPkg
 	chmod +x SctPkg/build_sbbr.sh
 	cd ..
 
@@ -68,14 +87,14 @@ do_compile () {
 	# Specify compilation commands here
 	:
 	echo "$PWD: do_compile()"
-	export PATH=$PATH:"$PWD/tools/gcc/gcc-linaro-4.9-2016.02-x86_64_aarch64-linux-gnu/bin"
+	export PATH=$PATH:"${WORKDIR}/tools/gcc/gcc-linaro-4.9-2016.02-x86_64_aarch64-linux-gnu/bin"
 	export BB_ENV_EXTRAWHITE="$BB_ENV_EXTRAWHITE PATH"
 	echo "New PATH = $PATH"
-	export CROSS_COMPILE="$PWD/tools/gcc/gcc-linaro-4.9-2016.02-x86_64_aarch64-linux-gnu/bin/aarch64-linux-gnu-"
+	export CROSS_COMPILE="${WORKDIR}/tools/gcc/gcc-linaro-4.9-2016.02-x86_64_aarch64-linux-gnu/bin/aarch64-linux-gnu-"
 	export BB_ENV_EXTRAWHITE="$BB_ENV_EXTRAWHITE CROSS_COMPILE"
 	echo "NEW CROSS_COMPILE: $CROSS_COMPILE"
 
-	cd edk2
+	cd ${WORKDIR}/edk2
 	./SctPkg/build_sbbr.sh AARCH64 GCC
 	cd ..
 }
@@ -86,7 +105,7 @@ do_install () {
 	echo "do_install()"
 	echo "Destination Directory: ${D}"
 	echo "Source Directory: ${B}"
-	cp -r ${B}/edk2/Build/SbbrSct/DEBUG_GCC49/SctPackageAARCH64 ${D}/sbbr
+	cp -r ${WORKDIR}/edk2/Build/SbbrSct/DEBUG_GCC49/SctPackageAARCH64 ${D}/sbbr
 }
 
 do_deploy () {
