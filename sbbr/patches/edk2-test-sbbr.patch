@@ -1,0 +1,614 @@
+diff --git a/uefi-sct/SctPkg/CommonGenFramework.sh b/uefi-sct/SctPkg/CommonGenFramework.sh
+index 299f0d6..96ec2fa 100755
+--- a/uefi-sct/SctPkg/CommonGenFramework.sh
++++ b/uefi-sct/SctPkg/CommonGenFramework.sh
+@@ -335,4 +335,72 @@ then
+   CopyDependency Ebc
+   CopyDependency PxeBaseCode
+ fi
++# *********************************************
++# For SBBR v1.0 SCT
++# *********************************************
++
++if [ $1 = "sbbr_sct" ]
++then
++    # *********************************************
++    # Copy the SBBR v1.0 Test Cases
++    # *********************************************
++
++    mkdir -p $Framework/SCRT
++    cp $ProcessorType/SCRTDRIVER.efi                           $Framework/SCRT  > NUL
++    cp $ProcessorType/SCRTAPP.efi                              $Framework/SCRT  > NUL
++    cp ../../../SctPkg/Config/Data/SCRT.conf                   $Framework/SCRT  > NUL
++
++    # *********************************************
++    # Copy your test cases here
++    # *********************************************
++
++    # Boot Services Tests - SBBR v1.0 Appendix A
++    cp $ProcessorType/EventTimerTaskPriorityServicesBBTest.efi $Framework/Test/ > NUL
++    cp $ProcessorType/ImageServicesBBTest.efi                  $Framework/Test/ > NUL
++    cp $ProcessorType/MemoryAllocationServicesBBTest.efi       $Framework/Test/ > NUL
++    cp $ProcessorType/MiscBootServicesBBTest.efi               $Framework/Test/ > NUL
++    cp $ProcessorType/ProtocolHandlerServicesBBTest.efi        $Framework/Test/ > NUL
+ 
++    # Tests SBBR sections 3.3.1, 3.3.2, 3.3.3, and 3.3.4
++    cp $ProcessorType/SysEnvConfigBBTest.efi                   $Framework/Test/ > NUL
++
++    # UEFI Boot Services - SBBR v1.0 3.4
++    cp $ProcessorType/SbbrBootServicesBBTest.efi               $Framework/Test/ > NUL
++
++    # Check if EFI Specification Version is 2.5 or greater
++    cp $ProcessorType/EfiSpecVerLvlBBTest.efi                  $Framework/Test/ > NUL
++
++    # SMBIOS Requirements on UEFI - SBBR v1.0 5.1.1
++    cp $ProcessorType/SbbrSmbiosBBTest.efi                     $Framework/Test/ > NUL
++
++    # Runtime Services Tests - SBBR v1.0 Appendix B
++    cp $ProcessorType/VariableServicesBBTest.efi               $Framework/Test/ > NUL
++    cp $ProcessorType/TimeServicesBBTest.efi                   $Framework/Test/ > NUL
++    cp $ProcessorType/MiscRuntimeServicesBBTest.efi            $Framework/Test/ > NUL
++    cp $ProcessorType/SBBRRuntimeServicesBBTest.efi            $Framework/Test/ > NUL
++
++    # Tests SBBR Appendix C
++    cp $ProcessorType/RequiredUefiProtocolsBBTest.efi          $Framework/Test/ > NUL
++    cp $ProcessorType/EfiCompliantBBTest.efi                   $Framework/Test/ > NUL
++
++    cp $ProcessorType/GraphicsOutputBBTest.efi                 $Framework/Test/ > NUL
++    cp $ProcessorType/PciIoBBTest.efi                          $Framework/Test/ > NUL
++    cp $ProcessorType/PciRootBridgeIoBBTest.efi                $Framework/Test/ > NUL
++    cp $ProcessorType/DevicePathBBTest.efi                     $Framework/Test/ > NUL
++    # *********************************************
++    # Copy ENTS binary
++    # *********************************************
++
++    cp $ProcessorType/SerialMonitor.efi                $Framework/Ents/Support/ > NUL
++    cp $ProcessorType/ManagedNetworkMonitor.efi        $Framework/Ents/Support/ > NUL
++    cp $ProcessorType/IP4NetworkMonitor.efi            $Framework/Ents/Support/ > NUL
++    cp $ProcessorType/Eftp.efi                         $Framework/Ents/Support/ > NUL
++
++    # *********************************************
++    # Copy the test dependency files
++    # *********************************************
++
++    CopyDependency EfiCompliant
++    CopyDependency ProtocolHandlerServices
++    CopyDependency ImageServices
++fi
+diff --git a/uefi-sct/SctPkg/TestCase/UEFI/EFI/BootServices/ImageServices/BlackBoxTest/ImageBBTest.inf b/uefi-sct/SctPkg/TestCase/UEFI/EFI/BootServices/ImageServices/BlackBoxTest/ImageBBTest.inf
+index 49ad799..c3b322e 100644
+--- a/uefi-sct/SctPkg/TestCase/UEFI/EFI/BootServices/ImageServices/BlackBoxTest/ImageBBTest.inf
++++ b/uefi-sct/SctPkg/TestCase/UEFI/EFI/BootServices/ImageServices/BlackBoxTest/ImageBBTest.inf
+@@ -53,4 +53,5 @@
+ 
+ [Protocols]
+   gEfiTestProfileLibraryGuid
++  gEfiTestRecoveryLibraryGuid
+   gBlackBoxEfiHIIPackageListProtocolGuid
+diff --git a/uefi-sct/SctPkg/TestCase/UEFI/EFI/BootServices/ImageServices/BlackBoxTest/ImageBBTestConformance.c b/uefi-sct/SctPkg/TestCase/UEFI/EFI/BootServices/ImageServices/BlackBoxTest/ImageBBTestConformance.c
+index 0a26d46..3925eea 100644
+--- a/uefi-sct/SctPkg/TestCase/UEFI/EFI/BootServices/ImageServices/BlackBoxTest/ImageBBTestConformance.c
++++ b/uefi-sct/SctPkg/TestCase/UEFI/EFI/BootServices/ImageServices/BlackBoxTest/ImageBBTestConformance.c
+@@ -778,6 +778,7 @@ BBTestExitBootServicesConsistencyTest (
+   )
+ {
+   EFI_STANDARD_TEST_LIBRARY_PROTOCOL   *StandardLib;
++  EFI_TEST_RECOVERY_LIBRARY_PROTOCOL   *RecoveryLib;
+   EFI_STATUS                           Status;
+   EFI_TEST_ASSERTION                   AssertionType;
+   UINTN                                MapKey;
+@@ -786,6 +787,7 @@ BBTestExitBootServicesConsistencyTest (
+   UINTN                                DataSize;
+   UINT8                                Data[MAX_BUFFER_SIZE];
+   EFI_STATUS                           ReturnStatus;
++  UINTN                                RecoveryData, RecoveryDataSize;
+ 
+   //
+   // Init
+@@ -803,6 +805,19 @@ BBTestExitBootServicesConsistencyTest (
+     return Status;
+   }
+ 
++  //
++  // Get the Recovery Library Interface
++  //
++  RecoveryLib = NULL;
++
++  Status = gtBS->HandleProtocol (
++                   SupportHandle,
++                   &gEfiTestRecoveryLibraryGuid,
++                   (VOID **) &RecoveryLib);
++  if (EFI_ERROR(Status)) {
++    return Status;
++  }
++
+   Status = ImageTestCheckForCleanEnvironment (&Numbers);
+   if (EFI_ERROR(Status)) {
+     StandardLib->RecordAssertion (
+@@ -819,26 +834,14 @@ BBTestExitBootServicesConsistencyTest (
+     return Status;
+   }
+ 
+-  DataSize = MAX_BUFFER_SIZE;
+-  Status = gtRT->GetVariable (
+-                 L"ExitBootServicesTestVariable",             // VariableName
+-                 &gTestVendor1Guid,                           // VendorGuid
+-                 NULL,                                        // Attributes
+-                 &DataSize,                                   // DataSize
+-                 &ReturnStatus                                // Data
+-                 );
++  RecoveryDataSize = sizeof(RecoveryData);
++  Status = RecoveryLib->ReadResetRecord(RecoveryLib, &RecoveryDataSize, &RecoveryData);
+ 
+-  if (Status == EFI_SUCCESS) {
+-    goto CheckResult;
++  if (!EFI_ERROR(Status) && RecoveryData == 1) {
++      goto CheckResult;
+   }
+ 
+   //
+-  // Print out some information to avoid the user thought it is an error
+-  //
+-  SctPrint (L"System will cold reset after 2 second. please run this test again...");
+-  gtBS->Stall (2000000);
+-
+-  //
+   // Checkpoint 1:
+   // 3.5.2.1  ExitBootServices should not succeed with an invalid MapKey
+   //
+@@ -864,15 +867,18 @@ BBTestExitBootServicesConsistencyTest (
+ 
+   MapKey += MapKey;
+ 
++  RecoveryData = 1;
++  RecoveryLib->WriteResetRecord (RecoveryLib, sizeof(RecoveryData), &RecoveryData);
++
++  SctPrint (L"System will cold reset after 1 second. please run this test again...");
++
++  gtBS->Stall (1000000);
++
++
+   ReturnStatus = gtBS->ExitBootServices (
+                          mImageHandle,
+                          MapKey
+                          );
+-  if (ReturnStatus == EFI_INVALID_PARAMETER) {
+-    AssertionType = EFI_TEST_ASSERTION_PASSED;
+-  } else {
+-    AssertionType = EFI_TEST_ASSERTION_FAILED;
+-  }
+ 
+   Status = gtRT->SetVariable (
+                      L"ExitBootServicesTestVariable",                                                           // VariableName
+@@ -888,6 +894,32 @@ BBTestExitBootServicesConsistencyTest (
+   // get var to get the status
+ CheckResult:
+ 
++  DataSize = MAX_BUFFER_SIZE;
++
++  Status = gtRT->GetVariable (
++                 L"ExitBootServicesTestVariable",             // VariableName
++                 &gTestVendor1Guid,                           // VendorGuid
++                 NULL,                                        // Attributes
++                 &DataSize,                                   // DataSize
++                 &ReturnStatus                                // Data
++                 );
++
++
++  if (EFI_ERROR(Status)) {
++    AssertionType = EFI_TEST_ASSERTION_FAILED;
++    StandardLib->RecordAssertion (
++                 StandardLib,
++                 AssertionType,
++                 gConsistencyTestAssertionGuid009,
++                 L"BS.ExitBootServices - ConsistencyTestCheckpoint1",
++                 L"%a:%d: GetVariable service routine failed - %r",
++                 __FILE__,
++                 (UINTN)__LINE__,
++                 Status
++                 );
++    goto Done;
++  }
++
+   if (ReturnStatus == EFI_INVALID_PARAMETER) {
+     AssertionType = EFI_TEST_ASSERTION_PASSED;
+   } else {
+@@ -905,14 +937,7 @@ CheckResult:
+                  ReturnStatus,
+                  EFI_INVALID_PARAMETER
+                  );
+-
+-  Status = gtRT->SetVariable (
+-                     L"ExitBootServicesTestVariable",                                                           // VariableName
+-                     &gTestVendor1Guid,                                                                         // VendorGuid
+-                     EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS, // Attributes
+-                     0,                               // DataSize
+-                     Data                             // Data
+-                     );
++Done:
+ 
+   Status = ImageTestCheckForCleanEnvironment (&Numbers);
+   if (EFI_ERROR(Status)) {
+@@ -930,4 +955,3 @@ CheckResult:
+   }
+   return EFI_SUCCESS;
+ }
+-
+diff --git a/uefi-sct/SctPkg/TestCase/UEFI/EFI/BootServices/ImageServices/BlackBoxTest/ImageBBTestFunction.c b/uefi-sct/SctPkg/TestCase/UEFI/EFI/BootServices/ImageServices/BlackBoxTest/ImageBBTestFunction.c
+index 11f78cd..af4306a 100644
+--- a/uefi-sct/SctPkg/TestCase/UEFI/EFI/BootServices/ImageServices/BlackBoxTest/ImageBBTestFunction.c
++++ b/uefi-sct/SctPkg/TestCase/UEFI/EFI/BootServices/ImageServices/BlackBoxTest/ImageBBTestFunction.c
+@@ -24,7 +24,7 @@ Abstract:
+ 
+ --*/
+ 
+-#include "SctLib.h"
++#include "SctLib.h"
+ #include "Misc.h"
+ 
+ extern EFI_GUID gBlackBoxEfiHIIPackageListProtocolGuid;
+@@ -161,9 +161,9 @@ BBTestLoadImageInterfaceTest (
+   //Checkpoint 8:
+   //4.1.2.8  Call LoadImage to load image for HII protocol
+   //
+-  BBTestLoadImageInterfaceTestCheckPoint8(StandardLib);
++  //BBTestLoadImageInterfaceTestCheckPoint8(StandardLib);
+ 
+-  BBTestLoadImageInterfaceTestCheckPoint9(StandardLib);
++  //BBTestLoadImageInterfaceTestCheckPoint9(StandardLib);
+ #endif  
+   return EFI_SUCCESS;
+ }
+diff --git a/uefi-sct/SctPkg/TestCase/UEFI/EFI/BootServices/ImageServices/BlackBoxTest/Misc.h b/uefi-sct/SctPkg/TestCase/UEFI/EFI/BootServices/ImageServices/BlackBoxTest/Misc.h
+index 3e713f4..4bc0cd2 100644
+--- a/uefi-sct/SctPkg/TestCase/UEFI/EFI/BootServices/ImageServices/BlackBoxTest/Misc.h
++++ b/uefi-sct/SctPkg/TestCase/UEFI/EFI/BootServices/ImageServices/BlackBoxTest/Misc.h
+@@ -29,6 +29,7 @@ Abstract:
+ 
+ #include "ImageBBTest.h"
+ #include "ProtocolDefinition.h"
++#include EFI_TEST_PROTOCOL_DEFINITION(TestRecoveryLibrary)
+ 
+ typedef struct {
+   VOID          *Registration;
+diff --git a/uefi-sct/SctPkg/TestCase/UEFI/EFI/BootServices/MemoryAllocationServices/BlackBoxTest/MemoryAllocationServicesBBTestConformance.c b/uefi-sct/SctPkg/TestCase/UEFI/EFI/BootServices/MemoryAllocationServices/BlackBoxTest/MemoryAllocationServicesBBTestConformance.c
+index 1b81ecb..ac70023 100644
+--- a/uefi-sct/SctPkg/TestCase/UEFI/EFI/BootServices/MemoryAllocationServices/BlackBoxTest/MemoryAllocationServicesBBTestConformance.c
++++ b/uefi-sct/SctPkg/TestCase/UEFI/EFI/BootServices/MemoryAllocationServices/BlackBoxTest/MemoryAllocationServicesBBTestConformance.c
+@@ -24,7 +24,7 @@ Abstract:
+ 
+ --*/
+ 
+-#include "SctLib.h"
++#include "SctLib.h"
+ #include "MemoryAllocationServicesBBTestMain.h"
+ 
+ /**
+@@ -288,7 +288,7 @@ BBTestGetMemoryMapConsistencyTest (
+                  L"%a:%d:Status - %r",
+                  __FILE__,
+                  (UINTN)__LINE__,
+-                 Status
++                 Status2
+                  ); 
+ 
+   FreeMemoryMap ();
+@@ -1079,81 +1079,3 @@ BBTestAllocatePoolConsistencyTest (
+   FreeMemoryMap ();
+   return EFI_SUCCESS;
+ }
+-
+-/**
+- *  Entrypoint for gtBS->FreePool () Consistency Test.
+- *  @param This a pointer of EFI_BB_TEST_PROTOCOL.
+- *  @param ClientInterface a pointer to the interface to be tested.
+- *  @param TestLevel test "thoroughness" control.
+- *  @param SupportHandle a handle containing protocols required.
+- *  @return EFI_SUCCESS Finish the test successfully.
+- */
+-//
+-// TDS 3.5
+-//
+-EFI_STATUS
+-BBTestFreePoolConsistencyTest (
+-  IN EFI_BB_TEST_PROTOCOL       *This,
+-  IN VOID                       *ClientInterface,
+-  IN EFI_TEST_LEVEL             TestLevel,
+-  IN EFI_HANDLE                 SupportHandle
+-  )
+-{
+-  EFI_STANDARD_TEST_LIBRARY_PROTOCOL   *StandardLib;
+-  EFI_STATUS                           Status;
+-  //VOID                                 *Memory;
+-  EFI_TEST_ASSERTION                   AssertionType;
+-
+-  //
+-  // Get the Standard Library Interface
+-  //
+-  Status = gtBS->HandleProtocol (
+-                   SupportHandle,
+-                   &gEfiStandardTestLibraryGuid,
+-                   (VOID **) &StandardLib
+-                   );
+-
+-  if (EFI_ERROR(Status)) {
+-    return Status;
+-  }
+-
+-  Status = InitMemoryMap ();
+-  if (EFI_ERROR(Status)) {
+-    StandardLib->RecordAssertion (
+-                   StandardLib,
+-                   EFI_TEST_ASSERTION_FAILED,
+-                   gTestGenericFailureGuid,
+-                   L"InitMemoryMap - Allocate memory map buffer",
+-                   L"%a:%d:Status - %r",
+-                   __FILE__,
+-                   (UINTN)__LINE__,
+-                   Status
+-                   );
+-    return Status;
+-  }
+-
+-  //
+-  // 3.5.2.1  FreePool should not succeed when the Buffer is NULL
+-  //
+-  Status = gtBS->FreePool (
+-                   NULL // invalid
+-                   );
+-  if (Status == EFI_INVALID_PARAMETER) {
+-    AssertionType = EFI_TEST_ASSERTION_PASSED;
+-  } else {
+-    AssertionType = EFI_TEST_ASSERTION_FAILED;
+-  }
+-  StandardLib->RecordAssertion (
+-                 StandardLib,
+-                 AssertionType,
+-                 gMemoryAllocationServicesConsistencyTestAssertionGuid042,
+-                 L"BS.FreePool - Buffer is NULL",
+-                 L"%a:%d:Status - %r",
+-                 __FILE__,
+-                 (UINTN)__LINE__,
+-                 Status
+-                 );
+-
+-  FreeMemoryMap ();
+-  return EFI_SUCCESS;
+-}
+\ No newline at end of file
+diff --git a/uefi-sct/SctPkg/TestCase/UEFI/EFI/BootServices/MemoryAllocationServices/BlackBoxTest/MemoryAllocationServicesBBTestFunction.c b/uefi-sct/SctPkg/TestCase/UEFI/EFI/BootServices/MemoryAllocationServices/BlackBoxTest/MemoryAllocationServicesBBTestFunction.c
+index d18fe1f..8f3213d 100644
+--- a/uefi-sct/SctPkg/TestCase/UEFI/EFI/BootServices/MemoryAllocationServices/BlackBoxTest/MemoryAllocationServicesBBTestFunction.c
++++ b/uefi-sct/SctPkg/TestCase/UEFI/EFI/BootServices/MemoryAllocationServices/BlackBoxTest/MemoryAllocationServicesBBTestFunction.c
+@@ -24,7 +24,7 @@ Abstract:
+ 
+ --*/
+ 
+-#include "SctLib.h"
++#include "SctLib.h"
+ #include "MemoryAllocationServicesBBTestMain.h"
+ 
+ #define ALLOCATEPAGES_MEMORYTYPE_NUM 16
+@@ -1810,117 +1810,3 @@ BBTestAllocatePoolInterfaceTest (
+   FreeMemoryMap ();
+   return EFI_SUCCESS;
+ }
+-
+-/**
+- *  Entrypoint for gtBS->FreePool () Interface Test.
+- *  @param This a pointer of EFI_BB_TEST_PROTOCOL.
+- *  @param ClientInterface a pointer to the interface to be tested.
+- *  @param TestLevel test "thoroughness" control.
+- *  @param SupportHandle a handle containing protocols required.
+- *  @return EFI_SUCCESS Finish the test successfully.
+- */
+-//
+-// TDS 4.5
+-//
+-EFI_STATUS
+-BBTestFreePoolInterfaceTest (
+-  IN EFI_BB_TEST_PROTOCOL       *This,
+-  IN VOID                       *ClientInterface,
+-  IN EFI_TEST_LEVEL             TestLevel,
+-  IN EFI_HANDLE                 SupportHandle
+-  )
+-{
+-  EFI_STANDARD_TEST_LIBRARY_PROTOCOL   *StandardLib;
+-  EFI_STATUS                           Status;
+-  VOID                                 *Memory;
+-  EFI_TEST_ASSERTION                   AssertionType;
+-  UINTN                                Index;
+-  UINTN                                TypeIndex;
+-  EFI_TPL                              OldTpl;
+-
+-  //
+-  // Get the Standard Library Interface
+-  //
+-  Status = gtBS->HandleProtocol (
+-                   SupportHandle,
+-                   &gEfiStandardTestLibraryGuid,
+-                   (VOID **) &StandardLib
+-                   );
+-
+-  if (EFI_ERROR(Status)) {
+-    return Status;
+-  }
+-
+-  Status = InitMemoryMap ();
+-  if (EFI_ERROR(Status)) {
+-    StandardLib->RecordAssertion (
+-                   StandardLib,
+-                   EFI_TEST_ASSERTION_FAILED,
+-                   gTestGenericFailureGuid,
+-                   L"InitMemoryMap - Allocate memory map buffer",
+-                   L"%a:%d:Status - %r",
+-                   __FILE__,
+-                   (UINTN)__LINE__,
+-                   Status
+-                   );
+-    return Status;
+-  }
+-
+-  for (Index = 0; Index < TPL_ARRAY_SIZE; Index++) {
+-    //
+-    // 4.5.2.1  FreePool must succeed with valid parameters.
+-    //
+-    for (TypeIndex = 0; TypeIndex < ALLOCATEPOOL_MEMORYTYPE_NUM; TypeIndex++) {
+-      Status = gtBS->AllocatePool (
+-                       AllocatePoolMemoryType[TypeIndex],
+-                       1,
+-                       (VOID **)&Memory
+-                       );
+-      if (EFI_ERROR(Status)) {
+-        StandardLib->RecordAssertion (
+-                       StandardLib,
+-                       EFI_TEST_ASSERTION_FAILED,
+-                       gTestGenericFailureGuid,
+-                       L"BS.AllocatePool - 1 byte",
+-                       L"%a:%d:Status - %r, TPL - %d, MemType - %d",
+-                       __FILE__,
+-                       (UINTN)__LINE__,
+-                       Status,
+-                       TplArray[Index],
+-                       AllocatePoolMemoryType[TypeIndex]
+-                       );
+-        continue;
+-      }
+-      OldTpl = gtBS->RaiseTPL (TplArray[Index]);
+-      Status = gtBS->FreePool (
+-                       Memory
+-                       );
+-      gtBS->RestoreTPL (OldTpl);
+-      if (!EFI_ERROR(Status)) {
+-        AssertionType = EFI_TEST_ASSERTION_PASSED;
+-      } else {
+-        AssertionType = EFI_TEST_ASSERTION_FAILED;
+-      }
+-      StandardLib->RecordAssertion (
+-                     StandardLib,
+-                     AssertionType,
+-                     Index==0? \
+-                     gMemoryAllocationServicesInterfaceTestAssertionGuid038: \
+-                     (Index == 1? \
+-                      gMemoryAllocationServicesBBTestFunctionAssertionGuid075: \
+-                      gMemoryAllocationServicesBBTestFunctionAssertionGuid076),
+-                     L"BS.FreePool - 1 byte",
+-                     L"%a:%d:Status - %r, TPL - %d, MemType - %d",
+-                     __FILE__,
+-                     (UINTN)__LINE__,
+-                     Status,
+-                     TplArray[Index],
+-                     AllocatePoolMemoryType[TypeIndex]
+-                     );
+-    }
+-
+-  }
+-
+-  FreeMemoryMap ();
+-  return EFI_SUCCESS;
+-}
+\ No newline at end of file
+diff --git a/uefi-sct/SctPkg/TestCase/UEFI/EFI/BootServices/MemoryAllocationServices/BlackBoxTest/MemoryAllocationServicesBBTestMain.c b/uefi-sct/SctPkg/TestCase/UEFI/EFI/BootServices/MemoryAllocationServices/BlackBoxTest/MemoryAllocationServicesBBTestMain.c
+index 8aa89a9..1c902d8 100644
+--- a/uefi-sct/SctPkg/TestCase/UEFI/EFI/BootServices/MemoryAllocationServices/BlackBoxTest/MemoryAllocationServicesBBTestMain.c
++++ b/uefi-sct/SctPkg/TestCase/UEFI/EFI/BootServices/MemoryAllocationServices/BlackBoxTest/MemoryAllocationServicesBBTestMain.c
+@@ -86,15 +86,6 @@ EFI_BB_TEST_ENTRY_FIELD gBBTestEntryField[] = {
+     BBTestAllocatePoolConsistencyTest
+   },
+   {
+-    MEMORY_ALLOCATION_SERVICES_FREEPOOL_CONSISTENCY_GUID,
+-    L"FreePool_Conf",
+-    L"Consistency Test for FreePool",
+-    EFI_TEST_LEVEL_MINIMAL,
+-    gSupportProtocolGuid1,
+-    EFI_TEST_CASE_AUTO,
+-    BBTestFreePoolConsistencyTest
+-  },
+-  {
+     MEMORY_ALLOCATION_SERVICES_GETMEMORYMAP_INTERFACE_GUID,
+     L"GetMemoryMap_Func",
+     L"Interface Test for GetMemoryMap",
+@@ -130,16 +121,6 @@ EFI_BB_TEST_ENTRY_FIELD gBBTestEntryField[] = {
+     EFI_TEST_CASE_AUTO,
+     BBTestAllocatePoolInterfaceTest
+   },
+-  {
+-    MEMORY_ALLOCATION_SERVICES_FREEPOOL_INTERFACE_GUID,
+-    L"FreePool_Func",
+-    L"Interface Test for FreePool",
+-    EFI_TEST_LEVEL_DEFAULT,
+-    gSupportProtocolGuid1,
+-    EFI_TEST_CASE_AUTO,
+-    BBTestFreePoolInterfaceTest
+-  },
+-
+ #ifdef EFI_TEST_EXHAUSTIVE
+   {
+     MEMORY_ALLOCATION_SERVICES_GETMEMORYMAP_STRESS_TEST_GUID,
+diff --git a/uefi-sct/SctPkg/TestCase/UEFI/EFI/Generic/EfiCompliant/BlackBoxTest/Dependency/Config/EfiCompliant.ini b/uefi-sct/SctPkg/TestCase/UEFI/EFI/Generic/EfiCompliant/BlackBoxTest/Dependency/Config/EfiCompliant.ini
+index 78b5f7b..4cd1c67 100644
+--- a/uefi-sct/SctPkg/TestCase/UEFI/EFI/Generic/EfiCompliant/BlackBoxTest/Dependency/Config/EfiCompliant.ini
++++ b/uefi-sct/SctPkg/TestCase/UEFI/EFI/Generic/EfiCompliant/BlackBoxTest/Dependency/Config/EfiCompliant.ini
+@@ -93,33 +93,33 @@
+ [Platform Specific]
+ ConsoleDevices            = yes
+ HiiConfigSupport          = yes
+-HiiFontSupport            = yes
+-GraphicalConsoleDevices   = yes
+-PointerDevices            = yes
+-BootFromDiskDevices       = yes
+-BootFromNetworkDevices    = yes
+-ValidateBootImageThruNet  = yes
+-UartDevices               = yes
+-PciBusSupport             = yes
+-UsbBusSupport             = yes
+-NVMExpressPassThru        = yes
+-BootFromNVMe              = yes
+-ExtScsiPassThru           = yes
+-DebugSupport              = yes
+-PlatformDriverOverride    = yes
+-AtaPassThru               = yes
+-UEFIIPv4Support           = yes
+-BootFromScsi              = yes
+-ExtScsiPassThruSupport    = yes
+-BootFromIScsi             = yes
+-EBCSupport                = yes
+-UEFIIPv6Support           = yes
+-VLANSupport               = yes
+-DNS4Support               = yes
+-DNS6Support               = yes
+-TLSSupport                = yes
+-HTTPSupport               = yes
+-EAPSupport                = yes
+-BlueToothSupport          = yes
+-IPSecSupport              = yes
++HiiFontSupport            = no
++GraphicalConsoleDevices   = no
++PointerDevices            = no
++BootFromDiskDevices       = no
++BootFromNetworkDevices    = no
++ValidateBootImageThruNet  = no
++UartDevices               = no
++PciBusSupport             = no
++UsbBusSupport             = no
++NVMExpressPassThru        = no
++BootFromNVMe              = no
++ExtScsiPassThru           = no
++DebugSupport              = no
++PlatformDriverOverride    = no
++AtaPassThru               = no
++UEFIIPv4Support           = no
++BootFromScsi              = no
++ExtScsiPassThruSupport    = no
++BootFromIScsi             = no
++EBCSupport                = no
++UEFIIPv6Support           = no
++VLANSupport               = no
++DNS4Support               = no
++DNS6Support               = no
++TLSSupport                = no
++HTTPSupport               = no
++EAPSupport                = no
++BlueToothSupport          = no
++IPSecSupport              = no
+ 
