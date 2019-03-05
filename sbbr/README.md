@@ -14,7 +14,11 @@ The SBBR test suites check for compliance against the SBBR specification. Like t
 ## UEFI Self Certification Tests
 Self Certification Tests (SCTs) test the UEFI implementation requirements defined by SBBR. The SCT implementation can eventually merge into the EDK2 tree and as a result, SBBR tests in these deliverables leverage those present in EDK2.
 
+<<<<<<< HEAD
 **Prerequisite** : Ensure that the system time is correct before starting SCT tests.
+=======
+**Prerequisite** : NTP Sync should be done before running SCT
+>>>>>>> 40e8ce5a6d99f9c3876b7c02f3e74b730e784e7c
 
 ### Running SCT
 SBBR SCT tests are available only if the test suite is built with UEFI-SCT. By Default, UEFI-SCT is not included in the test suite. <br />
