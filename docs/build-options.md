@@ -16,14 +16,14 @@ Usage:
 
 acs_sync.sh can accept one optional parameter.
 
-For example:
-$ acs_sync.sh luvos
+For Example:<br/>
+$ acs_sync.sh luvos<br/>
 will synch only luvos for building
 
-$ acs_sync.sh sbsa
+$ acs_sync.sh sbsa<br/>
 will synch only sbsa for building
 
-$ acs_sync.sh
+$ acs_sync.sh<br/>
 will sync all modules
 
 ### luvos/scripts/build.sh
@@ -35,33 +35,33 @@ Usage:
 
 /path/to/armacs/luvos/scripts/build.sh can accept upto 2 optional parameters
 
-For Example.
-$ ./luvos/scripts/build.sh sbbr cleanall
+For Example:<br/>
+$ ./luvos/scripts/build.sh sbbr cleanall<br/>
 will clean only sbbr module
 
-$ ./luvos/scripts/build.sh sbsa
+$ ./luvos/scripts/build.sh sbsa<br/>
 will build only sbsa module
 
-$ ./luvos/scripts/build.sh cleanall
+$ ./luvos/scripts/build.sh cleanall<br/>
 will clean all modules
 
-$ ./luvos/scripts/build.sh
+$ ./luvos/scripts/build.sh<br/>
 will build all modules (no clean is done)
 
 
 ### Typical Usage Scenarios
 Prerequisite : The complete build is done atleast once.
 
-To synch and build only sbsa, the following commands may be run :
-$ cd /path/to/armacs/
-$ ./acs_sync.sh sbsa
-$ luvos/scripts/build.sh sbsa cleanall
-$ luvos/scripts/build.sh sbsa
+To synch and build only sbsa, the following commands may be run:<br/>
+$ cd /path/to/armacs/<br/>
+$ ./acs_sync.sh sbsa<br/>
+$ luvos/scripts/build.sh sbsa cleanall<br/>
+$ luvos/scripts/build.sh sbsa<br/>
 
 
-To build the entire system, the following commands may be run :
-$ cd /path/to/armacs/
-$ ./acs_sync.sh
-$ luvos/scripts/build.sh cleanall
-$ luvos/scripts/build.sh
+To build the entire system, the following commands may be run:<br/>
+$ cd /path/to/armacs/<br/>
+$ ./acs_sync.sh<br/>
+$ luvos/scripts/build.sh cleanall<br/>
+$ luvos/scripts/build.sh<br/>
 

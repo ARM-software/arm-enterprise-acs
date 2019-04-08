@@ -13,7 +13,7 @@ In summary, the Arm Enterprise ACS product contains the following: <ol>
 These tests are split between UEFI and Linux (supported by corresponding kernel driver) applications that together determine whether an architectural implementation is compliant with the enterprise specifications. These tests are further described in detail.
 
 ## Release details
- - Code Quality: REL v2.0
+ - Code Quality: REL v2.2
  - The SBSA tests are written for version 5.0 of the SBSA specification.
  - The SBBR tests are written for version 1.1 of the SBBR specification.
  - The compliance suite is not a substitute for design verification.
