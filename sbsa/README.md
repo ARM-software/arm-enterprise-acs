@@ -17,7 +17,7 @@ Partners can also write their own abstraction layer implementations to allow SBS
 Shell>FS2:<br/>
 FS2:>FS3:\EFI\BOOT\sbsa\sbsa.nsh
 
-If any failures are encountered, see [SBSA User Guide](https://github.com/ARM-software/sbsa-acs/blob/master/docs/Arm_SBSA_Architecture_Compliance_User_Guide.pdf) for debug options.
+If any failures are encountered, see [SBSA User Guide](https://github.com/ARM-software/sbsa-acs/raw/master/docs/SBSA_ACS_User_Guide.pdf) for debug options.
 Power reset the system after completion of this test and continue with the next step. <br />
 
 Note:
@@ -39,7 +39,7 @@ On Linux shell, enter the following command:
 ## Debug Information
 SBSA source directories can be found at the following paths:
 
-- SBSA UEFI application source at /path/to/arm-enterprise-acs/tmp/work/aarch64-oe-linux/sbsa/1.0+gitAUTOINC+&lt;commit-id>-r0/git/
+- SBSA UEFI application source at /path/to/arm-enterprise-acs/luv/build/tmp/work/aarch64-oe-linux/sbsa/1.0+gitAUTOINC+&lt;commit-id>-r0/git/
 - SBSA Linux user application source at /path/to/arm-enterprise-acs/luv/meta-luv/recipes-utils/sbsa-acs-app/sbsa-acs-app/
 - SBSA Linux kernel module source at /path/to/arm-enterprise-acs/luv/meta-luv/recipes-core/sbsa-acs-[drv|val|pal|test]/files/
 

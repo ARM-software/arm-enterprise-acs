@@ -13,7 +13,7 @@ In summary, the Arm Enterprise ACS product contains the following: <ol>
 These tests are split between UEFI and Linux (supported by corresponding kernel driver) applications that together determine whether an architectural implementation is compliant with the enterprise specifications. These tests are further described in detail.
 
 ## Release details
- - Code Quality: REL v2.0
+ - Code Quality: REL v2.2
  - The SBSA tests are written for version 5.0 of the SBSA specification.
  - The SBBR tests are written for version 1.1 of the SBBR specification.
  - The compliance suite is not a substitute for design verification.
@@ -33,7 +33,6 @@ These tests are split between UEFI and Linux (supported by corresponding kernel 
 Before starting the ACS build, ensure that the following requirements are met:
  - Ubuntu 16.04 LTS with at least 64GB of free disk space.
  - Must use Bash shell.
- - UEFI SCT based tests are not built by default. To build UEFI SCT, membership of [https://github.com/UEFI/UEFI-SCT](https://github.com/UEFI/UEFI-SCT) is necessary. If you are not a member, you must request access by sending an e-mail to admin@uefi.org by providing your GitHub account ID.<br />
 
 Note : Windows build steps will be provided in the future releases.
 <br />
@@ -52,9 +51,8 @@ Perform the following steps to start the ACS build:
 
 Note:<br />
 - These build steps only target AArch64. <br />
-- By default, the build script excludes UEFI SCT in the built images.<br />
-  If SCT must be included, enter "no" when prompted "To continue without building UEFI-SCT.  Enter [yes(default)/no]: ", and then enter GitHub details for the UEFI-SCT member account.<br />
 - The build script provides the option to append kernel command-line parameters, if necessary. Press enter to continue with default parameters. <br />
+- For build options to selectively sync and build particular modules, please check this document : [build-options](https://github.com/ARM-software/arm-enterprise-acs/blob/master/docs/build-options.md). <br />
 
 ## Build output
 The luv-live-image-gpt.img bootable image can be found in:
@@ -130,8 +128,6 @@ The live image boots to UEFI Shell. The different test applications can be run i
 
 - [UEFI Self Certification Tests (UEFI-SCT)](https://github.com/UEFI/UEFI-SCT) TAG: c78ea66cb114390e8dd8de922bdf4ff3e9770f8c
 
-
-Note: <br /> You must be a member of [UEFI-SCT](https://github.com/UEFI/UEFI-SCT). If you are not a member, you must request access by sending an e-mail to [admin@uefi.org](mailto:admin@uefi.org) by specifying your GitHub ID.
 
 ## License
 
