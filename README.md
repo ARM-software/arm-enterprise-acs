@@ -126,7 +126,7 @@ The live image boots to UEFI Shell. The different test applications can be run i
 
 - [Server Base System Architecture (SBSA)](https://github.com/ARM-software/sbsa-acs) TAG: <>
 
-- [UEFI Self Certification Tests (UEFI-SCT)](https://github.com/UEFI/UEFI-SCT) TAG: c78ea66cb114390e8dd8de922bdf4ff3e9770f8c
+- [UEFI Self Certification Tests (UEFI-SCT)](https://github.com/tianocore/edk2-test) TAG: b558bad25479ec83d43399673d7580294c81c8f8
 
 
 ## License
