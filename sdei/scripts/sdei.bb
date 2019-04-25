@@ -25,14 +25,14 @@ LICENSE = "CLOSED"
 FILESEXTRAPATHS_prepend := "${THISDIR}/files:"
 inherit deploy
 
-SRC_URI =  " https://releases.linaro.org/components/toolchain/binaries/5.3-2016.05/aarch64-linux-gnu/gcc-linaro-5.3.1-2016.05-x86_64_aarch64-linux-gnu.tar.xz;name=name3 \
+SRC_URI =  " https://releases.linaro.org/components/toolchain/binaries/7.4-2019.02/aarch64-linux-gnu/gcc-linaro-7.4.1-2019.02-x86_64_aarch64-linux-gnu.tar.xz;name=name3 \
              file://sdei/ \
 	     file://compile.sh"
-SRC_URI[name3.md5sum] = "24ac2e26f50f49f3043f281440b41bba"
+SRC_URI[name3.md5sum] = "de0ede807c5b1cbea667ff9f02c822cd"
 
 do_unpack () {
   tar -xf ${DL_DIR}/gcc-linaro*.tar.xz
-  mv gcc-linaro-5.3.1-2016.05-x86_64_aarch64-linux-gnu/ ${S}/gcc-linaro/
+  mv gcc-linaro-7.4.1-2019.02-x86_64_aarch64-linux-gnu/ ${S}/gcc-linaro/
   ls
 }
 

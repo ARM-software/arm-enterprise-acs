@@ -15,7 +15,7 @@
 
 cd ${1}/edk2
 
-export GCC49_AARCH64_PREFIX=${1}/gcc-linaro-5.3.1-2016.05-x86_64_aarch64-linux-gnu/bin/aarch64-linux-gnu-
+export GCC49_AARCH64_PREFIX=${1}/gcc-linaro-7.4.1-2019.02-x86_64_aarch64-linux-gnu/bin/aarch64-linux-gnu-
 
 echo "do_compile: Initializing EDK2 for building."
 set --
