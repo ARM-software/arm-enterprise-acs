@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2017, ARM Limited or its affiliates. All rights reserved.
+# Copyright (c) 2017-2019, ARM Limited or its affiliates. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,13 +14,26 @@
 # limitations under the License.
 
 LUVDIR=$PWD/luv
+LUVDIRTEMP=$PWD/luvtemp
 TOPDIR=$PWD
-rm -rf $LUVDIR
-git clone https://github.com/intel/luv-yocto.git luv
-cd $LUVDIR
+
+CLONEDIR=$LUVDIR;
+if [ -d $TOPDIR/luv ]; then
+	CLONEDIR=$LUVDIRTEMP;
+fi
+
+git clone https://github.com/intel/luv-yocto.git $CLONEDIR
+cd $CLONEDIR
 git checkout -b v2.3 v2.3
 git am $TOPDIR/luvos/patches/luvos.patch
 cd $TOPDIR
+
+if [ -d  $LUVDIRTEMP ]; then
+	cp -r $LUVDIRTEMP/* $LUVDIR/
+	echo "removing $LUVDIRTEMP"
+	rm -rf $LUVDIRTEMP
+fi
+
 ln -s $TOPDIR/luvos/scripts/luv-collect-results $LUVDIR/meta-luv/recipes-core/luv-test/luv-test/luv-collect-results
 ln -s $TOPDIR/luvos/scripts/luv-sbsa-test $LUVDIR/meta-luv/recipes-core/luv-test/luv-test/luv-sbsa-test
 ln -s $TOPDIR/luvos/scripts/luv-sdei-test $LUVDIR/meta-luv/recipes-core/luv-test/luv-test/luv-sdei-test

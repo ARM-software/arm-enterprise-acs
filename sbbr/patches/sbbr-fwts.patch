@@ -1,23 +1,25 @@
-From e29e685d57d606a7234bb5608bb49943c9b437da Mon Sep 17 00:00:00 2001
+From ccd989a73b7f19ebd3df9fae51e2bd5e9fd41055 Mon Sep 17 00:00:00 2001
 From: Sakar Arora <Sakar.Arora@arm.com>
 Date: Mon, 23 Apr 2018 18:53:41 +0530
-Subject: [PATCH] sbbr fwts
+Subject: [PATCH] sbbr fwts Added logs for dmicheck test case 2 where it skips
+ due to SBBR
 
+Signed-off-by: edhcha01 <edhaya.chandran@arm.com>
 ---
  src/Makefile.am                  |   2 +
  src/acpi/acpiinfo/acpiinfo.c     |  18 +++-
- src/acpi/devices/ged/ged.c       | 156 +++++++++++++++++++++++++++++++++
- src/acpi/devices/pcie/rc.c       | 180 +++++++++++++++++++++++++++++++++++++++
- src/acpi/hest/hest.c             |  36 +++++++-
- src/acpi/method/method.c         |  60 ++++++++++---
- src/dmi/dmicheck/dmicheck.c      |  66 ++++++++++----
+ src/acpi/devices/ged/ged.c       | 156 +++++++++++++++++++++++++++
+ src/acpi/devices/pcie/rc.c       | 180 +++++++++++++++++++++++++++++++
+ src/acpi/hest/hest.c             |  36 ++++++-
+ src/acpi/method/method.c         |  60 +++++++++--
+ src/dmi/dmicheck/dmicheck.c      |  69 +++++++++---
  src/sbbr/acpitables/acpitables.c |   9 +-
- 8 files changed, 496 insertions(+), 31 deletions(-)
+ 8 files changed, 499 insertions(+), 31 deletions(-)
  create mode 100644 src/acpi/devices/ged/ged.c
  create mode 100644 src/acpi/devices/pcie/rc.c
 
 diff --git a/src/Makefile.am b/src/Makefile.am
-index 4daa9e8..5d5246f 100644
+index 4daa9e8f..5d5246fa 100644
 --- a/src/Makefile.am
 +++ b/src/Makefile.am
 @@ -71,6 +71,8 @@ fwts_SOURCES = main.c 				\
@@ -30,7 +32,7 @@ index 4daa9e8..5d5246f 100644
  	acpi/devices/buttons/sleep_button.c	\
  	acpi/devices/lid/lid.c			\
 diff --git a/src/acpi/acpiinfo/acpiinfo.c b/src/acpi/acpiinfo/acpiinfo.c
-index 5081850..ecfd95c 100644
+index 50818503..ecfd95ca 100644
 --- a/src/acpi/acpiinfo/acpiinfo.c
 +++ b/src/acpi/acpiinfo/acpiinfo.c
 @@ -25,6 +25,8 @@
@@ -87,7 +89,7 @@ index 5081850..ecfd95c 100644
  #endif
 diff --git a/src/acpi/devices/ged/ged.c b/src/acpi/devices/ged/ged.c
 new file mode 100644
-index 0000000..316f15e
+index 00000000..316f15e7
 --- /dev/null
 +++ b/src/acpi/devices/ged/ged.c
 @@ -0,0 +1,156 @@
@@ -249,7 +251,7 @@ index 0000000..316f15e
 +#endif
 diff --git a/src/acpi/devices/pcie/rc.c b/src/acpi/devices/pcie/rc.c
 new file mode 100644
-index 0000000..fc04a6b
+index 00000000..fc04a6b4
 --- /dev/null
 +++ b/src/acpi/devices/pcie/rc.c
 @@ -0,0 +1,180 @@
@@ -434,7 +436,7 @@ index 0000000..fc04a6b
 +
 +#endif
 diff --git a/src/acpi/hest/hest.c b/src/acpi/hest/hest.c
-index 1113148..4fca574 100644
+index 11131488..4fca574f 100644
 --- a/src/acpi/hest/hest.c
 +++ b/src/acpi/hest/hest.c
 @@ -590,6 +590,16 @@ static void hest_check_generic_error_source(
@@ -518,7 +520,7 @@ index 1113148..4fca574 100644
  
  #endif
 diff --git a/src/acpi/method/method.c b/src/acpi/method/method.c
-index 48736af..e4532bf 100644
+index 48736af3..e4532bf1 100644
 --- a/src/acpi/method/method.c
 +++ b/src/acpi/method/method.c
 @@ -1,4 +1,4 @@
@@ -673,7 +675,7 @@ index 48736af..e4532bf 100644
  	{ method_test_DGS, "Test _DGS (Query Graphics State)." },
  	{ method_test_DOD, "Test _DOD (Enumerate All Devices Attached to Display Adapter)." },
 diff --git a/src/dmi/dmicheck/dmicheck.c b/src/dmi/dmicheck/dmicheck.c
-index 8d3ca5a..e6f5aad 100644
+index 8d3ca5ad..fd6b9834 100644
 --- a/src/dmi/dmicheck/dmicheck.c
 +++ b/src/dmi/dmicheck/dmicheck.c
 @@ -56,6 +56,8 @@
@@ -818,8 +820,19 @@ index 8d3ca5a..e6f5aad 100644
  	{ "Onboard Devices Extended Information", 41, 0, RECOMMENDED_STRUCTURE_DEFAULT_MSG, 0 },
  	{ 0, 0, 0, 0, 0 }
  };
+@@ -2054,7 +2090,10 @@ static int dmicheck_test2(fwts_framework *fw)
+ 	uint8_t  *table;
+ 
+ 	if (fw->flags & FWTS_FLAG_TEST_SBBR)
++	{
++		fwts_skipped(fw, "This test is not required for SBBR Compliance, skip the test.");	
+ 		return FWTS_SKIP;
++	}
+ 
+ 	if (!smbios_found) {
+ 		fwts_skipped(fw, "Cannot find SMBIOS or DMI table entry, skip the test.");
 diff --git a/src/sbbr/acpitables/acpitables.c b/src/sbbr/acpitables/acpitables.c
-index d40c164..59b536d 100644
+index d40c164d..59b536d1 100644
 --- a/src/sbbr/acpitables/acpitables.c
 +++ b/src/sbbr/acpitables/acpitables.c
 @@ -199,14 +199,15 @@ static const char *recommended_acpi_tables[] = {
@@ -843,5 +856,5 @@ index d40c164..59b536d 100644
  };
  
 -- 
-2.7.4
+2.17.1
 

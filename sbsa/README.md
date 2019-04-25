@@ -39,7 +39,7 @@ On Linux shell, enter the following command:
 ## Debug Information
 SBSA source directories can be found at the following paths:
 
-- SBSA UEFI application source at /path/to/arm-enterprise-acs/tmp/work/aarch64-oe-linux/sbsa/1.0+gitAUTOINC+&lt;commit-id>-r0/git/
+- SBSA UEFI application source at /path/to/arm-enterprise-acs/luv/build/tmp/work/aarch64-oe-linux/sbsa/1.0+gitAUTOINC+&lt;commit-id>-r0/git/
 - SBSA Linux user application source at /path/to/arm-enterprise-acs/luv/meta-luv/recipes-utils/sbsa-acs-app/sbsa-acs-app/
 - SBSA Linux kernel module source at /path/to/arm-enterprise-acs/luv/meta-luv/recipes-core/sbsa-acs-[drv|val|pal|test]/files/
 

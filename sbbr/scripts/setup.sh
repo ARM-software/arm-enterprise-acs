@@ -18,5 +18,7 @@ LUVDIR=$PWD/luv
 rm -rf $LUVDIR/meta-luv/recipes-bsp/sbbr
 mkdir -p $LUVDIR/meta-luv/recipes-bsp/sbbr/files
 ln -s $PWD/sbbr/scripts/sbbr.bb $LUVDIR/meta-luv/recipes-bsp/sbbr/sbbr.bb
-ln -s $PWD/sbbr/patches/sbbr-sct.patch $LUVDIR/meta-luv/recipes-bsp/sbbr/files/sbbr-sct.patch
+ln -s $PWD/sbbr/patches/edk2-test-sbbr.patch $LUVDIR/meta-luv/recipes-bsp/sbbr/files/
 ln -s $PWD/sbbr/patches/sbbr-fwts.patch $LUVDIR/meta-luv/recipes-core/fwts/fwts/sbbr-fwts.patch
+
+cp -r $PWD/sbbr/tests/* $LUVDIR/meta-luv/recipes-bsp/sbbr/files/
