@@ -17,16 +17,16 @@ LICENSE = "CLOSED"
 LIC_FILES_CHKSUM = ""
 
 # SCT files placed in ${WORKDIR}/git
-# GCC files placed in ${WORKDIR}/gcc-linaro-5.3.1-2016.05-x86_64_aarch64-linux-gnu
+# GCC files placed in ${WORKDIR}/gcc-linaro-7.4.1-2019.02-x86_64_aarch64-linux-gnu
 SRC_URI = "git://github.com/ARM-software/sbsa-acs.git;protocol=https;branch=release \
-           https://releases.linaro.org/components/toolchain/binaries/5.3-2016.05/aarch64-linux-gnu/gcc-linaro-5.3.1-2016.05-x86_64_aarch64-linux-gnu.tar.xz \
+           https://releases.linaro.org/components/toolchain/binaries/7.4-2019.02/aarch64-linux-gnu/gcc-linaro-7.4.1-2019.02-x86_64_aarch64-linux-gnu.tar.xz \
            file://compile.sh"
 
 PV = "1.0+git${SRCPV}"
-SRCREV = "36c1d4b6822c180565f9abb67b5c02c4effa8397"
+SRCREV = "e5da184b34bd288d7955e2c72d149a36934cce29"
 
 # GCC checksum.
-SRC_URI[md5sum] = "24ac2e26f50f49f3043f281440b41bba"
+SRC_URI[md5sum] = "de0ede807c5b1cbea667ff9f02c822cd"
 
 S = "${WORKDIR}/git"
 
@@ -39,7 +39,7 @@ do_configure () {
     if [ ! -d ${WORKDIR}/edk2 ]
     then
         echo "do_configure: Cloning EDK2 repository."
-        git clone -b UDK2017 https://github.com/tianocore/edk2.git
+        git clone -b UDK2018 https://github.com/tianocore/edk2.git
     fi
 
     # Linking SBSA and EDK2.

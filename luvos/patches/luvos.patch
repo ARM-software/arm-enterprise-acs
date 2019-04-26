@@ -1,4 +1,4 @@
-From fbdf7214f8ad6c79c2de1dc774091c87feb8c4ae Mon Sep 17 00:00:00 2001
+From 12efec15da80a30fdddc3b6f64e284ecee418ae8 Mon Sep 17 00:00:00 2001
 From: Mahesh Bireddy <mahesh.reddybireddy@arm.com>
 Date: Fri, 9 Nov 2018 13:23:59 +0530
 Subject: [PATCH] Luvos v2.3 ACS patch
@@ -6,7 +6,7 @@ Subject: [PATCH] Luvos v2.3 ACS patch
 Signed-off-by: Mahesh Bireddy <mahesh.reddybireddy@arm.com>
 ---
  .templateconf                                      |   2 +-
- meta-luv/classes/luv-efi.bbclass                   | 118 ++++++++++++++++++++-
+ meta-luv/classes/luv-efi.bbclass                   | 115 ++++++++++++++++++++-
  meta-luv/conf/distro/luv.conf                      |   2 +-
  meta-luv/conf/local.conf.sample                    |   5 +-
  meta-luv/recipes-core/efivarfs/efivarfs-test.bb    |   1 -
@@ -21,7 +21,7 @@ Signed-off-by: Mahesh Bireddy <mahesh.reddybireddy@arm.com>
  meta-luv/recipes-kernel/linux/linux-luv_4.18.bb    |   4 +-
  meta/conf/bitbake.conf                             |   2 +-
  .../systemd-serialgetty/serial-getty@.service      |   2 +-
- 16 files changed, 167 insertions(+), 20 deletions(-)
+ 16 files changed, 164 insertions(+), 20 deletions(-)
 
 diff --git a/.templateconf b/.templateconf
 index 0fe6f82..dce51a4 100644
@@ -32,7 +32,7 @@ index 0fe6f82..dce51a4 100644
 -TEMPLATECONF=${TEMPLATECONF:-meta-poky/conf}
 +TEMPLATECONF=${TEMPLATECONF:-meta-luv/conf}
 diff --git a/meta-luv/classes/luv-efi.bbclass b/meta-luv/classes/luv-efi.bbclass
-index 86b3649..4cebf70 100644
+index 86b3649..6e72d48 100644
 --- a/meta-luv/classes/luv-efi.bbclass
 +++ b/meta-luv/classes/luv-efi.bbclass
 @@ -16,6 +16,13 @@ def get_bits_depends(d):
@@ -49,16 +49,13 @@ index 86b3649..4cebf70 100644
  do_bootimg[depends] += "${MLPREFIX}grub-efi:do_deploy \
                          sbsigntool-native:do_populate_sysroot"
  
-@@ -56,10 +63,18 @@ efi_populate() {
+@@ -56,10 +63,15 @@ efi_populate() {
      if [ "${TARGET_ARCH}" = "aarch64" ]; then
  		install -m 0644 ${DEPLOY_DIR_IMAGE}/${GRUB_EFI_LOADER_IMAGE} ${DEST}${EFIDIR}/${DEST_EFI_LOADER_IMAGE}
                  echo "${DEST_EFI_LOADER_IMAGE}" > ${DEST}${EFIDIR}/startup.nsh
-+            if [ "${SCTOPTIONAL}" = "no" ]; then
 +                echo "Including UEFI-SCT"
 +                efi_populate_sbbr ${DEST}
-+            fi
 +            efi_populate_startup ${DEST}
-+            echo "SCTOPTIONAL=${SCTOPTIONAL}"
 +            efi_populate_sbsa ${DEST}
 +            efi_populate_sdei ${DEST}
  
@@ -69,7 +66,7 @@ index 86b3649..4cebf70 100644
                  # sign grub2 bootloader
                  sbsign --key ${DEPLOY_DIR_IMAGE}/LUV.key --cert ${DEPLOY_DIR_IMAGE}/LUV.crt \
                         --output ${DEPLOY_DIR_IMAGE}/grubx64.efi ${DEPLOY_DIR_IMAGE}/${GRUB_EFI_LOADER_IMAGE}
-@@ -75,6 +90,8 @@ efi_populate() {
+@@ -75,6 +87,8 @@ efi_populate() {
  
                  # restore files to leave all in good shape for all the callers of the funciton
                  cp ${DEPLOY_DIR_IMAGE}/${DEST_EFI_LOADER_IMAGE} ${DEPLOY_DIR_IMAGE}/shim.efi
@@ -78,7 +75,7 @@ index 86b3649..4cebf70 100644
      fi
  
      if echo "${TARGET_ARCH}" | grep -q "i.86" || [ "${TARGET_ARCH}" = "x86_64" ]; then
-@@ -90,6 +107,95 @@ efi_populate() {
+@@ -90,6 +104,95 @@ efi_populate() {
      install -m 0644 ${LUV_CFG} ${DEST}
  }
  
@@ -174,7 +171,7 @@ index 86b3649..4cebf70 100644
  BITS_EFI_LOADER_IMAGE = "${DEST_EFI_LOADER_IMAGE}"
  efi_populate_bits() {
      DEST=$1
-@@ -170,6 +276,11 @@ python build_efi_cfg() {
+@@ -170,6 +273,11 @@ python build_efi_cfg() {
         cfgfile.write('default=bits\n')
         cfgfile.write('fallback=0\n')
  
@@ -186,7 +183,7 @@ index 86b3649..4cebf70 100644
      cfgfile.write('menuentry \'luv\' {\n')
      kernel = d.getVar('KERNEL_IMAGETYPE')
      cfgfile.write('linux /%s ' % (kernel))
-@@ -200,6 +311,11 @@ python build_efi_cfg() {
+@@ -200,6 +308,11 @@ python build_efi_cfg() {
         cfgfile.write('chainloader /EFI/BOOT/bits/%s\n' % loader)
         cfgfile.write('}\n')
  

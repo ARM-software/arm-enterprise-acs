@@ -1,10 +1,10 @@
 # Server Base Boot Requirements - Architecture Compliance Suite
-SBBR specification compliments the SBSA specification by defining the base firmware requirements
+SBBR specification complements the SBSA specification by defining the base firmware requirements
 required for out-of-box support of any SBSA compatible operating system or hypervisor. These requirements are comprehensive enough
 to enable booting multi-core 64-bit ARMv8 server platforms while remaining minimal enough to allow for OEM and ODM innovation, and
 market differentiation.
 
-For more information, see [SBBR specification](#).
+For more information, see [SBBR specification](http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.den0044c/index.html).
 
 This release includes both UEFI Shell and OS context tests that are packaged into a bootable LUV OS image.
 The SBBR test suites check for compliance against the SBBR specification. Like the SBSA tests, these tests are also delivered through two runtime executable environments:
@@ -12,10 +12,12 @@ The SBBR test suites check for compliance against the SBBR specification. Like t
   - SBBR based on Firmware Test Suite
 
 ## UEFI Self Certification Tests
-Self Certification Tests (SCTs) test the UEFI implementation requirements defined by SBBR. The SCT implementation can eventually merge into the EDK2 tree and as a result, SBBR tests in these deliverables leverage those present in EDK2.
+Self-Certification Tests (SCTs) test the UEFI implementation requirements defined by SBBR. The SCT implementation can eventually merge into the EDK2 tree and as a result, SBBR tests in these deliverables leverage those present in EDK2.
+
+**Prerequisite** : Ensure that the system time is correct before starting SCT tests.
 
 ### Running SCT
-SBBR SCT tests are available only if the test suite is built with UEFI-SCT. By Default, UEFI-SCT is not included in the test suite. <br />
+SBBR SCT tests are built as part of the test suite <br />
 
 Enter the following commands to install SCT.
 
@@ -77,7 +79,7 @@ After this, run the following command to create an updated luv live image:
 
 a. Tests run on SGI-575 Reference Platforms
 
-       i. SBBR Tests. (Optional UEFI Shell based tests built on top of UEFI-SCT Framework, excluded by default)
+       i. SBBR Tests. (UEFI Shell based tests built on top of UEFI-SCT Framework)
        ii. SBBR Tests. (OS based tests built on top of FWTS Framework)
 
 

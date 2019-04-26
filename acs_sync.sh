@@ -1,5 +1,5 @@
 #! /bin/bash
-# Copyright (c) 2017, ARM Limited or its affiliates. All rights reserved.
+# Copyright (c) 2017-2019, ARM Limited or its affiliates. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,6 +12,34 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+ALLOWED_FIRST_PARAM="luvos sbbr sbsa sdei"
+
+display_usage()
+{
+    echo
+    echo "Usage: $0 [luvos|sbbr|sbsa|sdei]"
+    echo
+}
+
+validate_param()
+{
+    occurrence=`echo $ALLOWED_FIRST_PARAM | grep -w $1 | wc -l`
+    if [ $occurrence -eq 0 ]; then
+        echo "Invalid option $1"
+	display_usage;
+        exit 1;
+    fi
+}
+
+if [ $# -gt 1 ]; then
+    display_usage;
+    exit 1;
+fi
+
+if [ $# -gt 0 ]; then
+    validate_param $*
+fi
 
 ./check_deps.sh
 if [ $? != 0 ]
@@ -34,7 +62,13 @@ then
     fi
 fi
 
-./luvos/scripts/setup.sh
-./sbbr/scripts/setup.sh
-./sbsa/scripts/setup.sh
-./sdei/scripts/setup.sh
+if [ $# -eq 1 ]; then
+    echo "Setting up $1 ..."
+    ./$1/scripts/setup.sh
+else
+    ./luvos/scripts/setup.sh
+    ./sbbr/scripts/setup.sh
+    ./sbsa/scripts/setup.sh
+    ./sdei/scripts/setup.sh
+fi
+

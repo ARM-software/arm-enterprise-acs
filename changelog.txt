@@ -1,3 +1,11 @@
+v19.04_REL2.2
+
+* SBSA: Support for SBSA baremetal templates with documentations
+* SBBR: Remove dependency UEFI membership for checking out SCT code 
+* SBSA: Big Endian Issue and ECAM bug fixes
+* SBBR: Bug fixes and minor document updates
+* Improved flexibility in arm-enterprise-acs build process
+
 v19.01_REL2.1
 
 * SBSA: PCIe test enhancements and bug fixes
