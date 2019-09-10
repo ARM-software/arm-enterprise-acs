@@ -39,7 +39,7 @@ do_configure () {
     if [ ! -d ${WORKDIR}/edk2 ]
     then
         echo "do_configure: Cloning EDK2 repository."
-        git clone -b UDK2017 https://github.com/tianocore/edk2.git
+        git clone -b UDK2018 https://github.com/tianocore/edk2.git
     fi
 
     # Linking SBSA and EDK2.
