@@ -13,7 +13,7 @@ In summary, the Arm Enterprise ACS product contains the following: <ol>
 These tests are split between UEFI and Linux (supported by corresponding kernel driver) applications that together determine whether an architectural implementation is compliant with the enterprise specifications. These tests are further described in detail.
 
 ## Release details
- - Code Quality: REL v2.2
+ - Code Quality: REL v2.3
  - The SBSA tests are written for version 5.0 of the SBSA specification.
  - The SBBR tests are written for version 1.1 of the SBBR specification.
  - The compliance suite is not a substitute for design verification.
@@ -63,6 +63,12 @@ This image comprises of two FAT file system partitions recognized by UEFI: <br /
   Stores logs and is used to install UEFI-SCT. (Approximate size: 120 MB) <br/>
 - 'boot' <br />
   Contains bootable applications and test suites. (Approximate size: 60 MB)
+
+The PXE boot package containing the netbootable image grub-efi-bootaa64.efi can be found in:
+&lt;work_dir&gt;/arm-enterprise-acs/luv/build/tmp/deploy/images/qemuarm64/PXEBOOT.tar.gz<br />
+This package may be used in PXE Booting and automatic execution of tests.<br />
+For more details please check this document :  [pxeboot-instructions](https://github.com/ARM-software/arm-enterprise-acs/blob/master/docs/pxeboot-instructions.md). <br />
+
 
 For more information, see [Yocto Project](https://www.yoctoproject.org/documentation) and [LuvOS](https://github.com/01org/luv-yocto). <br />
 
