@@ -19,6 +19,12 @@ Self-Certification Tests (SCTs) test the UEFI implementation requirements define
 ### Running SCT
 SBBR SCT tests are built as part of the test suite <br />
 
+Running of SBBR SCT tests is now automated. You can choose to skip the automated SCT tests by pressing any key when the UEFI shell prompts.
+
+- Shell>Press any key to stop the EFI SCT running
+
+To run SCT manually, Follow these steps: 
+
 Enter the following commands to install SCT.
 
 - Shell>FS3:

@@ -1,0 +1,221 @@
+diff --git a/ShellPkg/Application/Shell/Shell.c b/ShellPkg/Application/Shell/Shell.c
+index 577e17311b..ec63cb729c 100644
+--- a/ShellPkg/Application/Shell/Shell.c
++++ b/ShellPkg/Application/Shell/Shell.c
+@@ -315,6 +315,41 @@ InternalEfiShellStartCtrlSMonitor(
+ }
+ 
+ 
++EFI_STATUS
++RunInternalCommand(
++  IN CONST CHAR16                   *CmdLine,
++  IN       CHAR16                   *FirstParameter,
++  IN EFI_SHELL_PARAMETERS_PROTOCOL  *ParamProtocol,
++  OUT EFI_STATUS                    *CommandStatus
++);
++
++
++INTN
++EFIAPI
++ShellAppMain (
++  IN UINTN Argc,
++  IN CHAR16 **Argv
++  );
++
++
++SHELL_STATUS
++EFIAPI
++ShellCommandRunSbsa (
++  IN EFI_HANDLE        ImageHandle,
++  IN EFI_SYSTEM_TABLE  *SystemTable
++  )
++{
++
++  ShellAppMain (
++     1,
++     NULL
++   );
++
++  return 0;
++
++}
++
++
+ 
+ /**
+   The entry point for the application.
+@@ -603,28 +638,10 @@ UefiMain (
+         //
+         // begin the UI waiting loop
+         //
+-        do {
+-          //
+-          // clean out all the memory allocated for CONST <something> * return values
+-          // between each shell prompt presentation
+-          //
+-          if (!IsListEmpty(&ShellInfoObject.BufferToFreeList.Link)){
+-            FreeBufferList(&ShellInfoObject.BufferToFreeList);
+-          }
+-
+-          //
+-          // Reset page break back to default.
+-          //
+-          ShellInfoObject.PageBreakEnabled        = PcdGetBool(PcdShellPageBreakDefault);
+-          ASSERT (ShellInfoObject.ConsoleInfo != NULL);
+-          ShellInfoObject.ConsoleInfo->Enabled    = TRUE;
+-          ShellInfoObject.ConsoleInfo->RowCounter = 0;
+-
+-          //
+-          // Display Prompt
+-          //
+-          Status = DoShellPrompt();
+-        } while (!ShellCommandGetExit());
++	 CHAR16                   FirstParameter[] = L"sbsa";
++	 SHELL_STATUS CommandReturnedStatus;
++	 BOOLEAN LastError;
++	 ShellCommandRunCommandHandler(FirstParameter, &CommandReturnedStatus, &LastError);
+       }
+       if (OldConIn != NULL && ConInHandle != NULL) {
+         CloseSimpleTextInOnFile (gST->ConIn);
+diff --git a/ShellPkg/Library/UefiShellLevel3CommandsLib/UefiShellLevel3CommandsLib.c b/ShellPkg/Library/UefiShellLevel3CommandsLib/UefiShellLevel3CommandsLib.c
+index 448f7234dd..df1ca2d98d 100644
+--- a/ShellPkg/Library/UefiShellLevel3CommandsLib/UefiShellLevel3CommandsLib.c
++++ b/ShellPkg/Library/UefiShellLevel3CommandsLib/UefiShellLevel3CommandsLib.c
+@@ -16,6 +16,13 @@
+ 
+ CONST CHAR16 gShellLevel3FileName[] = L"ShellCommands";
+ EFI_HANDLE gShellLevel3HiiHandle = NULL;
++INTN
++EFIAPI
++ShellAppMain (
++  IN UINTN Argc,
++  IN CHAR16 **Argv
++  );
++
+ 
+ /**
+   return the filename to get help from is not using HII.
+@@ -75,7 +82,7 @@ ShellLevel3CommandsLibConstructor (
+   ShellCommandRegisterCommandName(L"pause",   ShellCommandRunPause  , ShellCommandGetManFileNameLevel3, 3, L"", TRUE , gShellLevel3HiiHandle, STRING_TOKEN(STR_GET_HELP_PAUSE));
+   ShellCommandRegisterCommandName(L"getmtc",  ShellCommandRunGetMtc , ShellCommandGetManFileNameLevel3, 3, L"", TRUE , gShellLevel3HiiHandle, STRING_TOKEN(STR_GET_HELP_GETMTC));
+   ShellCommandRegisterCommandName(L"help",    ShellCommandRunHelp   , ShellCommandGetManFileNameLevel3, 3, L"", TRUE , gShellLevel3HiiHandle, STRING_TOKEN(STR_GET_HELP_HELP));
+-
++  ShellCommandRegisterCommandName(L"sbsa",    ShellCommandRunSbsa   , ShellCommandGetManFileNameLevel3, 3, L"", TRUE , gShellLevel3HiiHandle, STRING_TOKEN(STR_GET_HELP_TOUCH));
+   ShellCommandRegisterAlias(L"type", L"cat");
+ 
+   return (EFI_SUCCESS);
+diff --git a/ShellPkg/Library/UefiShellLevel3CommandsLib/UefiShellLevel3CommandsLib.h b/ShellPkg/Library/UefiShellLevel3CommandsLib/UefiShellLevel3CommandsLib.h
+index be88dd5f28..4ff5dafc66 100644
+--- a/ShellPkg/Library/UefiShellLevel3CommandsLib/UefiShellLevel3CommandsLib.h
++++ b/ShellPkg/Library/UefiShellLevel3CommandsLib/UefiShellLevel3CommandsLib.h
+@@ -157,5 +157,13 @@ ShellCommandRunHelp (
+   IN EFI_SYSTEM_TABLE  *SystemTable
+   );
+ 
++SHELL_STATUS
++EFIAPI
++ShellCommandRunSbsa (
++  IN EFI_HANDLE        ImageHandle,
++  IN EFI_SYSTEM_TABLE  *SystemTable
++  );
++
++
+ #endif
+ 
+diff --git a/ShellPkg/Library/UefiShellLevel3CommandsLib/UefiShellLevel3CommandsLib.inf b/ShellPkg/Library/UefiShellLevel3CommandsLib/UefiShellLevel3CommandsLib.inf
+index a13cd9babf..8a0fed6382 100644
+--- a/ShellPkg/Library/UefiShellLevel3CommandsLib/UefiShellLevel3CommandsLib.inf
++++ b/ShellPkg/Library/UefiShellLevel3CommandsLib/UefiShellLevel3CommandsLib.inf
+@@ -30,6 +30,7 @@
+   Type.c
+   Touch.c
+   Ver.c
++  SbsaAvsMain.c
+   UefiShellLevel3CommandsLib.uni
+   UefiShellLevel3CommandsLib.c
+   UefiShellLevel3CommandsLib.h
+@@ -39,6 +40,75 @@
+   Pause.c
+   GetMtc.c
+   Help.c
++  test_pool/secure/test_s001.c
++  test_pool/secure/test_s002.c
++  test_pool/secure/test_s003.c
++  test_pool/pe/test_c001.c
++  test_pool/pe/test_c002.c
++  test_pool/pe/test_c003.c
++  test_pool/pe/test_c004.c
++  test_pool/pe/test_c005.c
++  test_pool/pe/test_c006.c
++  test_pool/pe/test_c007.c
++  test_pool/pe/test_c008.c
++  test_pool/pe/test_c009.c
++  test_pool/pe/test_c010.c
++  test_pool/pe/test_c011.c
++  test_pool/pe/test_c012.c
++  test_pool/pe/test_c013.c
++  test_pool/pe/test_c014.c
++  test_pool/pe/test_c015.c
++  test_pool/pe/test_c016.c
++  test_pool/pe/test_c017.c
++  test_pool/pe/test_c018.c
++  test_pool/pe/test_c019.c
++  test_pool/pe/test_c020.c
++  test_pool/pe/test_c021.c
++  test_pool/pe/test_c022.c
++  test_pool/pe/test_c023.c
++  test_pool/pe/test_c024.c
++  test_pool/pe/test_c025.c
++  test_pool/pe/test_c026.c
++  test_pool/pe/test_c027.c
++  test_pool/pe/test_c028.c
++  test_pool/gic/test_g001.c
++  test_pool/gic/test_g002.c
++  test_pool/gic/test_g003.c
++  test_pool/gic/test_g004.c
++  test_pool/timer_wd/test_t001.c
++  test_pool/timer_wd/test_t002.c
++  test_pool/timer_wd/test_t003.c
++  test_pool/timer_wd/test_t004.c
++  test_pool/timer_wd/test_t005.c
++  test_pool/timer_wd/test_t006.c
++  test_pool/timer_wd/test_t007.c
++  test_pool/timer_wd/test_t008.c
++  test_pool/timer_wd/test_w001.c
++  test_pool/timer_wd/test_w002.c
++  test_pool/pcie/test_p001.c
++  test_pool/pcie/test_p002.c
++  test_pool/pcie/test_p003.c
++  test_pool/io_virt/test_i001.c
++  test_pool/io_virt/test_i002.c
++  test_pool/io_virt/test_i003.c
++  test_pool/io_virt/test_i004.c
++  test_pool/io_virt/test_i005.c
++  test_pool/io_virt/test_i006.c
++  test_pool/power_wakeup/test_u001.c
++  test_pool/power_wakeup/test_u002.c
++  test_pool/peripherals/test_d001.c
++  test_pool/peripherals/test_d002.c
++  test_pool/peripherals/test_d003.c
++  test_pool/peripherals/test_m001.c
++  test_pool/peripherals/test_m002.c
++  test_pool/exerciser/test_e001.c
++  test_pool/exerciser/test_e002.c
++  test_pool/exerciser/test_e003.c
++  test_pool/exerciser/test_e004.c
++  test_pool/exerciser/test_e005.c
++  test_pool/exerciser/test_e006.c
++  test_pool/exerciser/test_e007.c
++
+ 
+ 
+ [Packages]
+@@ -60,6 +130,8 @@
+   HiiLib
+   FileHandleLib
+   HandleParsingLib
++  SbsaValLib
++  SbsaPalLib
+ 
+ [Guids]
+   gEfiFileInfoGuid                                        ## UNDEFINED
