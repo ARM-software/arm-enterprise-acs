@@ -15,18 +15,25 @@
 
 TOPDIR=`pwd`
 
-ALLOWED_FIRST_PARAM="sbbr sbsa sdei luv-live-image cleanall"
+#This parameter can be set to 0 if luv-netboot image is not needed in full build
+NEED_NETBOOT_IMAGE=1
+
+ALLOWED_FIRST_PARAM="sbbr sbsa sdei luv-live-image luv-netboot-image cleanall"
 ALLOWED_SECOND_PARAM="cleanall"
 NUMOFARGS=0;
 MODULE=""
 CLEANALLONLY=0
 
 OUTPUT_FILE="$PWD/luv/build/tmp/deploy/images/qemuarm64/luv-live-image-gpt.img"
+PATH_NETBOOT="$PWD/luv/build/tmp/deploy/images/qemuarm64"
+NETBOOT_OUTPUT_FILE="$PWD/luv/build/tmp/deploy/images/qemuarm64/grub-efi-bootaa64.efi"
+SHELLSBSA_FILE="$PWD/luv/build/tmp/deploy/images/qemuarm64/ShellSbsa.efi"
+LOCAL_CONF_FILE="$TOPDIR/luv/build/conf/local.conf"
 
 display_usage()
 {
         echo
-        echo "Usage: $0 [sbbr|sbsa|sdei|luv-live-image] [cleanall]"
+        echo "Usage: $0 [sbbr|sbsa|sdei|luv-live-image|luv-netboot-image] [cleanall]"
         echo
 }
 
@@ -56,6 +63,65 @@ validate_param()
 	fi
 }
 
+build_shell_sbsa()
+{
+	$TOPDIR/sbsa/scripts/buildshellsbsa.sh $TOPDIR
+
+}
+
+
+build_netboot_image()
+{
+	if [ ! -f $LOCAL_CONF_FILE ]; then
+		echo "$LOCAL_CONF_FILE is not found. Cannot build luv-netboot-image"
+		return;
+	fi
+
+	cp $LOCAL_CONF_FILE ${LOCAL_CONF_FILE}.luv-live-image
+	#Change local.conf
+	sed -i 's/^[ \t]*DISTRO.*=.*\".*\"/DISTRO = "luv-netboot"/g' ${LOCAL_CONF_FILE}
+
+	#Apply netboot patch
+	echo "Applying luv_netboot patch"
+	cd $TOPDIR/luv
+	git apply $TOPDIR/luvos/patches/luvos_netboot.patch
+        bitbake luv-netboot-image
+
+        #Revert to previous state
+	cp ${LOCAL_CONF_FILE}.luv-live-image $LOCAL_CONF_FILE
+	cp $LOCAL_CONF_FILE ${LOCAL_CONF_FILE}.luv-netboot-image
+
+	#revoke the netboot patch
+	echo "Revoking the netboot patch"
+	cd $TOPDIR/luv
+	git apply -R $TOPDIR/luvos/patches/luvos_netboot.patch
+
+	echo "Building netboot image is completed. The image can be found at $NETBOOT_OUTPUT_FILE"
+
+	echo "Creating PXE boot Package"
+	if [ ! -f $SHELLSBSA_FILE ]; then
+		echo "$SHELLSBSA_FILE is not found. Cannot create PXE Boot Package "
+		return 1;
+	fi
+
+	cd $PATH_NETBOOT
+	mkdir -p EFI/BOOT/sbsa
+	cp $SHELLSBSA_FILE $PATH_NETBOOT/EFI/BOOT/sbsa
+	cp $TOPDIR/luvos/scripts/modify_luv_params_efi.py $PATH_NETBOOT
+
+	tar cvf PXEBOOT.tar grub-efi-bootaa64.efi modify_luv_params_efi.py EFI
+	gzip -f PXEBOOT.tar
+
+	if [ ! -f $PATH_NETBOOT/PXEBOOT.tar.gz ]; then
+		echo "Creating PXE Boot Package Failed!"
+		return 1;
+	fi
+
+	echo "PXE Boot Package is created at $PATH_NETBOOT/PXEBOOT.tar.gz"
+	cd $TOPDIR/luv
+	return 0
+}
+
 if [ $# -gt 2 ]; then
 	display_usage;
 	exit;
@@ -70,6 +136,7 @@ fi
 cd $TOPDIR/luv
 source oe-init-build-env
 
+
 if [ $CLEANALLONLY -eq 1 ]; then
 	echo
 	echo -e "Are you sure to clean all modules? [Y/N]"
@@ -81,6 +148,7 @@ if [ $CLEANALLONLY -eq 1 ]; then
 		bitbake -c cleanall sbsa
 		bitbake -c cleanall sdei
 		bitbake -c cleanall luv-live-image
+		bitbake -c cleanall luv-netboot-image
 		exit 0;
 	else
 		exit 0;
@@ -106,8 +174,18 @@ if [ $NUMOFARGS -gt 0 ]; then
 		then
 			echo
 			echo "Executing with one parameter $0 $MODULE";
+
+			if [ "${MODULE}" == "luv-netboot-image" ]; then
+				build_shell_sbsa
+				build_netboot_image
+				exit 0
+			fi
+
 			bitbake $MODULE
-			bitbake luv-live-image
+			if [ "${MODULE}" != "luv-live-image" ]
+			then
+				bitbake luv-live-image
+			fi
 		else
 			exit 0
 		fi
@@ -122,6 +200,11 @@ else
 	bitbake sbsa
 	bitbake sdei
 	bitbake luv-live-image
+	if [ $? -eq 0 ] && [ $NEED_NETBOOT_IMAGE -eq 1 ]; then
+		build_shell_sbsa
+		build_netboot_image
+	fi
+
 fi
 
 unset BB_ENV_EXTRAWHITE
@@ -130,6 +213,7 @@ if [ -f $OUTPUT_FILE ]; then
 	echo "Built image can be found at $OUTPUT_FILE"
 else
 	echo "Build failed..."
+	exit 1;
 fi
-exit
 
+exit 0
