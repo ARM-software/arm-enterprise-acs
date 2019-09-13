@@ -30,7 +30,7 @@ will sync all modules
 
 Usage:
 ```sh
-/path/to/armacs/luvos/scripts/build.sh [sbbr|sbsa|sdei|luv-live-image] [cleanall]
+/path/to/armacs/luvos/scripts/build.sh [sbbr|sbsa|sdei|luv-live-image|luv-netboot-image] [cleanall]
 ```
 
 /path/to/armacs/luvos/scripts/build.sh can accept upto 2 optional parameters
@@ -48,6 +48,8 @@ will clean all modules
 $ ./luvos/scripts/build.sh<br/>
 will build all modules (no clean is done)
 
+$ ./luvos/scripts/build.sh luv-netboot-image<br/>
+will build netboot image
 
 ### Typical Usage Scenarios
 Prerequisite : The complete build is done atleast once.
