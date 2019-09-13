@@ -1,3 +1,9 @@
+v19.09_REL2.3
+* SBBR: Support for automated execution of SCT
+* SBSA: EL1 Exception Level Support for QEMU Default Configurations
+* SBSA: PCI Express Exerciser Enhancements
+* Support for Building LUV PXE Boot Image
+
 v19.04_REL2.2
 
 * SBSA: Support for SBSA baremetal templates with documentations
