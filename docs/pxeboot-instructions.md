@@ -14,13 +14,13 @@ https://github.com/intel/luv-yocto/wiki/Send--LUV-test-results-to-an-HTTP-server
 	gunzip -cf PXEBOOT.tar.gz | tar xvf -
 
 	This will generate the following file structure<br/>
-		- grub-efi-bootaa64.efi
-		- modify_luv_params_efi.py
-		- EFI/BOOT/sbsa/ShellSbsa.efi
+	grub-efi-bootaa64.efi<br/>
+	modify_luv_params_efi.py<br/>
+	EFI/BOOT/sbsa/ShellSbsa.efi<br/>
 
 4. Run command<br/>
 
-   ./modify_luv_params_efi.py -f grub-efi-bootaa64.efi -n <Console Log Server IP>,64001 -u http://<Apache Server IP>/cgi-bin/upload.php -p \<PXE Server IP\>
+	sudo ./modify_luv_params_efi.py -f grub-efi-bootaa64.efi -n \<Console Log Server IP\>,64001 -u http://\<Apache Server IP\>/cgi-bin/upload.php -p \<PXE Server IP\>
 
 Note: \<PXE Server IP\> is same as tftp server IP<br/>
 
