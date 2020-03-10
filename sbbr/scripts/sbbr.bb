@@ -90,8 +90,15 @@ do_compile () {
 	export PATH=$PATH:"${WORKDIR}/tools/gcc/gcc-linaro-4.9-2016.02-x86_64_aarch64-linux-gnu/bin"
 	export BB_ENV_EXTRAWHITE="$BB_ENV_EXTRAWHITE PATH"
 	echo "New PATH = $PATH"
-	export CROSS_COMPILE="${WORKDIR}/tools/gcc/gcc-linaro-4.9-2016.02-x86_64_aarch64-linux-gnu/bin/aarch64-linux-gnu-"
-	export BB_ENV_EXTRAWHITE="$BB_ENV_EXTRAWHITE CROSS_COMPILE"
+
+        MACHINE=`uname -m`
+        if [ $MACHINE = "aarch64" ]; then
+           export CROSS_COMPILE="/usr/bin/"
+        else
+           export CROSS_COMPILE="${WORKDIR}/tools/gcc/gcc-linaro-4.9-2016.02-x86_64_aarch64-linux-gnu/bin/aarch64-linux-gnu-"
+        fi
+
+        export BB_ENV_EXTRAWHITE="$BB_ENV_EXTRAWHITE CROSS_COMPILE"
 	echo "NEW CROSS_COMPILE: $CROSS_COMPILE"
 
 	cd ${WORKDIR}/edk2

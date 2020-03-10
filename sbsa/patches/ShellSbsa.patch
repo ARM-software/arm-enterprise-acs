@@ -123,7 +123,7 @@ index be88dd5f28..4ff5dafc66 100644
  #endif
  
 diff --git a/ShellPkg/Library/UefiShellLevel3CommandsLib/UefiShellLevel3CommandsLib.inf b/ShellPkg/Library/UefiShellLevel3CommandsLib/UefiShellLevel3CommandsLib.inf
-index a13cd9babf..8a0fed6382 100644
+index a13cd9babf..b302f2f863 100644
 --- a/ShellPkg/Library/UefiShellLevel3CommandsLib/UefiShellLevel3CommandsLib.inf
 +++ b/ShellPkg/Library/UefiShellLevel3CommandsLib/UefiShellLevel3CommandsLib.inf
 @@ -30,6 +30,7 @@
@@ -134,7 +134,7 @@ index a13cd9babf..8a0fed6382 100644
    UefiShellLevel3CommandsLib.uni
    UefiShellLevel3CommandsLib.c
    UefiShellLevel3CommandsLib.h
-@@ -39,6 +40,75 @@
+@@ -39,6 +40,102 @@
    Pause.c
    GetMtc.c
    Help.c
@@ -185,7 +185,32 @@ index a13cd9babf..8a0fed6382 100644
 +  test_pool/timer_wd/test_w002.c
 +  test_pool/pcie/test_p001.c
 +  test_pool/pcie/test_p002.c
-+  test_pool/pcie/test_p003.c
++  test_pool/pcie/test_p020.c
++  test_pool/pcie/test_p021.c
++  test_pool/pcie/test_p022.c
++  test_pool/pcie/test_p023.c
++  test_pool/pcie/test_p024.c
++  test_pool/pcie/test_p025.c
++  test_pool/pcie/test_p026.c
++  test_pool/pcie/test_p027.c
++  test_pool/pcie/test_p028.c
++  test_pool/pcie/test_p029.c
++  test_pool/pcie/test_p030.c
++  test_pool/pcie/test_p031.c
++  test_pool/pcie/test_p032.c
++  test_pool/pcie/test_p033.c
++  test_pool/pcie/test_p034.c
++  test_pool/pcie/test_p035.c
++  test_pool/pcie/test_p036.c
++  test_pool/pcie/test_p037.c
++  test_pool/pcie/test_p038.c
++  test_pool/pcie/test_p039.c
++  test_pool/pcie/test_p040.c
++  test_pool/pcie/test_p041.c
++  test_pool/pcie/test_p042.c
++  test_pool/pcie/test_p043.c
++  test_pool/pcie/test_p044.c
++  test_pool/pcie/test_p045.c
 +  test_pool/io_virt/test_i001.c
 +  test_pool/io_virt/test_i002.c
 +  test_pool/io_virt/test_i003.c
@@ -206,11 +231,13 @@ index a13cd9babf..8a0fed6382 100644
 +  test_pool/exerciser/test_e005.c
 +  test_pool/exerciser/test_e006.c
 +  test_pool/exerciser/test_e007.c
-+
++  test_pool/exerciser/test_e008.c
++  test_pool/exerciser/test_e009.c
++  test_pool/exerciser/test_e010.c
  
  
  [Packages]
-@@ -60,6 +130,8 @@
+@@ -60,6 +157,8 @@
    HiiLib
    FileHandleLib
    HandleParsingLib
@@ -219,3 +246,4 @@ index a13cd9babf..8a0fed6382 100644
  
  [Guids]
    gEfiFileInfoGuid                                        ## UNDEFINED
+

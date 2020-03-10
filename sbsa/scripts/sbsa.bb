@@ -1,4 +1,4 @@
-# Copyright (c) 2016-2018, Arm Limited or its affiliates. All rights reserved.
+# Copyright (c) 2016-2020, Arm Limited or its affiliates. All rights reserved.
 # SPDX-License-Identifier : Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -73,6 +73,10 @@ do_configure () {
 
     # Modifying EDK2 to build SBSA.
     echo "do_configure: Modifying edk2/ShellPkg/ShellPkg.dsc to build SBSA."
+    if ! grep -q SbsaNistLib "${WORKDIR}/edk2/ShellPkg/ShellPkg.dsc"
+    then
+        sed -i '/LibraryClasses.common/ a \ \ !ifdef $(ENABLE_NIST)\n\ \ \ \ SbsaNistLib|AppPkg/Applications/sbsa-acs/test_pool/nist_sts/SbsaNistLib.inf\n\ \ !endif' ${WORKDIR}/edk2/ShellPkg/ShellPkg.dsc
+    fi
     if ! grep -q SbsaPalLib "${WORKDIR}/edk2/ShellPkg/ShellPkg.dsc"
     then
         sed -i '/LibraryClasses.common/ a \ \ SbsaPalLib|AppPkg/Applications/sbsa-acs/platform/pal_uefi/SbsaPalLib.inf' ${WORKDIR}/edk2/ShellPkg/ShellPkg.dsc
@@ -81,10 +85,35 @@ do_configure () {
     then
         sed -i '/LibraryClasses.common/ a \ \ SbsaValLib|AppPkg/Applications/sbsa-acs/val/SbsaValLib.inf' ${WORKDIR}/edk2/ShellPkg/ShellPkg.dsc
     fi
+    if ! grep -q UefiRuntimeLib "${WORKDIR}/edk2/ShellPkg/ShellPkg.dsc"
+    then
+        sed -i '/LibraryClasses.common/ a \ \ UefiRuntimeLib|MdePkg/Library/UefiRuntimeLib/UefiRuntimeLib.inf' ${WORKDIR}/edk2/ShellPkg/ShellPkg.dsc
+    fi
     if ! grep -q SbsaAvs "${WORKDIR}/edk2/ShellPkg/ShellPkg.dsc"
     then
-        sed -i '/Components/ a \ \ AppPkg/Applications/sbsa-acs/uefi_app/SbsaAvs.inf' ${WORKDIR}/edk2/ShellPkg/ShellPkg.dsc
+        sed -i '/Components/ a \ \ !ifdef $(ENABLE_NIST)\n\ \ \ \ AppPkg/Applications/sbsa-acs/uefi_app/SbsaAvsNist.inf\n\ \ !else\n\ \ \ \ AppPkg/Applications/sbsa-acs/uefi_app/SbsaAvs.inf\n\ \ !endif' ${WORKDIR}/edk2/ShellPkg/ShellPkg.dsc
     fi
+    if ! grep -q DENABLE_NIST "${WORKDIR}/edk2/ShellPkg/ShellPkg.dsc"
+    then
+        sed -i '/*_*_*_CC_FLAGS/c  !ifdef $(ENABLE_NIST)\n\ \ *_*_*_CC_FLAGS = -DENABLE_NIST\n!else\n\ \ *_*_*_CC_FLAGS =\n!endif\n\n!include StdLib/StdLib.inc' ${WORKDIR}/edk2/ShellPkg/ShellPkg.dsc
+    fi
+    if ! grep -q ShellAppMainsbsa "${WORKDIR}/edk2/StdLib/LibC/Main/Main.c"
+    then
+        sed -i 's/main( /ShellAppMainsbsa( /g' ${WORKDIR}/edk2/StdLib/LibC/Main/Main.c
+    fi
+    if grep -q "static const int map" "${WORKDIR}/edk2/StdLib/LibC/Main/Arm/flt_rounds.c"
+    then
+        sed -i 's/static const int map/const int map/g' ${WORKDIR}/edk2/StdLib/LibC/Main/Arm/flt_rounds.c
+    fi
+    MACHINE=`uname -m`
+    echo "Architecture Detected : $MACHINE"
+    if [ $MACHINE = "aarch64" ]; then
+        if ! grep -q AARCH64_BUILD "${WORKDIR}/edk2/ShellPkg/ShellPkg.dsc"
+        then
+            sed -i '/BuildOptions/ a \ \ *_*_*_CC_FLAGS = -D_AARCH64_BUILD_' ${WORKDIR}/edk2/ShellPkg/ShellPkg.dsc
+        fi
+    fi
+
 }
 
 do_compile () {
