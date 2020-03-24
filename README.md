@@ -1,7 +1,7 @@
 # Arm Enterprise ACS - Architecture Compliance Suite
 
 ## Architecture Compliance Suite
-Architecture Compliance Suite (ACS) is used to ensure architectural compliance across different implementations of the architecture. Arm Enterprise ACS includes a set of examples of the invariant behaviours that are provided by a set of specifications for enterprise systems (e.g. SBSA, SBBR, etc.), so that implementers can verify if these behaviours have been interpreted correctly. ACS is delivered with tests in source form along with a build script, the output of the build being a bootable Linux UEFI Validation (LUV) OS image that can run all tests required by these specifications.
+Architecture Compliance Suite (ACS) is used to ensure architectural compliance across different implementations of the architecture. Arm Enterprise ACS includes a set of examples of the invariant behaviors that are provided by a set of specifications for enterprise systems (For example: SBSA, SBBR, etc.), so that implementers can verify if these behaviours have been interpreted correctly. ACS is delivered with tests in source form along with a build script, the output of the build being a bootable Linux UEFI Validation (LUV) OS image that can run all tests required by these specifications.
 
 Arm Enterprise ACS tests are available open source. The tests and the corresponding abstraction layers are available with an Apache v2 license allowing for external contribution.
 
@@ -13,8 +13,9 @@ In summary, the Arm Enterprise ACS product contains the following: <ol>
 These tests are split between UEFI and Linux (supported by corresponding kernel driver) applications that together determine whether an architectural implementation is compliant with the enterprise specifications. These tests are further described in detail.
 
 ## Release details
- - Code Quality: REL v2.3
+ - Code Quality: REL v2.4
  - The SBSA tests are written for version 5.0 of the SBSA specification.
+ - PCIe RCiEP tests for Appendix E of SBSA 6.0 specification are also included.
  - The SBBR tests are written for version 1.1 of the SBBR specification.
  - The compliance suite is not a substitute for design verification.
  - To review the ACS logs, Arm licensees can contact Arm directly through their partner managers.
@@ -26,13 +27,14 @@ These tests are split between UEFI and Linux (supported by corresponding kernel 
 ## ACS build steps
 
 ### Prebuilt images
-- Prebuilt images for each release are available in the prebuilt_images folder of the release branch. You can choose to use these images or build your own image by following the steps below.
+- Prebuilt images for each release are available in the prebuilt_images folder of the release branch. You can either choose to use these images or build your own image by following the steps below.
 - If you choose to use the prebuilt image, skip the build steps and jump to the test suite execution section below.
 
 ### Prerequisites
 Before starting the ACS build, ensure that the following requirements are met:
  - Ubuntu 16.04 LTS with at least 64GB of free disk space.
  - Must use Bash shell.
+ - Build is supported on x86 or aarch64 machines.
 
 Note : Windows build steps will be provided in the future releases.
 <br />
@@ -52,7 +54,7 @@ Perform the following steps to start the ACS build:
 Note:<br />
 - These build steps only target AArch64. <br />
 - The build script provides the option to append kernel command-line parameters, if necessary. Press enter to continue with default parameters. <br />
-- For build options to selectively sync and build particular modules, please check this document : [build-options](https://github.com/ARM-software/arm-enterprise-acs/blob/master/docs/build-options.md). <br />
+- For build options to selectively sync and build particular modules, check this document : [build-options](https://github.com/ARM-software/arm-enterprise-acs/blob/master/docs/build-options.md). <br />
 
 ## Build output
 The luv-live-image-gpt.img bootable image can be found in:
@@ -133,6 +135,10 @@ The live image boots to UEFI Shell. The different test applications can be run i
 - [Server Base System Architecture (SBSA)](https://github.com/ARM-software/sbsa-acs) TAG: <>
 
 - [UEFI Self Certification Tests (UEFI-SCT)](https://github.com/tianocore/edk2-test) TAG: b558bad25479ec83d43399673d7580294c81c8f8
+
+
+## Security Implication
+Arm Enterprise ACS test suite may run at higher privilege level. An attacker may utilize these tests as a means to elevate privilege which can potentially reveal the platform security assets. To prevent the leakage of secure information, it is strongly recommended that the ACS test suite is run only on development platforms. If it is run on production systems, the system should be scrubbed after running the test suite.
 
 
 ## License

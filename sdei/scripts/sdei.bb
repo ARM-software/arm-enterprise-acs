@@ -1,4 +1,4 @@
-# Copyright (c) 2018, Arm Limited or its affiliates. All rights reserved.
+# Copyright (c) 2018-2020, Arm Limited or its affiliates. All rights reserved.
 # SPDX-License-Identifier : Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -47,10 +47,29 @@ do_configure () {
     sed -i '/LibraryClasses.common/ a\ SdeiValLib|AppPkg/Applications/sdei-acs/val/SdeiValLib.inf' edk2/ShellPkg/ShellPkg.dsc
     sed -i '/LibraryClasses.common/ a\ SdeiPalLib|AppPkg/Applications/sdei-acs/platform/pal_uefi/SdeiPalLib.inf' edk2/ShellPkg/ShellPkg.dsc
     sed -i '/Components/ a\ AppPkg/Applications/sdei-acs/uefi_app/SdeiAcs.inf' edk2/ShellPkg/ShellPkg.dsc
+    
+    MACHINE=`uname -m`
+    echo "Architecture Detected : $MACHINE"
+    if [ $MACHINE = "aarch64" ]; then
+        if ! grep -q AARCH64_BUILD "edk2/ShellPkg/ShellPkg.dsc"
+        then
+            sed -i '/BuildOptions/ a \ \ *_*_*_CC_FLAGS = -D_AARCH64_BUILD_' edk2/ShellPkg/ShellPkg.dsc
+        fi
+    fi
+
+
 }
 
 do_compile () {
-   export GCC49_AARCH64_PREFIX=${S}/gcc-linaro/bin/aarch64-linux-gnu-
+   #export GCC49_AARCH64_PREFIX=${S}/gcc-linaro/bin/aarch64-linux-gnu-
+   
+   MACHINE=`uname -m`
+   if [ $MACHINE = "aarch64" ]; then
+      export GCC49_AARCH64_PREFIX=/usr/bin/
+   else
+      export GCC49_AARCH64_PREFIX=${S}/gcc-linaro/bin/aarch64-linux-gnu-
+   fi
+   
    /bin/bash ${THISDIR}/files/compile.sh ${S}
 }
 
