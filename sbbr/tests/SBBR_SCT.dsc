@@ -42,7 +42,7 @@
 #
 # Copyright (c) 2010 - 2016, Intel Corporation. All rights reserved.<BR>
 #
-# Copyright (c) 2016, ARM Ltd. All rights reserved.<BR>
+# Copyright (c) 2016-2020, ARM Ltd. All rights reserved.<BR>
 #
 #
 #/*++
@@ -99,7 +99,7 @@
   *_*_AARCH64_PP_FLAGS         = -D EFIAARCH64 $(GCC_VER_MACRO)
   RVCT:*_*_AARCH64_DLINK_FLAGS = --muldefweak
 
-  DEBUG_*_*_CC_FLAGS  = -DEFI_DEBUG
+  DEBUG_*_*_CC_FLAGS  = -DEFI_DEBUG -DACS_VERSION=\"v2.4\"
   RELEASE_*_*_CC_FLAGS  = -DMDEPKG_NDEBUG
 
 [Libraries]

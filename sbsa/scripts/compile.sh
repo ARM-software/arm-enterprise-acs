@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright (c) 2017, ARM Limited or its affiliates. All rights reserved.
+# Copyright (c) 2017-2020, ARM Limited or its affiliates. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,7 +15,14 @@
 
 cd ${1}/edk2
 
-export GCC49_AARCH64_PREFIX=${1}/gcc-linaro-7.4.1-2019.02-x86_64_aarch64-linux-gnu/bin/aarch64-linux-gnu-
+MACHINE=`uname -m`
+echo "Architecture Detected : $MACHINE"
+if [ $MACHINE = "aarch64" ]; then
+    export GCC49_AARCH64_PREFIX=/usr/bin/
+else
+    export GCC49_AARCH64_PREFIX=${1}/gcc-linaro-5.3.1-2016.05-x86_64_aarch64-linux-gnu/bin/aarch64-linux-gnu-
+fi
+echo "GCC49_AARCH64_PREFIX=$GCC49_AARCH64_PREFIX"
 
 echo "do_compile: Initializing EDK2 for building."
 set --
@@ -25,4 +32,4 @@ echo "do_compile: Building BaseTools."
 make -C BaseTools/Source/C
 
 echo "do_compile: Building SBSA."
-source AppPkg/Applications/sbsa-acs/tools/scripts/avsbuild.sh
+source AppPkg/Applications/sbsa-acs/tools/scripts/avsbuild.sh NIST

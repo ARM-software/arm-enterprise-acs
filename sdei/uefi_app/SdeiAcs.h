@@ -21,4 +21,10 @@
   #define SDEI_ACS_MAJOR_VER 1
   #define SDEI_ACS_MINOR_VER 0
 
+
+  #ifdef _AARCH64_BUILD_
+  unsigned long __stack_chk_guard = 0xBAAAAAAD;
+  unsigned long __stack_chk_fail =  0xBAAFAAAD;
+  #endif
+
 #endif

@@ -36,8 +36,18 @@ PACKAGES_TO_CHECK=(
         "python-crypto"
         "python-wand"
         "texinfo"
+        "make"
+        "diffstat"
         "uuid-dev"
 	)
+
+
+#Add additional packages specific to aarch64 build here
+MACHINE=`uname -m`
+if [ $MACHINE = "aarch64" ]; then
+	PACKAGES_TO_CHECK+=("python3-distutils");
+fi
+
 
 RC_ERROR=1
 RC_SUCCESS=0
