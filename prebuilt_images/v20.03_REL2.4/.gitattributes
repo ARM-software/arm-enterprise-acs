@@ -1,2 +1,0 @@
-luv-live-image-gpt.img filter=lfs diff=lfs merge=lfs -text
-PXEBOOT.tar.gz filter=lfs diff=lfs merge=lfs -text
