@@ -51,7 +51,7 @@ echo "TOOLS PATH is $TOOLSPATH"
 
 cd ${WORKDIR}/edk2
 echo "Apply Shell Sbsa Patch"
-git apply $TOPDIR/sbsa/patches/ShellSbsa.patch
+git apply --ignore-space-change --ignore-whitespace $TOPDIR/sbsa/patches/ShellSbsa.patch
 
 
 
@@ -77,7 +77,15 @@ cd ${WORKDIR}/edk2/
 
 set --
 source edksetup.sh
-export GCC49_AARCH64_PREFIX=${TOOLSPATH}/bin/aarch64-linux-gnu-
+
+MACHINE=`uname -m`
+echo "Architecture Detected : $MACHINE"
+if [ $MACHINE = "aarch64" ]; then
+    export GCC49_AARCH64_PREFIX=/usr/bin/
+else
+    export GCC49_AARCH64_PREFIX=${TOOLSPATH}/bin/aarch64-linux-gnu-
+fi
+
 echo "GCC49_AARCH64_PREFIX = $GCC49_AARCH64_PREFIX"
 
 cd ${WORKDIR}/edk2/
@@ -91,7 +99,7 @@ mv ${WORKDIR}/edk2/Build/Shell/DEBUG_GCC49/AARCH64/ShellPkg/Application/Shell/Sh
 ####RevokePatch
 cd ${WORKDIR}/edk2
 echo "Revoke Shell Sbsa Patch"
-git apply -R $TOPDIR/sbsa/patches/ShellSbsa.patch
+git apply -R --ignore-space-change --ignore-whitespace $TOPDIR/sbsa/patches/ShellSbsa.patch
 
 
 if [ -f ${WORKDIR}/edk2/Build/Shell/DEBUG_GCC49/AARCH64/ShellPkg/Application/Shell/Shell/DEBUG/ShellSbsa.efi ]; then

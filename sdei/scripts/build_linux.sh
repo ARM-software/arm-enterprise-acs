@@ -30,7 +30,8 @@ echo "Building SDEI ACS for Linux"
 
 if [ ! -d linux ]
 then
-    git clone https://kernel.googlesource.com/pub/scm/linux/kernel/git/torvalds/linux
+    #git clone https://kernel.googlesource.com/pub/scm/linux/kernel/git/torvalds/linux
+    git clone --depth 1 git://github.com/torvalds/linux.git 
     cd linux
     git checkout -b v4.13 v4.13
     git apply ${S}/kernel/patches/0001-Enterprise-acs-linux-v4.13.patch
