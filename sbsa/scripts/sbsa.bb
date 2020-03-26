@@ -75,15 +75,7 @@ do_configure () {
     echo "do_configure: Modifying edk2/ShellPkg/ShellPkg.dsc to build SBSA."
     if ! grep -q SbsaNistLib "${WORKDIR}/edk2/ShellPkg/ShellPkg.dsc"
     then
-        sed -i '/LibraryClasses.common/ a \ \ !ifdef $(ENABLE_NIST)\n\ \ \ \ SbsaNistLib|AppPkg/Applications/sbsa-acs/test_pool/nist_sts/SbsaNistLib.inf\n\ \ !endif' ${WORKDIR}/edk2/ShellPkg/ShellPkg.dsc
-    fi
-    if ! grep -q SbsaPalLib "${WORKDIR}/edk2/ShellPkg/ShellPkg.dsc"
-    then
-        sed -i '/LibraryClasses.common/ a \ \ SbsaPalLib|AppPkg/Applications/sbsa-acs/platform/pal_uefi/SbsaPalLib.inf' ${WORKDIR}/edk2/ShellPkg/ShellPkg.dsc
-    fi
-    if ! grep -q SbsaValLib "${WORKDIR}/edk2/ShellPkg/ShellPkg.dsc"
-    then
-        sed -i '/LibraryClasses.common/ a \ \ SbsaValLib|AppPkg/Applications/sbsa-acs/val/SbsaValLib.inf' ${WORKDIR}/edk2/ShellPkg/ShellPkg.dsc
+        sed -i '/LibraryClasses.common/ a \ \ !ifdef $(ENABLE_NIST)\n\ \ \ \ SbsaNistLib|AppPkg/Applications/sbsa-acs/test_pool/nist_sts/SbsaNistLib.inf\n\ \ \ \ SbsaValNistLib|AppPkg/Applications/sbsa-acs/val/SbsaValNistLib.inf\n\ \ \ \ SbsaPalNistLib|AppPkg/Applications/sbsa-acs/platform/pal_uefi/SbsaPalNistLib.inf\n\ \ !else\n\ \ \ \ SbsaValLib|AppPkg/Applications/sbsa-acs/val/SbsaValLib.inf\n\ \ \ \ SbsaPalLib|AppPkg/Applications/sbsa-acs/platform/pal_uefi/SbsaPalLib.inf\n\ \ !endif' ${WORKDIR}/edk2/ShellPkg/ShellPkg.dsc
     fi
     if ! grep -q UefiRuntimeLib "${WORKDIR}/edk2/ShellPkg/ShellPkg.dsc"
     then
