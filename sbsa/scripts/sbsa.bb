@@ -17,13 +17,13 @@ LICENSE = "CLOSED"
 LIC_FILES_CHKSUM = ""
 
 # SCT files placed in ${WORKDIR}/git
-# GCC files placed in ${WORKDIR}/gcc-linaro-7.4.1-2019.02-x86_64_aarch64-linux-gnu
-SRC_URI = "git://github.com/ARM-software/sbsa-acs.git;protocol=https;branch=release \
+# GCC files placed in ${WORKDIR}/gcc-linaro-5.3.1-2016.05-x86_64_aarch64-linux-gnu
+SRC_URI = "git://github.com/ARM-software/sbsa-acs.git;protocol=https \
            https://releases.linaro.org/components/toolchain/binaries/5.3-2016.05/aarch64-linux-gnu/gcc-linaro-5.3.1-2016.05-x86_64_aarch64-linux-gnu.tar.xz \
            file://compile.sh"
 
 PV = "1.0+git${SRCPV}"
-SRCREV = "31de790a328c4b3183a3b6d204170afe361893b9"
+SRCREV = "79994b3de8d785634ad0dfe21f044006c83a6b7c"
 
 # GCC checksum.
 SRC_URI[md5sum] = "24ac2e26f50f49f3043f281440b41bba"
@@ -75,15 +75,7 @@ do_configure () {
     echo "do_configure: Modifying edk2/ShellPkg/ShellPkg.dsc to build SBSA."
     if ! grep -q SbsaNistLib "${WORKDIR}/edk2/ShellPkg/ShellPkg.dsc"
     then
-        sed -i '/LibraryClasses.common/ a \ \ !ifdef $(ENABLE_NIST)\n\ \ \ \ SbsaNistLib|AppPkg/Applications/sbsa-acs/test_pool/nist_sts/SbsaNistLib.inf\n\ \ !endif' ${WORKDIR}/edk2/ShellPkg/ShellPkg.dsc
-    fi
-    if ! grep -q SbsaPalLib "${WORKDIR}/edk2/ShellPkg/ShellPkg.dsc"
-    then
-        sed -i '/LibraryClasses.common/ a \ \ SbsaPalLib|AppPkg/Applications/sbsa-acs/platform/pal_uefi/SbsaPalLib.inf' ${WORKDIR}/edk2/ShellPkg/ShellPkg.dsc
-    fi
-    if ! grep -q SbsaValLib "${WORKDIR}/edk2/ShellPkg/ShellPkg.dsc"
-    then
-        sed -i '/LibraryClasses.common/ a \ \ SbsaValLib|AppPkg/Applications/sbsa-acs/val/SbsaValLib.inf' ${WORKDIR}/edk2/ShellPkg/ShellPkg.dsc
+        sed -i '/LibraryClasses.common/ a \ \ !ifdef $(ENABLE_NIST)\n\ \ \ \ SbsaNistLib|AppPkg/Applications/sbsa-acs/test_pool/nist_sts/SbsaNistLib.inf\n\ \ \ \ SbsaValNistLib|AppPkg/Applications/sbsa-acs/val/SbsaValNistLib.inf\n\ \ \ \ SbsaPalNistLib|AppPkg/Applications/sbsa-acs/platform/pal_uefi/SbsaPalNistLib.inf\n\ \ !else\n\ \ \ \ SbsaValLib|AppPkg/Applications/sbsa-acs/val/SbsaValLib.inf\n\ \ \ \ SbsaPalLib|AppPkg/Applications/sbsa-acs/platform/pal_uefi/SbsaPalLib.inf\n\ \ !endif' ${WORKDIR}/edk2/ShellPkg/ShellPkg.dsc
     fi
     if ! grep -q UefiRuntimeLib "${WORKDIR}/edk2/ShellPkg/ShellPkg.dsc"
     then
