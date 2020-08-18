@@ -13,7 +13,7 @@ In summary, the Arm Enterprise ACS product contains the following: <ol>
 These tests are split between UEFI and Linux (supported by corresponding kernel driver) applications that together determine whether an architectural implementation is compliant with the enterprise specifications. These tests are further described in detail.
 
 ## Release details
- - Code Quality: REL v2.4
+ - Code Quality: REL v2.5
  - The SBSA tests are written for version 5.0 of the SBSA specification.
  - PCIe RCiEP tests for Appendix E of SBSA 6.0 specification are also included.
  - The SBBR tests are written for version 1.1 of the SBBR specification.
@@ -66,10 +66,11 @@ This image comprises of two FAT file system partitions recognized by UEFI: <br /
 - 'boot' <br />
   Contains bootable applications and test suites. (Approximate size: 60 MB)
 
-The PXE boot package containing the netbootable image grub-efi-bootaa64.efi can be found in:
-&lt;work_dir&gt;/arm-enterprise-acs/luv/build/tmp/deploy/images/qemuarm64/PXEBOOT.tar.gz<br />
-This package may be used in PXE Booting and automatic execution of tests.<br />
-For more details please check this document :  [pxeboot-instructions](https://github.com/ARM-software/arm-enterprise-acs/blob/master/docs/pxeboot-instructions.md). <br />
+The grub-efi-bootaa64.efi netbootable image can be found in:
+&lt;work_dir&gt;/arm-enterprise-acs/luv/build/tmp/deploy/images/qemuarm64/grub-efi-bootaa64.efi<br />
+
+This image is built to be used in PXE Booting and automatic execution of tests
+For more details please check this document :  [build-options](https://github.com/ARM-software/arm-enterprise-acs/blob/master/docs/pxeboot-instructions.md). <br />
 
 
 For more information, see [Yocto Project](https://www.yoctoproject.org/documentation) and [LuvOS](https://github.com/01org/luv-yocto). <br />
@@ -113,7 +114,7 @@ To launch the FVP model with script ‘run_model.sh’ that supports -v option f
 
 ### Automation
 The test suite execution can be automated or manual. Automated execution is the default execution method when no key is pressed during boot. <br />
-Note: SBBR SCT tests are now included as part of automation. For information about running these tests, see section ‘SBBR SCT tests’ in this [document](sbbr/README.md). <br />
+Note: SBBR SCT tests are not included as part of automation. For information about running these tests, see section ‘SBBR SCT tests’ in this [document](sbbr/README.md). <br />
 The execution varies depending on the test environment.
 The next set of commands are an example of our typical run of the test suites.
 Note that the File System Partition in your platform can vary. <br />

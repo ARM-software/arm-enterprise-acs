@@ -40,7 +40,7 @@
   matters included within this Test Suite, to which United
   EFI, Inc. makes no claim of right.
 
-  Copyright (c) 2016, ARM LTD. All rights reserved.
+  Copyright (c) 2016 - 2020, ARM LTD. All rights reserved.
 
 --*/
 /*++
@@ -68,7 +68,7 @@ Abstract:
   { 0x852e92eb, 0xd7aa, 0x4d61, {0x84, 0xef, 0xd3, 0x2d, 0xc5, 0xd5, 0x45, 0xec }}
 
 #define SBBR_SMBIOS_MIN_VERSION 311
-#define SMBIOS_VERSION(s) (s->MajorVersion * 100 + s->MinorVersion)
+#define SMBIOS_VERSION(s) (s->MajorVersion * 100 + s->MinorVersion * 10)
 
 EFI_STATUS
 InitializeBBTestSbbrSmbios (
