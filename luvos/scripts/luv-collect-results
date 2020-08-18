@@ -18,6 +18,9 @@ import os
 import re
 import codecs
 
+reload(sys)
+sys.setdefaultencoding('utf8')
+
 def log_fwts(d):
     testCategory = ""
     testName = ""
