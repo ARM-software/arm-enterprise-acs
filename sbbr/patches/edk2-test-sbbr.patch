@@ -443,7 +443,7 @@ index 1b81ecbc..ac70023c 100644
 -}
 \ No newline at end of file
 diff --git a/uefi-sct/SctPkg/TestCase/UEFI/EFI/BootServices/MemoryAllocationServices/BlackBoxTest/MemoryAllocationServicesBBTestFunction.c b/uefi-sct/SctPkg/TestCase/UEFI/EFI/BootServices/MemoryAllocationServices/BlackBoxTest/MemoryAllocationServicesBBTestFunction.c
-index d18fe1fc..69577abd 100644
+index d18fe1fc..b5d92cfd 100644
 --- a/uefi-sct/SctPkg/TestCase/UEFI/EFI/BootServices/MemoryAllocationServices/BlackBoxTest/MemoryAllocationServicesBBTestFunction.c
 +++ b/uefi-sct/SctPkg/TestCase/UEFI/EFI/BootServices/MemoryAllocationServices/BlackBoxTest/MemoryAllocationServicesBBTestFunction.c
 @@ -24,7 +24,7 @@ Abstract:
@@ -455,231 +455,188 @@ index d18fe1fc..69577abd 100644
  #include "MemoryAllocationServicesBBTestMain.h"
  
  #define ALLOCATEPAGES_MEMORYTYPE_NUM 16
-@@ -354,6 +354,7 @@ BBTestAllocatePagesInterfaceTest (
-   EFI_TPL                              OldTpl;
-   EFI_MEMORY_DESCRIPTOR                Descriptor;
-   UINTN                                PageNum;
-+  UINTN                                Alignment;
- 
-   //
-   // Get the Standard Library Interface
-@@ -700,14 +701,23 @@ BBTestAllocatePagesInterfaceTest (
-         PageNum = (UINTN)Descriptor.NumberOfPages;
-         Start   = Descriptor.PhysicalStart;
- 
--        //
--        // Some memory types need more alignment than 4K, so
--        //
--        if (PageNum <= 0x10) {
-+        Alignment = DEFAULT_PAGE_ALLOCATION_GRANULARITY;
-+
-+        if  (AllocatePagesMemoryType[TypeIndex] == EfiACPIReclaimMemory   ||
-+             AllocatePagesMemoryType[TypeIndex] == EfiACPIMemoryNVS       ||
-+             AllocatePagesMemoryType[TypeIndex] == EfiRuntimeServicesCode ||
-+             AllocatePagesMemoryType[TypeIndex] == EfiRuntimeServicesData) {
-+
-+          Alignment = RUNTIME_PAGE_ALLOCATION_GRANULARITY;
-+        }
-+
-+        Start   = (Start + Alignment - 1) & ~(Alignment - 1);
-+        PageNum -= EFI_SIZE_TO_PAGES (Start - Descriptor.PhysicalStart);
-+
-+        PageNum &= ~(EFI_SIZE_TO_PAGES (Alignment) - 1);
-+        if (PageNum <= EFI_SIZE_TO_PAGES (Alignment)) {
+@@ -706,7 +706,7 @@ BBTestAllocatePagesInterfaceTest (
+         if (PageNum <= 0x10) {
            break;
          }
 -        Start   = (Start + 0x10000) & 0xFFFFFFFFFFFF0000;
--        PageNum = PageNum - EFI_SIZE_TO_PAGES(0x10000);
++        Start   = (Start + 0xFFFF) & 0xFFFFFFFFFFFF0000;
+         PageNum = PageNum - EFI_SIZE_TO_PAGES(0x10000);
  
          Memory  = Start;
- 
-@@ -830,14 +840,23 @@ BBTestAllocatePagesInterfaceTest (
-         PageNum = (UINTN)Descriptor.NumberOfPages;
-         Start   = Descriptor.PhysicalStart;
- 
--        //
--        // Some memory types need more alignment than 4K, so
--        //
--        if (PageNum <= 0x10) {
-+        Alignment = DEFAULT_PAGE_ALLOCATION_GRANULARITY;
-+
-+        if  (AllocatePagesMemoryType[TypeIndex] == EfiACPIReclaimMemory   ||
-+             AllocatePagesMemoryType[TypeIndex] == EfiACPIMemoryNVS       ||
-+             AllocatePagesMemoryType[TypeIndex] == EfiRuntimeServicesCode ||
-+             AllocatePagesMemoryType[TypeIndex] == EfiRuntimeServicesData) {
-+
-+          Alignment = RUNTIME_PAGE_ALLOCATION_GRANULARITY;
-+        }
-+
-+        Start   = (Start + Alignment - 1) & ~(Alignment - 1);
-+        PageNum -= EFI_SIZE_TO_PAGES (Start - Descriptor.PhysicalStart);
-+
-+        PageNum &= ~(EFI_SIZE_TO_PAGES (Alignment) - 1);
-+        if (PageNum <= EFI_SIZE_TO_PAGES (Alignment)) {
+@@ -836,7 +836,7 @@ BBTestAllocatePagesInterfaceTest (
+         if (PageNum <= 0x10) {
            break;
          }
 -        Start   = (Start + 0x10000) & 0xFFFFFFFFFFFF0000;
--        PageNum = PageNum - EFI_SIZE_TO_PAGES(0x10000);
++        Start   = (Start + 0xFFFF) & 0xFFFFFFFFFFFF0000;
+         PageNum = PageNum - EFI_SIZE_TO_PAGES(0x10000);
  
          Memory  = Start;
- 
-@@ -953,14 +972,23 @@ BBTestAllocatePagesInterfaceTest (
-         PageNum = (UINTN)Descriptor.NumberOfPages;
-         Start   = Descriptor.PhysicalStart;
- 
--        //
--        // Some memory types need more alignment than 4K, so
--        //
--        if (PageNum <= 0x10) {
-+        Alignment = DEFAULT_PAGE_ALLOCATION_GRANULARITY;
-+
-+        if  (AllocatePagesMemoryType[TypeIndex] == EfiACPIReclaimMemory   ||
-+             AllocatePagesMemoryType[TypeIndex] == EfiACPIMemoryNVS       ||
-+             AllocatePagesMemoryType[TypeIndex] == EfiRuntimeServicesCode ||
-+             AllocatePagesMemoryType[TypeIndex] == EfiRuntimeServicesData) {
-+
-+          Alignment = RUNTIME_PAGE_ALLOCATION_GRANULARITY;
-+        }
-+
-+        Start   = (Start + Alignment - 1) & ~(Alignment - 1);
-+        PageNum -= EFI_SIZE_TO_PAGES (Start - Descriptor.PhysicalStart);
-+
-+        PageNum &= ~(EFI_SIZE_TO_PAGES (Alignment) - 1);
-+        if (PageNum <= EFI_SIZE_TO_PAGES (Alignment)) {
+@@ -959,7 +959,7 @@ BBTestAllocatePagesInterfaceTest (
+         if (PageNum <= 0x10) {
            break;
          }
 -        Start   = (Start + 0x10000) & 0xFFFFFFFFFFFF0000;
--        PageNum = PageNum - EFI_SIZE_TO_PAGES(0x10000);
++        Start   = (Start + 0xFFFF) & 0xFFFFFFFFFFFF0000;
+         PageNum = PageNum - EFI_SIZE_TO_PAGES(0x10000);
  
          Memory = Start + (SctLShiftU64 (PageNum/3, EFI_PAGE_SHIFT) & 0xFFFFFFFFFFFF0000);
- 
-@@ -1076,14 +1104,23 @@ BBTestAllocatePagesInterfaceTest (
-         PageNum = (UINTN)Descriptor.NumberOfPages;
-         Start   = Descriptor.PhysicalStart;
- 
--        //
--        // Some memory types need more alignment than 4K, so
--        //
--        if (PageNum <= 0x10) {
-+        Alignment = DEFAULT_PAGE_ALLOCATION_GRANULARITY;
-+
-+        if  (AllocatePagesMemoryType[TypeIndex] == EfiACPIReclaimMemory   ||
-+             AllocatePagesMemoryType[TypeIndex] == EfiACPIMemoryNVS       ||
-+             AllocatePagesMemoryType[TypeIndex] == EfiRuntimeServicesCode ||
-+             AllocatePagesMemoryType[TypeIndex] == EfiRuntimeServicesData) {
-+
-+          Alignment = RUNTIME_PAGE_ALLOCATION_GRANULARITY;
-+        }
-+
-+        Start   = (Start + Alignment - 1) & ~(Alignment - 1);
-+        PageNum -= EFI_SIZE_TO_PAGES (Start - Descriptor.PhysicalStart);
-+
-+        PageNum &= ~(EFI_SIZE_TO_PAGES (Alignment) - 1);
-+        if (PageNum <= EFI_SIZE_TO_PAGES (Alignment)) {
+@@ -1082,7 +1082,7 @@ BBTestAllocatePagesInterfaceTest (
+         if (PageNum <= 0x10) {
            break;
          }
 -        Start   = (Start + 0x10000) & 0xFFFFFFFFFFFF0000;
--        PageNum = PageNum - EFI_SIZE_TO_PAGES(0x10000);
++        Start   = (Start + 0xFFFF) & 0xFFFFFFFFFFFF0000;
+         PageNum = PageNum - EFI_SIZE_TO_PAGES(0x10000);
  
          Memory  = Start + (SctLShiftU64 (PageNum * 2 / 3, EFI_PAGE_SHIFT) & 0xFFFFFFFFFFFF0000);
- 
-@@ -1206,14 +1243,23 @@ BBTestAllocatePagesInterfaceTest (
-         PageNum = (UINTN)Descriptor.NumberOfPages;
-         Start   = Descriptor.PhysicalStart;
- 
--        //
--        // Some memory types need more alignment than 4K, so
--        //
--        if (PageNum <= 0x10) {
-+        Alignment = DEFAULT_PAGE_ALLOCATION_GRANULARITY;
-+
-+        if  (AllocatePagesMemoryType[TypeIndex] == EfiACPIReclaimMemory   ||
-+             AllocatePagesMemoryType[TypeIndex] == EfiACPIMemoryNVS       ||
-+             AllocatePagesMemoryType[TypeIndex] == EfiRuntimeServicesCode ||
-+             AllocatePagesMemoryType[TypeIndex] == EfiRuntimeServicesData) {
-+
-+          Alignment = RUNTIME_PAGE_ALLOCATION_GRANULARITY;
-+        }
-+
-+        Start   = (Start + Alignment - 1) & ~(Alignment - 1);
-+        PageNum -= EFI_SIZE_TO_PAGES (Start - Descriptor.PhysicalStart);
-+
-+        PageNum &= ~(EFI_SIZE_TO_PAGES (Alignment) - 1);
-+        if (PageNum <= EFI_SIZE_TO_PAGES (Alignment)) {
+@@ -1212,7 +1212,7 @@ BBTestAllocatePagesInterfaceTest (
+         if (PageNum <= 0x10) {
            break;
          }
 -        Start   = (Start + 0x10000) & 0xFFFFFFFFFFFF0000;
--        PageNum = PageNum - EFI_SIZE_TO_PAGES(0x10000);
++        Start   = (Start + 0xFFFF) & 0xFFFFFFFFFFFF0000;
+         PageNum = PageNum - EFI_SIZE_TO_PAGES(0x10000);
  
          Memory  = Start;
- 
-@@ -1329,14 +1375,23 @@ BBTestAllocatePagesInterfaceTest (
-         PageNum = (UINTN)Descriptor.NumberOfPages;
-         Start   = Descriptor.PhysicalStart;
- 
--        //
--        // Some memory types need more alignment than 4K, so
--        //
--        if (PageNum <= 0x10) {
-+        Alignment = DEFAULT_PAGE_ALLOCATION_GRANULARITY;
-+
-+        if  (AllocatePagesMemoryType[TypeIndex] == EfiACPIReclaimMemory   ||
-+             AllocatePagesMemoryType[TypeIndex] == EfiACPIMemoryNVS       ||
-+             AllocatePagesMemoryType[TypeIndex] == EfiRuntimeServicesCode ||
-+             AllocatePagesMemoryType[TypeIndex] == EfiRuntimeServicesData) {
-+
-+          Alignment = RUNTIME_PAGE_ALLOCATION_GRANULARITY;
-+        }
-+
-+        Start   = (Start + Alignment - 1) & ~(Alignment - 1);
-+        PageNum -= EFI_SIZE_TO_PAGES (Start - Descriptor.PhysicalStart);
-+
-+        PageNum &= ~(EFI_SIZE_TO_PAGES (Alignment) - 1);
-+        if (PageNum <= EFI_SIZE_TO_PAGES (Alignment)) {
+@@ -1335,7 +1335,7 @@ BBTestAllocatePagesInterfaceTest (
+         if (PageNum <= 0x10) {
            break;
          }
 -        Start   = (Start + 0x10000) & 0xFFFFFFFFFFFF0000;
--        PageNum = PageNum - EFI_SIZE_TO_PAGES(0x10000);
++        Start   = (Start + 0xFFFF) & 0xFFFFFFFFFFFF0000;
+         PageNum = PageNum - EFI_SIZE_TO_PAGES(0x10000);
  
          Memory  = Start;
- 
-@@ -1468,14 +1523,23 @@ BBTestAllocatePagesInterfaceTest (
-         PageNum = (UINTN)Descriptor.NumberOfPages;
-         Start   = Descriptor.PhysicalStart;
- 
--        //
--        // Some memory types need more alignment than 4K, so
--        //
--        if (PageNum <= 0x10) {
-+        Alignment = DEFAULT_PAGE_ALLOCATION_GRANULARITY;
-+
-+        if  (AllocatePagesMemoryType[TypeIndex] == EfiACPIReclaimMemory   ||
-+             AllocatePagesMemoryType[TypeIndex] == EfiACPIMemoryNVS       ||
-+             AllocatePagesMemoryType[TypeIndex] == EfiRuntimeServicesCode ||
-+             AllocatePagesMemoryType[TypeIndex] == EfiRuntimeServicesData) {
-+
-+          Alignment = RUNTIME_PAGE_ALLOCATION_GRANULARITY;
-+        }
-+
-+        Start   = (Start + Alignment - 1) & ~(Alignment - 1);
-+        PageNum -= EFI_SIZE_TO_PAGES (Start - Descriptor.PhysicalStart);
-+
-+        PageNum &= ~(EFI_SIZE_TO_PAGES (Alignment) - 1);
-+        if (PageNum <= EFI_SIZE_TO_PAGES (Alignment)) {
+@@ -1474,7 +1474,7 @@ BBTestAllocatePagesInterfaceTest (
+         if (PageNum <= 0x10) {
            break;
          }
 -        Start   = (Start + 0x10000) & 0xFFFFFFFFFFFF0000;
--        PageNum = PageNum - EFI_SIZE_TO_PAGES(0x10000);
++        Start   = (Start + 0xFFFF) & 0xFFFFFFFFFFFF0000;
+         PageNum = PageNum - EFI_SIZE_TO_PAGES(0x10000);
  
          Memory  = Start;
- 
-@@ -1923,4 +1987,4 @@ BBTestFreePoolInterfaceTest (
- 
+@@ -1810,117 +1810,3 @@ BBTestAllocatePoolInterfaceTest (
    FreeMemoryMap ();
    return EFI_SUCCESS;
+ }
+-
+-/**
+- *  Entrypoint for gtBS->FreePool () Interface Test.
+- *  @param This a pointer of EFI_BB_TEST_PROTOCOL.
+- *  @param ClientInterface a pointer to the interface to be tested.
+- *  @param TestLevel test "thoroughness" control.
+- *  @param SupportHandle a handle containing protocols required.
+- *  @return EFI_SUCCESS Finish the test successfully.
+- */
+-//
+-// TDS 4.5
+-//
+-EFI_STATUS
+-BBTestFreePoolInterfaceTest (
+-  IN EFI_BB_TEST_PROTOCOL       *This,
+-  IN VOID                       *ClientInterface,
+-  IN EFI_TEST_LEVEL             TestLevel,
+-  IN EFI_HANDLE                 SupportHandle
+-  )
+-{
+-  EFI_STANDARD_TEST_LIBRARY_PROTOCOL   *StandardLib;
+-  EFI_STATUS                           Status;
+-  VOID                                 *Memory;
+-  EFI_TEST_ASSERTION                   AssertionType;
+-  UINTN                                Index;
+-  UINTN                                TypeIndex;
+-  EFI_TPL                              OldTpl;
+-
+-  //
+-  // Get the Standard Library Interface
+-  //
+-  Status = gtBS->HandleProtocol (
+-                   SupportHandle,
+-                   &gEfiStandardTestLibraryGuid,
+-                   (VOID **) &StandardLib
+-                   );
+-
+-  if (EFI_ERROR(Status)) {
+-    return Status;
+-  }
+-
+-  Status = InitMemoryMap ();
+-  if (EFI_ERROR(Status)) {
+-    StandardLib->RecordAssertion (
+-                   StandardLib,
+-                   EFI_TEST_ASSERTION_FAILED,
+-                   gTestGenericFailureGuid,
+-                   L"InitMemoryMap - Allocate memory map buffer",
+-                   L"%a:%d:Status - %r",
+-                   __FILE__,
+-                   (UINTN)__LINE__,
+-                   Status
+-                   );
+-    return Status;
+-  }
+-
+-  for (Index = 0; Index < TPL_ARRAY_SIZE; Index++) {
+-    //
+-    // 4.5.2.1  FreePool must succeed with valid parameters.
+-    //
+-    for (TypeIndex = 0; TypeIndex < ALLOCATEPOOL_MEMORYTYPE_NUM; TypeIndex++) {
+-      Status = gtBS->AllocatePool (
+-                       AllocatePoolMemoryType[TypeIndex],
+-                       1,
+-                       (VOID **)&Memory
+-                       );
+-      if (EFI_ERROR(Status)) {
+-        StandardLib->RecordAssertion (
+-                       StandardLib,
+-                       EFI_TEST_ASSERTION_FAILED,
+-                       gTestGenericFailureGuid,
+-                       L"BS.AllocatePool - 1 byte",
+-                       L"%a:%d:Status - %r, TPL - %d, MemType - %d",
+-                       __FILE__,
+-                       (UINTN)__LINE__,
+-                       Status,
+-                       TplArray[Index],
+-                       AllocatePoolMemoryType[TypeIndex]
+-                       );
+-        continue;
+-      }
+-      OldTpl = gtBS->RaiseTPL (TplArray[Index]);
+-      Status = gtBS->FreePool (
+-                       Memory
+-                       );
+-      gtBS->RestoreTPL (OldTpl);
+-      if (!EFI_ERROR(Status)) {
+-        AssertionType = EFI_TEST_ASSERTION_PASSED;
+-      } else {
+-        AssertionType = EFI_TEST_ASSERTION_FAILED;
+-      }
+-      StandardLib->RecordAssertion (
+-                     StandardLib,
+-                     AssertionType,
+-                     Index==0? \
+-                     gMemoryAllocationServicesInterfaceTestAssertionGuid038: \
+-                     (Index == 1? \
+-                      gMemoryAllocationServicesBBTestFunctionAssertionGuid075: \
+-                      gMemoryAllocationServicesBBTestFunctionAssertionGuid076),
+-                     L"BS.FreePool - 1 byte",
+-                     L"%a:%d:Status - %r, TPL - %d, MemType - %d",
+-                     __FILE__,
+-                     (UINTN)__LINE__,
+-                     Status,
+-                     TplArray[Index],
+-                     AllocatePoolMemoryType[TypeIndex]
+-                     );
+-    }
+-
+-  }
+-
+-  FreeMemoryMap ();
+-  return EFI_SUCCESS;
 -}
 \ No newline at end of file
-+}
 diff --git a/uefi-sct/SctPkg/TestCase/UEFI/EFI/BootServices/MemoryAllocationServices/BlackBoxTest/MemoryAllocationServicesBBTestMain.c b/uefi-sct/SctPkg/TestCase/UEFI/EFI/BootServices/MemoryAllocationServices/BlackBoxTest/MemoryAllocationServicesBBTestMain.c
 index 8aa89a93..1c902d82 100644
 --- a/uefi-sct/SctPkg/TestCase/UEFI/EFI/BootServices/MemoryAllocationServices/BlackBoxTest/MemoryAllocationServicesBBTestMain.c
@@ -834,7 +791,7 @@ index 78b5f7b5..4cd1c675 100644
 +IPSecSupport              = no
  
 diff --git a/uefi-sct/SctPkg/TestCase/UEFI/EFI/RuntimeServices/VariableServices/BlackBoxTest/AuthVariableServicesBBTestConformance.c b/uefi-sct/SctPkg/TestCase/UEFI/EFI/RuntimeServices/VariableServices/BlackBoxTest/AuthVariableServicesBBTestConformance.c
-index a1d1c4c3..c105366e 100644
+index a1d1c4c3..715933a0 100644
 --- a/uefi-sct/SctPkg/TestCase/UEFI/EFI/RuntimeServices/VariableServices/BlackBoxTest/AuthVariableServicesBBTestConformance.c
 +++ b/uefi-sct/SctPkg/TestCase/UEFI/EFI/RuntimeServices/VariableServices/BlackBoxTest/AuthVariableServicesBBTestConformance.c
 @@ -1,315 +1,311 @@
@@ -865,7 +822,7 @@ index a1d1c4c3..c105366e 100644
 +/** @file
 +
 +  Copyright 2006 - 2012 Unified EFI, Inc.<BR>
-+  Copyright (c) 2010 - 2018, Intel Corporation. All rights reserved.<BR>
++  Copyright (c) 2010 - 2019, Intel Corporation. All rights reserved.<BR>
 +
 +  This program and the accompanying materials
 +  are licensed and made available under the terms and conditions of the BSD License
@@ -1441,7 +1398,7 @@ index a1d1c4c3..c105366e 100644
 +                   &MaximumVariableSize
 +                   );
 +
-+    if (Status == EFI_SUCCESS || Status == EFI_UNSUPPORTED) {
++    if (Status == EFI_UNSUPPORTED) {
 +      Result = EFI_TEST_ASSERTION_PASSED;
 +    } else {
 +      Result = EFI_TEST_ASSERTION_FAILED;

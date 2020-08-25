@@ -131,7 +131,7 @@ The live image boots to UEFI Shell. The different test applications can be run i
 - [Linux UEFI Validation OS](https://github.com/intel/luv-yocto)
         - SHA: 73f995b61a7b1b856a082203cbeb744a3f21880d
 
-- [Firmware Test Suite (FWTS) TAG: V18.02.00](http://kernel.ubuntu.com/git/hwe/fwts.git)
+- [Firmware Test Suite (FWTS) TAG: V20.08.00](http://kernel.ubuntu.com/git/hwe/fwts.git)
 
 - [Server Base System Architecture (SBSA)](https://github.com/ARM-software/sbsa-acs) TAG: <>
 
