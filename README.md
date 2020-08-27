@@ -115,7 +115,7 @@ To launch the FVP model with script ‘run_model.sh’ that supports -v option f
 
 ### Automation
 The test suite execution can be automated or manual. Automated execution is the default execution method when no key is pressed during boot. <br />
-Note: SBBR SCT tests are not included as part of automation. For information about running these tests, see section ‘SBBR SCT tests’ in this [document](sbbr/README.md). <br />
+Note: SBBR SCT tests are now included as part of automation. For information about running these tests, see section ‘SBBR SCT tests’ in this [document](sbbr/README.md). <br />
 The execution varies depending on the test environment.
 The next set of commands are an example of our typical run of the test suites.
 Note that the File System Partition in your platform can vary. <br />
