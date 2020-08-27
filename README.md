@@ -32,7 +32,8 @@ These tests are split between UEFI and Linux (supported by corresponding kernel 
 
 ### Prerequisites
 Before starting the ACS build, ensure that the following requirements are met:
- - Ubuntu 16.04 LTS with at least 64GB of free disk space.
+ - Ubuntu 18.04 LTS with at least 64GB of free disk space.
+ - ACS build on Ubuntu 20.04 is currently not supported.
  - Must use Bash shell.
  - Build is supported on x86 or aarch64 machines.
 
@@ -132,6 +133,7 @@ The live image boots to UEFI Shell. The different test applications can be run i
         - SHA: 73f995b61a7b1b856a082203cbeb744a3f21880d
 
 - [Firmware Test Suite (FWTS) TAG: V20.08.00](http://kernel.ubuntu.com/git/hwe/fwts.git)
+  Note: For improved FTWS test coverage, use release images of ACSv2.5 or higher
 
 - [Server Base System Architecture (SBSA)](https://github.com/ARM-software/sbsa-acs) TAG: <>
 
