@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright (c) 2017, ARM Limited or its affiliates. All rights reserved.
+# Copyright (c) 2017-2020, ARM Limited or its affiliates. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ def log_fwts(d):
     # Opening FWTS raw output file.
     fwtsRawPath = os.path.join(d, fwtsDir, "raw", "fwts")
     try:
-        fwtsRaw = open(fwtsRawPath, "r")
+        fwtsRaw = open(fwtsRawPath, "r", encoding="ISO-8859-1")
     except IOError:
         print ("FWTS raw results file \"%s\" could not be opened, skipping." % fwtsRawPath)
         return -1
@@ -193,7 +193,7 @@ if fileext != ".md" and fileext != ".MD":
     print ("Output file must have .md file extension. Exiting.")
     exit()
 try:
-    outFile = open(arg_output, "w")
+    outFile = open(arg_output, "w", encoding="ISO-8859-1")
 except IOError:
     print ("Could not open \"%s\" for writing. Exiting." % arg_output)
     exit()

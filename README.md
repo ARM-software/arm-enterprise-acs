@@ -13,7 +13,7 @@ In summary, the Arm Enterprise ACS product contains the following: <ol>
 These tests are split between UEFI and Linux (supported by corresponding kernel driver) applications that together determine whether an architectural implementation is compliant with the enterprise specifications. These tests are further described in detail.
 
 ## Release details
- - Code Quality: REL v2.4
+ - Code Quality: REL v2.5
  - The SBSA tests are written for version 5.0 of the SBSA specification.
  - PCIe RCiEP tests for Appendix E of SBSA 6.0 specification are also included.
  - The SBBR tests are written for version 1.1 of the SBBR specification.
@@ -33,7 +33,8 @@ These tests are split between UEFI and Linux (supported by corresponding kernel 
 
 ### Prerequisites
 Before starting the ACS build, ensure that the following requirements are met:
- - Ubuntu 16.04 LTS with at least 64GB of free disk space.
+ - Ubuntu 18.04 LTS with at least 64GB of free disk space.
+ - ACS build on Ubuntu 20.04 is currently not supported.
  - Must use Bash shell.
  - Build is supported on x86 or aarch64 machines.
 
@@ -67,10 +68,11 @@ This image comprises of two FAT file system partitions recognized by UEFI: <br /
 - 'boot' <br />
   Contains bootable applications and test suites. (Approximate size: 60 MB)
 
-The PXE boot package containing the netbootable image grub-efi-bootaa64.efi can be found in:
-&lt;work_dir&gt;/arm-enterprise-acs/luv/build/tmp/deploy/images/qemuarm64/PXEBOOT.tar.gz<br />
-This package may be used in PXE Booting and automatic execution of tests.<br />
-For more details please check this document :  [pxeboot-instructions](https://github.com/ARM-software/arm-enterprise-acs/blob/master/docs/pxeboot-instructions.md). <br />
+The grub-efi-bootaa64.efi netbootable image can be found in:
+&lt;work_dir&gt;/arm-enterprise-acs/luv/build/tmp/deploy/images/qemuarm64/grub-efi-bootaa64.efi<br />
+
+This image is built to be used in PXE Booting and automatic execution of tests
+For more details please check this document :  [build-options](https://github.com/ARM-software/arm-enterprise-acs/blob/master/docs/pxeboot-instructions.md). <br />
 
 
 For more information, see [Yocto Project](https://www.yoctoproject.org/documentation) and [LuvOS](https://github.com/01org/luv-yocto). <br />
@@ -131,7 +133,8 @@ The live image boots to UEFI Shell. The different test applications can be run i
 - [Linux UEFI Validation OS](https://github.com/intel/luv-yocto)
         - SHA: 73f995b61a7b1b856a082203cbeb744a3f21880d
 
-- [Firmware Test Suite (FWTS) TAG: V18.02.00](http://kernel.ubuntu.com/git/hwe/fwts.git)
+- [Firmware Test Suite (FWTS) TAG: V20.08.00](http://kernel.ubuntu.com/git/hwe/fwts.git)
+  Note: For improved FTWS test coverage, use release images of ACSv2.5 or higher
 
 - [Server Base System Architecture (SBSA)](https://github.com/ARM-software/sbsa-acs) TAG: <>
 
