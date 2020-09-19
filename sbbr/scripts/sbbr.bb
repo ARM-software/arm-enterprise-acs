@@ -1,4 +1,4 @@
-# Copyright (c) 2017-2019, Arm Limited or its affiliates. All rights reserved.
+# Copyright (c) 2017-2020, Arm Limited or its affiliates. All rights reserved.
 # SPDX-License-Identifier : Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -28,7 +28,7 @@ HOMEPAGE = "https://github.com/tianocore/edk2-test"
 LICENSE = "CLOSED"
 LIC_FILES_CHKSUM = ""
 
-SBBRVERSION="v1.1"
+SBBRVERSION="v1.2"
 PV="${SBBRVERSION}+git${SRCPV}"
 
 S = "${WORKDIR}/git"
@@ -36,7 +36,7 @@ S = "${WORKDIR}/git"
 inherit deploy
 
 # No information for SRC_URI yet (only an external source tree was specified)
-SRCREV  = "b558bad25479ec83d43399673d7580294c81c8f8"
+SRCREV  = "ed8a7477d47459be07cac790f7182afe68ed53c6"
 SRC_URI = "git://github.com/tianocore/edk2-test;protocol=https \
            file://SbbrBootServices/ \
            file://SbbrEfiSpecVerLvl/ \
@@ -67,13 +67,11 @@ do_configure () {
 	if [ ! -d ${WORKDIR}/edk2 ]
 	then
 		echo "do_configure: Cloning EDK2 repository."
-		git clone -b UDK2018 https://github.com/tianocore/edk2.git
+		git clone --recursive -b edk2-stable202008 https://github.com/tianocore/edk2.git
 	fi
 
-	cd edk2
 	ln -s ${WORKDIR}/git/uefi-sct/SctPkg SctPkg
 	chmod +x SctPkg/build_sbbr.sh
-	cd ..
 
 	mkdir -p "tools/gcc"
 	cd "tools/gcc"
@@ -101,9 +99,9 @@ do_compile () {
         export BB_ENV_EXTRAWHITE="$BB_ENV_EXTRAWHITE CROSS_COMPILE"
 	echo "NEW CROSS_COMPILE: $CROSS_COMPILE"
 
-	cd ${WORKDIR}/edk2
+	cd ${WORKDIR}
+        pwd
 	./SctPkg/build_sbbr.sh AARCH64 GCC
-	cd ..
 }
 
 do_install () {
@@ -112,7 +110,7 @@ do_install () {
 	echo "do_install()"
 	echo "Destination Directory: ${D}"
 	echo "Source Directory: ${B}"
-	cp -r ${WORKDIR}/edk2/Build/SbbrSct/DEBUG_GCC49/SctPackageAARCH64 ${D}/sbbr
+	cp -r ${WORKDIR}/Build/SbbrSct/DEBUG_GCC49/SctPackageAARCH64 ${D}/sbbr
 }
 
 do_deploy () {
