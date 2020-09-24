@@ -13,10 +13,9 @@ In summary, the Arm Enterprise ACS product contains the following: <ol>
 These tests are split between UEFI and Linux (supported by corresponding kernel driver) applications that together determine whether an architectural implementation is compliant with the enterprise specifications. These tests are further described in detail.
 
 ## Release details
- - Code Quality: REL v2.5
- - The SBSA tests are written for version 5.0 of the SBSA specification.
- - PCIe RCiEP tests for Appendix E of SBSA 6.0 specification are also included.
- - The SBBR tests are written for version 1.1 of the SBBR specification.
+ - Code Quality: REL v3.0
+ - The SBSA tests are written for version 6.0 of the SBSA specification.
+ - The SBBR tests are written for version 1.2 of the SBBR specification.
  - The compliance suite is not a substitute for design verification.
  - To review the ACS logs, Arm licensees can contact Arm directly through their partner managers.
 
@@ -28,6 +27,7 @@ These tests are split between UEFI and Linux (supported by corresponding kernel 
 
 ### Prebuilt images
 - Prebuilt images for each release are available in the prebuilt_images folder of the release branch. You can either choose to use these images or build your own image by following the steps below.
+- To access the prebuilt_images, click this link : [prebuilt_images](https://github.com/ARM-software/arm-enterprise-acs/tree/release/prebuilt_images)
 - If you choose to use the prebuilt image, skip the build steps and jump to the test suite execution section below.
 
 ### Prerequisites
