@@ -73,6 +73,8 @@ cp -r ${WORKDIR}/git/test_pool ${WORKDIR}/edk2/ShellPkg/Library/UefiShellLevel3C
 rm -rf ${WORKDIR}/edk2/ShellPkg/Library/UefiShellLevel3CommandsLib/val
 cp -r ${WORKDIR}/git/val ${WORKDIR}/edk2/ShellPkg/Library/UefiShellLevel3CommandsLib/
 
+export PACKAGES_PATH=${WORKDIR}/edk2-libc
+
 cd ${WORKDIR}/edk2/
 
 set --
