@@ -21,6 +21,7 @@ inherit module
 SRC_URI = " file://Makefile \
             file://include/ \
             file://src/ \
+            file://sys_arch_src/ \
 	    file://COPYING \
             "
 S = "${WORKDIR}"
