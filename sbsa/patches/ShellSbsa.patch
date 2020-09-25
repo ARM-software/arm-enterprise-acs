@@ -1,249 +1,567 @@
-diff --git a/ShellPkg/Application/Shell/Shell.c b/ShellPkg/Application/Shell/Shell.c
-index 577e17311b..ec63cb729c 100644
---- a/ShellPkg/Application/Shell/Shell.c
-+++ b/ShellPkg/Application/Shell/Shell.c
-@@ -315,6 +315,41 @@ InternalEfiShellStartCtrlSMonitor(
+From 7e993c94ee1cb2e339b2214e8230f989739aa5b4 Mon Sep 17 00:00:00 2001
+From: Mahesh Bireddy <mahesh.reddybireddy@arm.com>
+Date: Fri, 9 Nov 2018 13:23:59 +0530
+Subject: [PATCH] Luvos v3.0 ACS patch
+
+Signed-off-by: Mahesh Bireddy <mahesh.reddybireddy@arm.com>
+Signed-off-by: Rajat Goyal <rajat.goyal@arm.com>
+Signed-off-by: G Edhaya Chandran <edhaya.chandran@arm.com>
+Signed-off-by: Gowtham Siddarth <gowtham.siddarth@arm.com>
+---
+ .templateconf                                 |   2 +-
+ meta-luv/classes/luv-efi.bbclass              | 187 +++++++++++++++++-
+ meta-luv/conf/distro/luv.conf                 |   2 +-
+ meta-luv/conf/local.conf.sample               |   5 +-
+ .../recipes-core/efivarfs/efivarfs-test.bb    |   1 -
+ meta-luv/recipes-core/fwts/fwts_git.bb        |   8 +-
+ .../images/core-image-efi-initramfs.bb        |   2 +-
+ meta-luv/recipes-core/images/luv-image.inc    |   3 +-
+ .../recipes-core/images/luv-live-image.bb     |  10 +-
+ .../recipes-core/images/luv-netboot-image.bb  |  10 +-
+ .../kernel-efi-warnings_0.1.bb                |   2 -
+ meta-luv/recipes-core/luv-test/luv-test.bb    |   8 +
+ .../luv-test/luv-test/luv-test-manager        |   9 +
+ .../sbsigntool/sbsigntool_git.bb              |  11 +-
+ .../recipes-kernel/linux/linux-luv_4.18.bb    |   4 +-
+ meta/conf/bitbake.conf                        |   2 +-
+ .../systemd-serialgetty/serial-getty@.service |   2 +-
+ 17 files changed, 247 insertions(+), 21 deletions(-)
+
+diff --git a/.templateconf b/.templateconf
+index 0fe6f82503..dce51a4f7a 100644
+--- a/.templateconf
++++ b/.templateconf
+@@ -1,2 +1,2 @@
+ # Template settings
+-TEMPLATECONF=${TEMPLATECONF:-meta-poky/conf}
++TEMPLATECONF=${TEMPLATECONF:-meta-luv/conf}
+diff --git a/meta-luv/classes/luv-efi.bbclass b/meta-luv/classes/luv-efi.bbclass
+index 86b364953c..f743857155 100644
+--- a/meta-luv/classes/luv-efi.bbclass
++++ b/meta-luv/classes/luv-efi.bbclass
+@@ -16,6 +16,13 @@ def get_bits_depends(d):
+                  return ""
+ _BITSDEPENDS = "${@get_bits_depends(d)}"
+ 
++def get_sbbr_depends(d):
++         import re
++         deps = d.getVar('TARGET_PREFIX', True)
++         if re.search("aarch64",deps):
++                 return "sbbr:do_deploy"
++_SBBRDEPENDS = "${@get_sbbr_depends(d)}"
++
+ do_bootimg[depends] += "${MLPREFIX}grub-efi:do_deploy \
+                         sbsigntool-native:do_populate_sysroot"
+ 
+@@ -56,10 +63,15 @@ efi_populate() {
+     if [ "${TARGET_ARCH}" = "aarch64" ]; then
+ 		install -m 0644 ${DEPLOY_DIR_IMAGE}/${GRUB_EFI_LOADER_IMAGE} ${DEST}${EFIDIR}/${DEST_EFI_LOADER_IMAGE}
+                 echo "${DEST_EFI_LOADER_IMAGE}" > ${DEST}${EFIDIR}/startup.nsh
++                echo "Including UEFI-SCT"
++                efi_populate_sbbr ${DEST}
++            efi_populate_startup ${DEST}
++            efi_populate_sbsa ${DEST}
++            efi_populate_sdei ${DEST}
+ 
+     # TODO: need conditional signing; e.g., if (DISTRO_FEATURES contains secure_boot)
+     # shim bootloader does not seem to work with i386. Thus we don't use it for 32-bit
+-    elif [ "${TARGET_ARCH}" = "x86_64" ] ; then
++    elif [ "${TARGET_ARCH}" = "x86_64" ] && [ "${LUV_FOR_NETBOOT}" = "0"  ]; then
+                 # sign grub2 bootloader
+                 sbsign --key ${DEPLOY_DIR_IMAGE}/LUV.key --cert ${DEPLOY_DIR_IMAGE}/LUV.crt \
+                        --output ${DEPLOY_DIR_IMAGE}/grubx64.efi ${DEPLOY_DIR_IMAGE}/${GRUB_EFI_LOADER_IMAGE}
+@@ -75,6 +87,8 @@ efi_populate() {
+ 
+                 # restore files to leave all in good shape for all the callers of the funciton
+                 cp ${DEPLOY_DIR_IMAGE}/${DEST_EFI_LOADER_IMAGE} ${DEPLOY_DIR_IMAGE}/shim.efi
++    else
++		install -m 0644 ${DEPLOY_DIR_IMAGE}/${GRUB_EFI_LOADER_IMAGE} ${DEST}${EFIDIR}/${DEST_EFI_LOADER_IMAGE}
+     fi
+ 
+     if echo "${TARGET_ARCH}" | grep -q "i.86" || [ "${TARGET_ARCH}" = "x86_64" ]; then
+@@ -90,6 +104,167 @@ efi_populate() {
+     install -m 0644 ${LUV_CFG} ${DEST}
  }
  
- 
-+EFI_STATUS
-+RunInternalCommand(
-+  IN CONST CHAR16                   *CmdLine,
-+  IN       CHAR16                   *FirstParameter,
-+  IN EFI_SHELL_PARAMETERS_PROTOCOL  *ParamProtocol,
-+  OUT EFI_STATUS                    *CommandStatus
-+);
++efi_populate_sbbr() {
++    DEST=$1
++    cp -r ${DEPLOY_DIR_IMAGE}/sbbr ${DEST}${EFIDIR}/sbbr
++    echo "echo -off
++          for %i in 0 1 2 3 4 5 6 7 8 9 A B C D E F
++            if exist FS%i:\SCT_RUN then
++              FS%i:
++              cd SCT_RUN
++              echo Press any key to stop the EFI SCT running
++              stallforkey.efi 5
++              if %lasterror% == 0 then
++                goto Done
++              endif
 +
++              if exist FS%i:\SCT_RUN\.passive.mode then
++                if exist FS%i:\SCT_RUN\.verbose.mode then
++                  Sct -c -p mnp -v
++                else
++                  Sct -c -p mnp
++                endif
++              else
++                if exist FS%i:\SCT_RUN\.verbose.mode then
++                  Sct -c -v
++                else
++                  Sct -c
++                endif
++              endif
++              goto Done
++            endif
++          endfor
++          :Done" > ${DEST}${EFIDIR}/sbbr/SbbrSctStartup.nsh
 +
-+INTN
-+EFIAPI
-+ShellAppMain (
-+  IN UINTN Argc,
-+  IN CHAR16 **Argv
-+  );
++    echo "echo -off
++          for %i in 0 1 2 3 4 5 6 7 8 9 A B C D E F then
++            if exist FS%i:\SCT_RUN then
++              FS%i:
++              if not exist SCT_RUN\SCT.efi then
++                for %j in 0 1 2 3 4 5 6 7 8 9 A B C D E F then
++                  if exist FS%j:\EFI\BOOT\sbbr\AARCH64 then
++                    echo \"Press any key to stop the EFI SCT running\"
++                    FS%j:\EFI\BOOT\sbbr\AARCH64\StallForKey.efi 10
++                    if %lasterror% == 0 then
++                      goto Done
++                    endif
++                    echo \"Installing SCT to Luv-results partition...\"
++                    cp -r FS%j:\EFI\BOOT\sbbr\AARCH64\* SCT_RUN\\
++                    cp FS%j:\EFI\BOOT\sbbr\SbbrSctStartup.nsh SCT_RUN\\
++                    echo \"Running SCT Tests...\"
++                    FS%i:\SCT_RUN\SCT.efi -a -v
++                    goto Done
++                  endif
++                endfor
++                echo \"SCT not found\"
++              else
++                echo \"SCT tests continue...\"
++                for %k in 0 1 2 3 4 5 6 7 8 9 A B C D E F then
++                  if exist FS%k:\SCT_RUN\SbbrSctStartup.nsh then
++                    FS%k:\SCT_RUN\SbbrSctStartup.nsh
++                    goto Done
++                  endif
++                endfor
++              endif
++              goto Done
++            endif
++          endfor
++          echo \"LUV-RESULTS SCT partition not found\"
++          :Done" > ${DEST}${EFIDIR}/sbbr/sbbr.nsh
++}
 +
-+
-+SHELL_STATUS
-+EFIAPI
-+ShellCommandRunSbsa (
-+  IN EFI_HANDLE        ImageHandle,
-+  IN EFI_SYSTEM_TABLE  *SystemTable
-+  )
-+{
-+
-+  ShellAppMain (
-+     1,
-+     NULL
-+   );
-+
-+  return 0;
++efi_populate_sbsa() {
++    DEST=$1
++    cp -r ${DEPLOY_DIR_IMAGE}/sbsa ${DEST}${EFIDIR}/sbsa
++    echo "echo -off
++          for %i in 0 1 2 3 4 5 6 7 8 9 A B C D E F then
++            if exist FS%i:\sbsa_results then
++              FS%i:
++              cd FS%i:\sbsa_results
++              if not exist uefi then
++                mkdir uefi
++              endif
++              cd uefi
++              for %j in 0 1 2 3 4 5 6 7 8 9 A B C D E F then
++                if exist FS%j:\EFI\BOOT\sbsa\Sbsa.efi then
++                  FS%j:\EFI\BOOT\sbsa\Sbsa.efi -f SbsaResults.log
++                  goto Done
++                endif
++              endfor
++              echo \"Sbsa.efi not found\"
++            endif
++          endfor
++          echo \"LUV-RESULTS partition not found\"
++          :Done" > ${DEST}${EFIDIR}/sbsa/sbsa.nsh
 +
 +}
 +
++efi_populate_sdei() {
++    DEST=$1
++    cp -r ${DEPLOY_DIR_IMAGE}/sdei ${DEST}${EFIDIR}/sdei
++    cp ${DEST}${EFIDIR}/sdei/Shell.efi ${DEST}${EFIDIR}/Shell.efi
++    echo "echo -off
++          for %i in 0 1 2 3 4 5 6 7 8 9 A B C D E F then
++            if exist FS%i:\sdei_results then
++              FS%i:
++              cd FS%i:\sdei_results
++              if not exist uefi then
++                mkdir uefi
++              endif
++              cd uefi
++              for %j in 0 1 2 3 4 5 6 7 8 9 A B C D E F then
++                if exist FS%j:\EFI\BOOT\sdei\Sdei.efi then
++                  FS%j:\EFI\BOOT\sdei\Sdei.efi -f SdeiResults.log
++                  goto Done
++                endif
++              endfor
++              echo \"Sdei.efi not found\"
++            endif
++          endfor
++          echo \"LUV-RESULTS partition not found\"
++          :Done" > ${DEST}${EFIDIR}/sdei/sdei.nsh
++}
 +
- 
- /**
-   The entry point for the application.
-@@ -603,28 +638,10 @@ UefiMain (
-         //
-         // begin the UI waiting loop
-         //
--        do {
--          //
--          // clean out all the memory allocated for CONST <something> * return values
--          // between each shell prompt presentation
--          //
--          if (!IsListEmpty(&ShellInfoObject.BufferToFreeList.Link)){
--            FreeBufferList(&ShellInfoObject.BufferToFreeList);
--          }
--
--          //
--          // Reset page break back to default.
--          //
--          ShellInfoObject.PageBreakEnabled        = PcdGetBool(PcdShellPageBreakDefault);
--          ASSERT (ShellInfoObject.ConsoleInfo != NULL);
--          ShellInfoObject.ConsoleInfo->Enabled    = TRUE;
--          ShellInfoObject.ConsoleInfo->RowCounter = 0;
--
--          //
--          // Display Prompt
--          //
--          Status = DoShellPrompt();
--        } while (!ShellCommandGetExit());
-+	 CHAR16                   FirstParameter[] = L"sbsa";
-+	 SHELL_STATUS CommandReturnedStatus;
-+	 BOOLEAN LastError;
-+	 ShellCommandRunCommandHandler(FirstParameter, &CommandReturnedStatus, &LastError);
-       }
-       if (OldConIn != NULL && ConInHandle != NULL) {
-         CloseSimpleTextInOnFile (gST->ConIn);
-diff --git a/ShellPkg/Library/UefiShellLevel3CommandsLib/UefiShellLevel3CommandsLib.c b/ShellPkg/Library/UefiShellLevel3CommandsLib/UefiShellLevel3CommandsLib.c
-index 448f7234dd..df1ca2d98d 100644
---- a/ShellPkg/Library/UefiShellLevel3CommandsLib/UefiShellLevel3CommandsLib.c
-+++ b/ShellPkg/Library/UefiShellLevel3CommandsLib/UefiShellLevel3CommandsLib.c
-@@ -16,6 +16,13 @@
- 
- CONST CHAR16 gShellLevel3FileName[] = L"ShellCommands";
- EFI_HANDLE gShellLevel3HiiHandle = NULL;
-+INTN
-+EFIAPI
-+ShellAppMain (
-+  IN UINTN Argc,
-+  IN CHAR16 **Argv
-+  );
++efi_populate_startup() {
++    DEST=$1
++    echo "echo -off
++          for %i in 0 1 2 3 4 5 6 7 8 9 A B C D E F then
++            if exist FS%i:\EFI\BOOT\sbbr\sbbr.nsh then
++              FS%i:\EFI\BOOT\sbbr\sbbr.nsh
++              goto DoneSbbr
++            endif
++          endfor
++          echo \"sbbr.nsh not found\"
 +
- 
- /**
-   return the filename to get help from is not using HII.
-@@ -75,7 +82,7 @@ ShellLevel3CommandsLibConstructor (
-   ShellCommandRegisterCommandName(L"pause",   ShellCommandRunPause  , ShellCommandGetManFileNameLevel3, 3, L"", TRUE , gShellLevel3HiiHandle, STRING_TOKEN(STR_GET_HELP_PAUSE));
-   ShellCommandRegisterCommandName(L"getmtc",  ShellCommandRunGetMtc , ShellCommandGetManFileNameLevel3, 3, L"", TRUE , gShellLevel3HiiHandle, STRING_TOKEN(STR_GET_HELP_GETMTC));
-   ShellCommandRegisterCommandName(L"help",    ShellCommandRunHelp   , ShellCommandGetManFileNameLevel3, 3, L"", TRUE , gShellLevel3HiiHandle, STRING_TOKEN(STR_GET_HELP_HELP));
--
-+  ShellCommandRegisterCommandName(L"sbsa",    ShellCommandRunSbsa   , ShellCommandGetManFileNameLevel3, 3, L"", TRUE , gShellLevel3HiiHandle, STRING_TOKEN(STR_GET_HELP_TOUCH));
-   ShellCommandRegisterAlias(L"type", L"cat");
- 
-   return (EFI_SUCCESS);
-diff --git a/ShellPkg/Library/UefiShellLevel3CommandsLib/UefiShellLevel3CommandsLib.h b/ShellPkg/Library/UefiShellLevel3CommandsLib/UefiShellLevel3CommandsLib.h
-index be88dd5f28..4ff5dafc66 100644
---- a/ShellPkg/Library/UefiShellLevel3CommandsLib/UefiShellLevel3CommandsLib.h
-+++ b/ShellPkg/Library/UefiShellLevel3CommandsLib/UefiShellLevel3CommandsLib.h
-@@ -157,5 +157,13 @@ ShellCommandRunHelp (
-   IN EFI_SYSTEM_TABLE  *SystemTable
-   );
- 
-+SHELL_STATUS
-+EFIAPI
-+ShellCommandRunSbsa (
-+  IN EFI_HANDLE        ImageHandle,
-+  IN EFI_SYSTEM_TABLE  *SystemTable
-+  );
++          :DoneSbbr
++          for %j in 0 1 2 3 4 5 6 7 8 9 A B C D E F then
++            if exist FS%j:\EFI\BOOT\sbsa\sbsa.nsh then
++              FS%j:\EFI\BOOT\sbsa\sbsa.nsh
++              goto DoneSbsa
++            endif
++          endfor
++          echo \"sbsa.nsh not found\"
 +
++          :DoneSbsa
++          for %k in 0 1 2 3 4 5 6 7 8 9 A B C D E F then
++            if exist FS%k:\EFI\BOOT\sdei\sdei.nsh then
++              FS%k:\EFI\BOOT\sdei\sdei.nsh
++              goto DoneSdei
++            endif
++          endfor
++          echo \"sdei.nsh not found\"
 +
- #endif
++          :DoneSdei
++          for %l in 0 1 2 3 4 5 6 7 8 9 A B C D E F then
++            if exist FS%l:\Image then
++              FS%l:
++              Image initrd=\initrd ${CMDLINE} luv_netconsole=none luv_storage=none luv_tests=fwts
++            endif
++          endfor
++          echo \"Image not found\"
++          " > ${DEST}${EFIDIR}/startup.nsh
++}
++
+ BITS_EFI_LOADER_IMAGE = "${DEST_EFI_LOADER_IMAGE}"
+ efi_populate_bits() {
+     DEST=$1
+@@ -170,6 +345,11 @@ python build_efi_cfg() {
+        cfgfile.write('default=bits\n')
+        cfgfile.write('fallback=0\n')
  
-diff --git a/ShellPkg/Library/UefiShellLevel3CommandsLib/UefiShellLevel3CommandsLib.inf b/ShellPkg/Library/UefiShellLevel3CommandsLib/UefiShellLevel3CommandsLib.inf
-index a13cd9babf..b302f2f863 100644
---- a/ShellPkg/Library/UefiShellLevel3CommandsLib/UefiShellLevel3CommandsLib.inf
-+++ b/ShellPkg/Library/UefiShellLevel3CommandsLib/UefiShellLevel3CommandsLib.inf
-@@ -30,6 +30,7 @@
-   Type.c
-   Touch.c
-   Ver.c
-+  SbsaAvsMain.c
-   UefiShellLevel3CommandsLib.uni
-   UefiShellLevel3CommandsLib.c
-   UefiShellLevel3CommandsLib.h
-@@ -39,6 +40,102 @@
-   Pause.c
-   GetMtc.c
-   Help.c
-+  test_pool/secure/test_s001.c
-+  test_pool/secure/test_s002.c
-+  test_pool/secure/test_s003.c
-+  test_pool/pe/test_c001.c
-+  test_pool/pe/test_c002.c
-+  test_pool/pe/test_c003.c
-+  test_pool/pe/test_c004.c
-+  test_pool/pe/test_c005.c
-+  test_pool/pe/test_c006.c
-+  test_pool/pe/test_c007.c
-+  test_pool/pe/test_c008.c
-+  test_pool/pe/test_c009.c
-+  test_pool/pe/test_c010.c
-+  test_pool/pe/test_c011.c
-+  test_pool/pe/test_c012.c
-+  test_pool/pe/test_c013.c
-+  test_pool/pe/test_c014.c
-+  test_pool/pe/test_c015.c
-+  test_pool/pe/test_c016.c
-+  test_pool/pe/test_c017.c
-+  test_pool/pe/test_c018.c
-+  test_pool/pe/test_c019.c
-+  test_pool/pe/test_c020.c
-+  test_pool/pe/test_c021.c
-+  test_pool/pe/test_c022.c
-+  test_pool/pe/test_c023.c
-+  test_pool/pe/test_c024.c
-+  test_pool/pe/test_c025.c
-+  test_pool/pe/test_c026.c
-+  test_pool/pe/test_c027.c
-+  test_pool/pe/test_c028.c
-+  test_pool/gic/test_g001.c
-+  test_pool/gic/test_g002.c
-+  test_pool/gic/test_g003.c
-+  test_pool/gic/test_g004.c
-+  test_pool/timer_wd/test_t001.c
-+  test_pool/timer_wd/test_t002.c
-+  test_pool/timer_wd/test_t003.c
-+  test_pool/timer_wd/test_t004.c
-+  test_pool/timer_wd/test_t005.c
-+  test_pool/timer_wd/test_t006.c
-+  test_pool/timer_wd/test_t007.c
-+  test_pool/timer_wd/test_t008.c
-+  test_pool/timer_wd/test_w001.c
-+  test_pool/timer_wd/test_w002.c
-+  test_pool/pcie/test_p001.c
-+  test_pool/pcie/test_p002.c
-+  test_pool/pcie/test_p020.c
-+  test_pool/pcie/test_p021.c
-+  test_pool/pcie/test_p022.c
-+  test_pool/pcie/test_p023.c
-+  test_pool/pcie/test_p024.c
-+  test_pool/pcie/test_p025.c
-+  test_pool/pcie/test_p026.c
-+  test_pool/pcie/test_p027.c
-+  test_pool/pcie/test_p028.c
-+  test_pool/pcie/test_p029.c
-+  test_pool/pcie/test_p030.c
-+  test_pool/pcie/test_p031.c
-+  test_pool/pcie/test_p032.c
-+  test_pool/pcie/test_p033.c
-+  test_pool/pcie/test_p034.c
-+  test_pool/pcie/test_p035.c
-+  test_pool/pcie/test_p036.c
-+  test_pool/pcie/test_p037.c
-+  test_pool/pcie/test_p038.c
-+  test_pool/pcie/test_p039.c
-+  test_pool/pcie/test_p040.c
-+  test_pool/pcie/test_p041.c
-+  test_pool/pcie/test_p042.c
-+  test_pool/pcie/test_p043.c
-+  test_pool/pcie/test_p044.c
-+  test_pool/pcie/test_p045.c
-+  test_pool/io_virt/test_i001.c
-+  test_pool/io_virt/test_i002.c
-+  test_pool/io_virt/test_i003.c
-+  test_pool/io_virt/test_i004.c
-+  test_pool/io_virt/test_i005.c
-+  test_pool/io_virt/test_i006.c
-+  test_pool/power_wakeup/test_u001.c
-+  test_pool/power_wakeup/test_u002.c
-+  test_pool/peripherals/test_d001.c
-+  test_pool/peripherals/test_d002.c
-+  test_pool/peripherals/test_d003.c
-+  test_pool/peripherals/test_m001.c
-+  test_pool/peripherals/test_m002.c
-+  test_pool/exerciser/test_e001.c
-+  test_pool/exerciser/test_e002.c
-+  test_pool/exerciser/test_e003.c
-+  test_pool/exerciser/test_e004.c
-+  test_pool/exerciser/test_e005.c
-+  test_pool/exerciser/test_e006.c
-+  test_pool/exerciser/test_e007.c
-+  test_pool/exerciser/test_e008.c
-+  test_pool/exerciser/test_e009.c
-+  test_pool/exerciser/test_e010.c
++    if re.search("aarch64", target):
++       cfgfile.write('default=sbbr/sbsa\n')
++       cfgfile.write('timeout=10\n')
++       cfgfile.write('fallback=0\n')
++
+     cfgfile.write('menuentry \'luv\' {\n')
+     kernel = d.getVar('KERNEL_IMAGETYPE')
+     cfgfile.write('linux /%s ' % (kernel))
+@@ -200,6 +380,11 @@ python build_efi_cfg() {
+        cfgfile.write('chainloader /EFI/BOOT/bits/%s\n' % loader)
+        cfgfile.write('}\n')
  
++    if re.search("aarch64", target):
++       cfgfile.write('menuentry \'sbbr/sbsa\' {\n')
++       cfgfile.write('chainloader /EFI/BOOT/Shell.efi\n')
++       cfgfile.write('}\n')
++
+     cfgfile.close()
+ }
  
- [Packages]
-@@ -60,6 +157,8 @@
-   HiiLib
-   FileHandleLib
-   HandleParsingLib
-+  SbsaValLib
-+  SbsaPalLib
+diff --git a/meta-luv/conf/distro/luv.conf b/meta-luv/conf/distro/luv.conf
+index 9b5b5fd13c..b664710eae 100644
+--- a/meta-luv/conf/distro/luv.conf
++++ b/meta-luv/conf/distro/luv.conf
+@@ -17,4 +17,4 @@ VIRTUAL-RUNTIME_init_manager = "systemd"
+ VIRTUAL-RUNTIME_initscripts = ""
+ DISTRO_FEATURES_BACKFILL_CONSIDERED += "sysvinit"
  
- [Guids]
-   gEfiFileInfoGuid                                        ## UNDEFINED
+-INITRAMFS_MAXSIZE = "260000"
++INITRAMFS_MAXSIZE = "600000"
+diff --git a/meta-luv/conf/local.conf.sample b/meta-luv/conf/local.conf.sample
+index c1cbcc1778..a48809497d 100644
+--- a/meta-luv/conf/local.conf.sample
++++ b/meta-luv/conf/local.conf.sample
+@@ -35,7 +35,7 @@
+ #MACHINE ?= "edgerouter"
+ #
+ # This sets the default machine to be qemux86 if no other machine is selected:
+-MACHINE ??= "qemux86-64"
++MACHINE ??= "qemuarm64"
+ 
+ #
+ # Where to place downloads
+@@ -234,3 +234,6 @@ PACKAGECONFIG_append_pn-nativesdk-qemu = " sdl"
+ # track the version of this file when it was generated. This can safely be ignored if
+ # this doesn't mean anything to you.
+ CONF_VERSION = "1"
++
++EXTRA_IMAGE_FEATURES += "dev-pkgs"
++BB_NUMBER_THREADS ?= "16"
+diff --git a/meta-luv/recipes-core/efivarfs/efivarfs-test.bb b/meta-luv/recipes-core/efivarfs/efivarfs-test.bb
+index 9f185fd166..2a1e1c2403 100644
+--- a/meta-luv/recipes-core/efivarfs/efivarfs-test.bb
++++ b/meta-luv/recipes-core/efivarfs/efivarfs-test.bb
+@@ -73,4 +73,3 @@ do_install() {
+ 
+ LUV_TEST_LOG_PARSER="luv-parser-efivarfs"
+ LUV_TEST_JSON="efivarfs.json"
+-LUV_TEST="efivarfs"
+diff --git a/meta-luv/recipes-core/fwts/fwts_git.bb b/meta-luv/recipes-core/fwts/fwts_git.bb
+index 08c67ae912..ecaa84ea87 100644
+--- a/meta-luv/recipes-core/fwts/fwts_git.bb
++++ b/meta-luv/recipes-core/fwts/fwts_git.bb
+@@ -4,11 +4,12 @@ HOMEPAGE = "https://wiki.ubuntu.com/Kernel/Reference/fwts"
+ LICENSE = "GPLv2+"
+ LIC_FILES_CHKSUM = "file://src/main.c;beginline=1;endline=16;md5=31da590f3e9f3bd34dcdb9e4db568519"
+ 
+-PV = "V18.09.00+git${SRCPV}"
++PV = "V18.02.00+git${SRCPV}"
+ 
+-SRCREV = "55ecee114fd2a91ba01750914cff8efed77f58d4"
++SRCREV = "fc058734142d1de80fc52a211c8908a50ee03986"
+ SRC_URI = "git://kernel.ubuntu.com/hwe/fwts.git \
+            file://luv-parser-fwts \
++           file://sbbr-fwts.patch \
+           "
+ 
+ S = "${WORKDIR}/git"
+@@ -52,8 +53,7 @@ do_install_append() {
+ }
+ 
+ LUV_TEST_LOG_PARSER="luv-parser-fwts"
+-LUV_TEST_ARGS="-r stdout -q --uefitests --log-format='%owner;%field ' \
+-	      --batch"
++LUV_TEST_ARGS="-r stdout -q --sbbr"
+ 
+ FILES_${PN} += "${libdir}/fwts/lib*${SOLIBS}"
+ FILES_${PN} += "/lib/modules/${KERNEL_VERSION}/extra/efi_runtime.ko"
+diff --git a/meta-luv/recipes-core/images/core-image-efi-initramfs.bb b/meta-luv/recipes-core/images/core-image-efi-initramfs.bb
+index 952953483d..868d37c06e 100644
+--- a/meta-luv/recipes-core/images/core-image-efi-initramfs.bb
++++ b/meta-luv/recipes-core/images/core-image-efi-initramfs.bb
+@@ -8,7 +8,7 @@ IMAGE_INSTALL = "\
+     util-linux-mount util-linux-umount kmod sed tar net-tools \
+     shadow util-linux procps efivarfs-test pstore-test \
+     plymouth plymouth-set-default-theme kernel-efi-warnings linux-firmware-luv kexec \
+-    acpixtract iasl \
++    acpixtract iasl sbsa-acs-drv sbsa-acs-app sdei-acs-drv sdei-acs-app \
+     "
+ 
+ X86_ADDITIONS = "chipsec python-codecs python-subprocess vmcore-dmesg bits \
+diff --git a/meta-luv/recipes-core/images/luv-image.inc b/meta-luv/recipes-core/images/luv-image.inc
+index def23444e6..62b55d1d26 100644
+--- a/meta-luv/recipes-core/images/luv-image.inc
++++ b/meta-luv/recipes-core/images/luv-image.inc
+@@ -3,6 +3,7 @@ LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/MIT;md5=0835ade698e0bcf8506ecda
+ 
+ DEPENDS_append_x86 = " bits"
+ DEPENDS_append_x86-64 = " bits"
++DEPENDS_${PN} = "bits sbbr"
+ 
+ HDDDIR = "${S}/hddimg"
+ 
+@@ -24,7 +25,7 @@ COMMON_CMDLINE_x86 += "splash nomodeset crash_kexec_post_notifiers"
+ 
+ # Unlike the += operand, _append's do not insert a space between the current value
+ # and the appended string. Thus, we add them.
+-CMDLINE_append_aarch64 = " acpi=on"
++CMDLINE_append_aarch64 = " acpi=on crashkernel=256M earlycon uefi_debug ${ACS_CMDLINE_APPEND}"
+ CMDLINE_append_x86 = "${COMMON_CMDLINE_x86}"
+ CMDLINE_append_x86-64 = "${COMMON_CMDLINE_x86}"
+ 
+diff --git a/meta-luv/recipes-core/images/luv-live-image.bb b/meta-luv/recipes-core/images/luv-live-image.bb
+index b105b7b033..1b330c39db 100644
+--- a/meta-luv/recipes-core/images/luv-live-image.bb
++++ b/meta-luv/recipes-core/images/luv-live-image.bb
+@@ -11,7 +11,7 @@ MACHINE_FEATURES += "efi"
+ 
+ CMDLINE = "${CMDLINE_BASE}"
+ 
+-GRUB_TIMEOUT = "2"
++GRUB_TIMEOUT = "1"
+ 
+ inherit image-live
+ 
+@@ -33,8 +33,8 @@ build_img() {
+     BYTES_PER_SECTOR=512
+     MiB=$(expr 1024 \* 1024)
+     VFAT_RESULTS=${DEPLOY_DIR_IMAGE}/${PN}-results.hddimg
+-    # 16MB of space to store test results
+-    VFAT_RESULTS_SPACE_MiB=16
++    # 128 MB of space for test results and SCT installation
++    VFAT_RESULTS_SPACE_MiB=128
+     VFAT_RESULTS_SPACE=$(expr $VFAT_RESULTS_SPACE_MiB \* $MiB)
+     VFAT_RESULTS_BLOCKS=$(expr $VFAT_RESULTS_SPACE / 1024)
+     # TODO: do we need to dynamically generate the UUID?
+@@ -53,6 +53,10 @@ build_img() {
+     mkdosfs -C ${VFAT_RESULTS} -S ${BYTES_PER_SECTOR} -i ${VFAT_RESULTS_UUID} \
+             -n ${VFAT_RESULTS_LABEL} $VFAT_RESULTS_BLOCKS
+ 
++    mmd -i ${VFAT_RESULTS} ::/sbsa_results
++    mmd -i ${VFAT_RESULTS} ::/sdei_results
++    mmd -i ${VFAT_RESULTS} ::/SCT_RUN
++
+     dd if=/dev/zero of=${IMG} bs=${BYTES_PER_SECTOR} count=1
+ 
+     # Now that we are calculating sizes in MiB make sure that the value
+diff --git a/meta-luv/recipes-core/images/luv-netboot-image.bb b/meta-luv/recipes-core/images/luv-netboot-image.bb
+index cb4105bd66..78394ef8c2 100644
+--- a/meta-luv/recipes-core/images/luv-netboot-image.bb
++++ b/meta-luv/recipes-core/images/luv-netboot-image.bb
+@@ -25,7 +25,8 @@ do_mkimage[depends] += "dosfstools-native:do_populate_sysroot \
+                         mtools-native:do_populate_sysroot \
+                         cdrtools-native:do_populate_sysroot \
+                         virtual/kernel:do_deploy \
+-			${_BITSDEPENDS}"
++			            ${_BITSDEPENDS} \
++                        ${_SBBRDEPENDS}"
+ 
+ do_bootimg[noexec] = "1"
+ 
+@@ -36,6 +37,13 @@ do_populate_image() {
+ 	if [ "${TARGET_ARCH}" != "aarch64" ]; then
+ 		efi_populate_bits ${HDDDIR}
+ 	fi
++    if [ "${TARGET_ARCH}" = "aarch64" ]; then
++        echo "${DEST_EFI_LOADER_IMAGE}" > ${HDDDIR}${EFIDIR}/startup.nsh
++        efi_populate_sbbr ${HDDDIR}
++        efi_populate_sbsa ${HDDDIR}
++        install -m 0644 ${DEPLOY_DIR_IMAGE}/${GRUB_EFI_LOADER_IMAGE} ${HDDDIR}${EFIDIR}/${DEST_EFI_LOADER_IMAGE}
++    fi
++
+ 	build_hddimg
+ }
+ 
+diff --git a/meta-luv/recipes-core/kernel_efi_warnings/kernel-efi-warnings_0.1.bb b/meta-luv/recipes-core/kernel_efi_warnings/kernel-efi-warnings_0.1.bb
+index a0fde3c30b..85eec505de 100644
+--- a/meta-luv/recipes-core/kernel_efi_warnings/kernel-efi-warnings_0.1.bb
++++ b/meta-luv/recipes-core/kernel_efi_warnings/kernel-efi-warnings_0.1.bb
+@@ -20,5 +20,3 @@ do_install() {
+ }
+ 
+ LUV_TEST_LOG_PARSER="luv-parser-kernel-efi-warnings"
+-LUV_TEST="kernel-efi-warnings"
+-LUV_TEST_ARGS=""
+diff --git a/meta-luv/recipes-core/luv-test/luv-test.bb b/meta-luv/recipes-core/luv-test/luv-test.bb
+index e6263d9a63..922435f522 100644
+--- a/meta-luv/recipes-core/luv-test/luv-test.bb
++++ b/meta-luv/recipes-core/luv-test/luv-test.bb
+@@ -42,6 +42,9 @@ SRC_URI += "file://luv-test-manager \
+             file://luv-reboot-poweroff.service \
+             file://luv-reboot-poweroff \
+             file://luv-message \
++            file://luv-collect-results \
++            file://luv-sdei-test \
++            file://luv-sbsa-test \
+           "
+ 
+ RDEPENDS_${PN}+= "kernel-modules curl iputils iproute2 bash init-ifupdown dhcp-client gzip"
+@@ -97,6 +100,11 @@ do_install_append() {
+        install -m 0644 ${WORKDIR}/icon_fail3.png ${D}${datadir}/luv/html
+        install -m 0644 ${WORKDIR}/icon_failunk.png ${D}${datadir}/luv/html
+ 
++       # Install luv-collect-results script
++       install -m 755 ${WORKDIR}/luv-collect-results ${D}${sysconfdir}/
++       install -m 755 ${WORKDIR}/luv-sbsa-test ${D}${sysconfdir}/
++       install -m 755 ${WORKDIR}/luv-sdei-test ${D}${sysconfdir}/
++
+        install -d ${D}${systemd_unitdir}/system
+ 
+        install -m 0644 ${WORKDIR}/luv-test-manager.service ${D}${systemd_unitdir}/system
+diff --git a/meta-luv/recipes-core/luv-test/luv-test/luv-test-manager b/meta-luv/recipes-core/luv-test/luv-test/luv-test-manager
+index ffb197c3ca..7ed9401f4f 100644
+--- a/meta-luv/recipes-core/luv-test/luv-test/luv-test-manager
++++ b/meta-luv/recipes-core/luv-test/luv-test/luv-test-manager
+@@ -385,6 +385,15 @@ result=$(cat /tmp/testsuites)
+ echo -e '\n'$result | tee -a /tmp/luv.results ${LUV_SAVE_RESULTS_DIR}/luv.results | \
+         html_inline ${LUV_HTML_REPORT}
+ 
++#test SDEI compliance on luv
++sh /etc/luv-sdei-test ${LUV_STORAGE}
++
++# test SBSA compliance on luv
++sh /etc/luv-sbsa-test ${LUV_STORAGE}
++
++# collecting test results
++python3 /etc/luv-collect-results ${LUV_STORAGE} ${LUV_STORAGE}/results.md
++
+ luv_msg_write "$result"
+ sleep 2
+ 
+diff --git a/meta-luv/recipes-devtools/sbsigntool/sbsigntool_git.bb b/meta-luv/recipes-devtools/sbsigntool/sbsigntool_git.bb
+index 69f050bb83..e85c758049 100644
+--- a/meta-luv/recipes-devtools/sbsigntool/sbsigntool_git.bb
++++ b/meta-luv/recipes-devtools/sbsigntool/sbsigntool_git.bb
+@@ -30,7 +30,16 @@ do_configure() {
+     fi
+ 
+     export CC="${OLD_CC}"
+-    export CFLAGS="-I${STAGING_INCDIR}/efi -I${STAGING_INCDIR}/efi/x86_64"
++
++    MACHINE=`uname -m`
++    echo "Architecture Detected : $MACHINE"
++    if [ $MACHINE = "aarch64" ]; then
++        export CFLAGS="-I${STAGING_INCDIR}/efi -I${STAGING_INCDIR}/efi/aarch64"
++    else
++        export CFLAGS="-I${STAGING_INCDIR}/efi -I${STAGING_INCDIR}/efi/x86_64"
++    fi
++
+     ./autogen.sh --noconfigure
+     oe_runconf
+ }
++#End-For aarch64 Build
+diff --git a/meta-luv/recipes-kernel/linux/linux-luv_4.18.bb b/meta-luv/recipes-kernel/linux/linux-luv_4.18.bb
+index 3d58d447d1..9e4a0a0672 100644
+--- a/meta-luv/recipes-kernel/linux/linux-luv_4.18.bb
++++ b/meta-luv/recipes-kernel/linux/linux-luv_4.18.bb
+@@ -61,7 +61,8 @@ KERNEL_FEATURES_remove= " features/debug/printk.scc \
+ 
+ # Override SRC_URI in a bbappend file to point at a different source
+ # tree if you do not want to build from Linus' tree.
+-SRC_URI = "git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git;protocol=git;branch=${KBRANCH};name=machine"
++SRC_URI = "git://github.com/torvalds/linux.git;protocol=git;branch=${KBRANCH};name=machine"
++#SRC_URI = "git://kernel.googlesource.com/pub/scm/linux/kernel/git/torvalds/linux;protocol=https;branch=${KBRANCH};name=machine"
+ 
+ # These patches are under discussion on ML
+ SRC_URI += "file://0001-serial-SPCR-check-bit-width-for-the-16550-UART.patch  \
+@@ -82,6 +83,7 @@ SRC_URI += "file://0001-PCI-Vulcan-AHCI-PCI-bar-fix-for-Broadcom-Vulcan-earl.pat
+             file://0001-selftests-change-reboot-flag-location.patch \
+             file://0001-pstore-test-remove-log-directory.patch \
+             file://0001-x86-mttr-Update-only-valid-variable-range-MTRRs.patch \
++            file://0001-Enterprise-acs-linux-v4.18.patch \
+            "
+ 
+ COMMON_CFG_x86 = " file://qemux86/modules.cfg \
+diff --git a/meta/conf/bitbake.conf b/meta/conf/bitbake.conf
+index ecc43a46f9..f045d7448a 100644
+--- a/meta/conf/bitbake.conf
++++ b/meta/conf/bitbake.conf
+@@ -769,7 +769,7 @@ INITRAMFS_FSTYPES ?= "cpio.gz"
+ # The maximum size in Kbytes for the generated initramfs image size.
+ # Usually, it should be less than 1/2 of ram size, or you may fail to
+ # boot it.
+-INITRAMFS_MAXSIZE ??= "131072"
++INITRAMFS_MAXSIZE ??= "196608"
+ 
+ DEFAULT_TASK_PROVIDER ?= "packagegroup-base"
+ MACHINE_TASK_PROVIDER ?= "${DEFAULT_TASK_PROVIDER}"
+diff --git a/meta/recipes-core/systemd/systemd-serialgetty/serial-getty@.service b/meta/recipes-core/systemd/systemd-serialgetty/serial-getty@.service
+index e8b027e97d..1611bfee4c 100644
+--- a/meta/recipes-core/systemd/systemd-serialgetty/serial-getty@.service
++++ b/meta/recipes-core/systemd/systemd-serialgetty/serial-getty@.service
+@@ -21,7 +21,7 @@ IgnoreOnIsolate=yes
+ 
+ [Service]
+ Environment="TERM=xterm"
+-ExecStart=-/sbin/agetty -8 -L %I @BAUDRATE@ $TERM
++ExecStart=-/sbin/agetty -8 --autologin root --noclear -L %I @BAUDRATE@ $TERM
+ Type=idle
+ Restart=always
+ RestartSec=0
+-- 
+2.17.1
 
