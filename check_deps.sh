@@ -48,6 +48,15 @@ if [ $MACHINE = "aarch64" ]; then
 	PACKAGES_TO_CHECK+=("python3-distutils");
 fi
 
+#Add additional packages specific to Ubuntu 20.04 and above build here
+VERSION=`/usr/bin/lsb_release -d | awk '{ print $3 }' | cut -c1-5`
+MAJOR_VERSION=`echo $VERSION | awk -F '.' '{print $1}'`
+MINOR_VERSION=`echo $VERSION | awk -F '.' '{print $2}'`
+if [ $MAJOR_VERSION -ge 20 ] && [ $MINOR_VERSION -ge 04 ]
+then
+        PACKAGES_TO_CHECK+=("python3-distutils");
+fi
+
 
 RC_ERROR=1
 RC_SUCCESS=0
