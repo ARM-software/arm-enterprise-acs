@@ -1,0 +1,1045 @@
+From 2113cd401b1338b5c69748f3f09b519cda7fbc1b Mon Sep 17 00:00:00 2001
+From: Sujana M <sujana.m@arm.com>
+Date: Mon, 6 Aug 2018 15:57:00 -0700
+Subject: [PATCH] Luvos additional patch for ubuntu 20.04 build
+
+Signed-off-by: Edhaya Chandran G <edhaya.chandran@arm.com>
+Signed-off-by: Sujana M <sujana.m@arm.com>
+---
+ meta-luv/recipes-bsp/bits/bits_git.bb         |   1 +
+ .../files/0002-grub-core-changes-efi.patch    |  47 +++++++
+ .../files/0003-grub-core-changes-efi.patch    |  26 ++++
+ .../recipes-bsp/grub/grub-efi_2.02.bbappend   |   1 +
+ ...x-switch-fallthrough-cases-with-GCC9.patch |  38 ++++++
+ meta/recipes-bsp/grub/files/chainloader.patch |  36 +++++
+ meta/recipes-bsp/grub/files/efi.patch         |  51 +++++++
+ meta/recipes-bsp/grub/files/gcc9.patch        | 114 ++++++++++++++++
+ meta/recipes-bsp/grub/files/jfs.patch         |  18 +++
+ meta/recipes-bsp/grub/files/usbtest.patch     |  32 +++++
+ meta/recipes-bsp/grub/grub2.inc               |   6 +
+ .../openssl/openssl_1.0.2p.bb                 |   2 +-
+ .../Avoid_printing_null_strings.patch         |  40 ++++++
+ meta/recipes-core/glib-2.0/glib-2.0_2.54.3.bb |   1 +
+ .../glibc/cross-localedef-native_2.27.bb      |   2 +-
+ .../bison/110-glibc-change-work-around.patch  |  33 +++++
+ meta/recipes-devtools/bison/bison_3.0.4.bb    |   1 +
+ .../elfutils/elfutils_0.170.bb                |   1 +
+ ...fsize-and-msize-with-const-attribute.patch |  16 +++
+ meta/recipes-devtools/m4/m4-1.4.18.inc        |   1 +
+ .../m4-1.4.18-glibc-change-work-around.patch  | 129 ++++++++++++++++++
+ ...inux-user-rename-gettid-to-sysgettid.patch |  62 +++++++++
+ meta/recipes-devtools/qemu/qemu_2.11.1.bb     |   1 +
+ .../libgpg-error/gawk5-suport.patch           | 127 +++++++++++++++++
+ .../libgpg-error/libgpg-error_1.27.bb         |   1 +
+ 25 files changed, 785 insertions(+), 2 deletions(-)
+ create mode 100644 meta-luv/recipes-bsp/grub/files/0002-grub-core-changes-efi.patch
+ create mode 100644 meta-luv/recipes-bsp/grub/files/0003-grub-core-changes-efi.patch
+ create mode 100644 meta/recipes-bsp/grub/files/GRUB-fix-switch-fallthrough-cases-with-GCC9.patch
+ create mode 100644 meta/recipes-bsp/grub/files/chainloader.patch
+ create mode 100644 meta/recipes-bsp/grub/files/efi.patch
+ create mode 100644 meta/recipes-bsp/grub/files/gcc9.patch
+ create mode 100644 meta/recipes-bsp/grub/files/jfs.patch
+ create mode 100644 meta/recipes-bsp/grub/files/usbtest.patch
+ create mode 100644 meta/recipes-core/glib-2.0/glib-2.0/Avoid_printing_null_strings.patch
+ create mode 100644 meta/recipes-devtools/bison/bison/110-glibc-change-work-around.patch
+ create mode 100644 meta/recipes-devtools/elfutils/files/Mark-fsize-and-msize-with-const-attribute.patch
+ create mode 100644 meta/recipes-devtools/m4/m4/m4-1.4.18-glibc-change-work-around.patch
+ create mode 100644 meta/recipes-devtools/qemu/qemu/0009-linux-user-rename-gettid-to-sysgettid.patch
+ create mode 100644 meta/recipes-support/libgpg-error/libgpg-error/gawk5-suport.patch
+
+diff --git a/meta-luv/recipes-bsp/bits/bits_git.bb b/meta-luv/recipes-bsp/bits/bits_git.bb
+index d77811fdeb..269b0cec2f 100644
+--- a/meta-luv/recipes-bsp/bits/bits_git.bb
++++ b/meta-luv/recipes-bsp/bits/bits_git.bb
+@@ -57,6 +57,7 @@ SRC_URI = "gitsm://github.com/biosbits/bits.git;protocol=http  \
+            file://0001-only-output-to-log.patch;apply=no \
+            file://GRUB-util-include-sysmacros.h-header.patch \
+            file://GRUB-fix-switch-fallthrough-cases-with-GCC7.patch \
++           file://0002-grub-core-changes-efi.patch \
+            file://GRUB-btrfs-avoid-used-uninitialized-error-with-GCC7.patch \
+            file://PYTHON-Fix-gcc7-warnings-when-calling-PyMem_MALLOC-macros.patch \
+            file://libffi-fix-switch-fallthrough-cases-with-GCC7.patch \
+diff --git a/meta-luv/recipes-bsp/grub/files/0002-grub-core-changes-efi.patch b/meta-luv/recipes-bsp/grub/files/0002-grub-core-changes-efi.patch
+new file mode 100644
+index 0000000000..d85ab46a69
+--- /dev/null
++++ b/meta-luv/recipes-bsp/grub/files/0002-grub-core-changes-efi.patch
+@@ -0,0 +1,47 @@
++diff --git a/grub-core/kern/efi/efi.c b/grub-core/kern/efi/efi.c
++index 9e8547b33d..36e04075ce 100644
++--- a/grub-core/kern/efi/efi.c
+++++ b/grub-core/kern/efi/efi.c
++@@ -360,6 +360,7 @@ grub_efi_get_filename (grub_efi_device_path_t *dp0)
++ 	{
++ 	  grub_efi_file_path_device_path_t *fp;
++ 	  grub_efi_uint16_t len;
+++          grub_efi_char16_t *dup_name;
++ 
++ 	  *p++ = '/';
++ 
++@@ -370,7 +371,14 @@ grub_efi_get_filename (grub_efi_device_path_t *dp0)
++ 	  while (len > 0 && fp->path_name[len - 1] == 0)
++ 	    len--;
++ 
++-          p = (char *) grub_utf16_to_utf8 ((unsigned char *) p, fp->path_name, len);
+++          dup_name = grub_malloc (len * sizeof (*dup_name));
+++          if (!dup_name)
+++            {
+++              grub_free (name);
+++              return NULL;
+++            }
+++          p = (char *) grub_utf16_to_utf8 ((unsigned char *) p, grub_memcpy (dup_name,fp->path_name, len * sizeof (*dup_name)), len);
+++          grub_free (dup_name);
++ 	}
++ 
++       dp = GRUB_EFI_NEXT_DEVICE_PATH (dp);
++@@ -800,8 +808,16 @@ grub_efi_print_device_path (grub_efi_device_path_t *dp)
++ 		fp = (grub_efi_file_path_device_path_t *) dp;
++ 		buf = grub_malloc ((len - 4) * 2 + 1);
++ 		if (buf)
++-                   *grub_utf16_to_utf8 (buf, fp->path_name, 
++-                                        (len - 4) / sizeof (grub_efi_char16_t))
+++                  {
+++                   grub_efi_char16_t *dup_name = grub_malloc (len - 4);
+++                   if (!dup_name)
+++                     {
+++                        grub_errno = GRUB_ERR_NONE;
+++                        grub_printf ("/File((null))");
+++                        grub_free (buf);
+++                        break;
+++                      }
+++                   *grub_utf16_to_utf8 (buf, grub_memcpy (dup_name, fp->path_name, len - 4), (len - 4) / sizeof (grub_efi_char16_t)) 
++                       = '\0';
++                     grub_free (dup_name);
++                   }
+diff --git a/meta-luv/recipes-bsp/grub/files/0003-grub-core-changes-efi.patch b/meta-luv/recipes-bsp/grub/files/0003-grub-core-changes-efi.patch
+new file mode 100644
+index 0000000000..e1aeb2ca0c
+--- /dev/null
++++ b/meta-luv/recipes-bsp/grub/files/0003-grub-core-changes-efi.patch
+@@ -0,0 +1,26 @@
++diff --git a/include/grub/acpi.h b/include/grub/acpi.h
++index 66148f6848..1cacc41593 100644
++--- a/include/grub/acpi.h
+++++ b/include/grub/acpi.h
++@@ -93,7 +93,7 @@ struct grub_acpi_madt
++   grub_uint32_t lapic_addr;
++   grub_uint32_t flags;
++   struct grub_acpi_madt_entry_header entries[0];
++-};
+++}GRUB_PACKED;
++ 
++ enum
++   {
++diff --git a/include/grub/hfs.h b/include/grub/hfs.h
++index d935f5005c..f36b7ccd87 100644
++--- a/include/grub/hfs.h
+++++ b/include/grub/hfs.h
++@@ -29,7 +29,7 @@ struct grub_hfs_extent
++   /* The first physical block.  */
++   grub_uint16_t first_block;
++   grub_uint16_t count;
++-};
+++}GRUB_PACKED;
++ 
++ /* HFS stores extents in groups of 3.  */
++ typedef struct grub_hfs_extent grub_hfs_datarecord_t[3];
+diff --git a/meta-luv/recipes-bsp/grub/grub-efi_2.02.bbappend b/meta-luv/recipes-bsp/grub/grub-efi_2.02.bbappend
+index 640d19e1a4..236e590a3b 100644
+--- a/meta-luv/recipes-bsp/grub/grub-efi_2.02.bbappend
++++ b/meta-luv/recipes-bsp/grub/grub-efi_2.02.bbappend
+@@ -15,6 +15,7 @@ python __anonymous(){
+ 
+ COMMON_GRUB_x86 += "file://0001-pe32.h-add-header-structures-for-TE-and-DOS-executab.patch \
+            file://0002-shim-add-needed-data-structures.patch \
++           file://0003-grub-core-changes-efi.patch \
+            file://0003-efi-chainloader-implement-an-UEFI-Exit-service-for-s.patch \
+            file://0004-efi-chainloader-port-shim-to-grub.patch \
+            file://0005-efi-chainloader-use-shim-to-load-and-verify-an-image.patch \
+diff --git a/meta/recipes-bsp/grub/files/GRUB-fix-switch-fallthrough-cases-with-GCC9.patch b/meta/recipes-bsp/grub/files/GRUB-fix-switch-fallthrough-cases-with-GCC9.patch
+new file mode 100644
+index 0000000000..ae2e493072
+--- /dev/null
++++ b/meta/recipes-bsp/grub/files/GRUB-fix-switch-fallthrough-cases-with-GCC9.patch
+@@ -0,0 +1,38 @@
++diff --git a/grub-core/fs/cpio.c b/grub-core/fs/cpio.c
++index dab5f98988..a1aa666893 100644
++--- a/grub-core/fs/cpio.c
+++++ b/grub-core/fs/cpio.c
++@@ -38,11 +38,12 @@ struct head
++ } GRUB_PACKED;
++ 
++ static inline unsigned long long
++-read_number (const grub_uint16_t *arr, grub_size_t size)
+++read_number (const void *arr, grub_size_t size)
++ {
++   long long ret = 0;
+++  const grub_uint16_t *p = (const grub_uint16_t *)arr;
++   while (size--)
++-    ret = (ret << 16) | grub_le_to_cpu16 (*arr++);
+++    ret = (ret << 16) | grub_le_to_cpu16 (grub_get_unaligned16 (p++));
++   return ret;
++ }
++ 
++diff --git a/grub-core/fs/cpio_be.c b/grub-core/fs/cpio_be.c
++index 8465488921..93e75ec9bc 100644
++--- a/grub-core/fs/cpio_be.c
+++++ b/grub-core/fs/cpio_be.c
++@@ -38,11 +38,12 @@ struct head
++ } GRUB_PACKED;
++ 
++ static inline unsigned long long
++-read_number (const grub_uint16_t *arr, grub_size_t size)
+++read_number (const void *arr, grub_size_t size)
++ {
++   long long ret = 0;
+++  const grub_uint16_t *p = (const grub_uint16_t *)arr; 
++   while (size--)
++-    ret = (ret << 16) | grub_be_to_cpu16 (*arr++);
+++    ret = (ret << 16) | grub_be_to_cpu16 (grub_get_unaligned16 (p++));
++   return ret;
++ }
++
+diff --git a/meta/recipes-bsp/grub/files/chainloader.patch b/meta/recipes-bsp/grub/files/chainloader.patch
+new file mode 100644
+index 0000000000..4d2b753b15
+--- /dev/null
++++ b/meta/recipes-bsp/grub/files/chainloader.patch
+@@ -0,0 +1,36 @@
++diff --git a/./grub-core/loader/efi/chainloader.c b/home/sujm02/chainloader.c
++index adc8563..fff6567 100644
++--- a/grub-core/loader/efi/chainloader.c
+++++ b/grub-core/loader/efi/chainloader.c
++@@ -110,21 +110,27 @@ static void
++ copy_file_path (grub_efi_file_path_device_path_t *fp,
++ 		const char *str, grub_efi_uint16_t len)
++ {
++-  grub_efi_char16_t *p;
+++  grub_efi_char16_t *p, *path_name;
++   grub_efi_uint16_t size;
++ 
++   fp->header.type = GRUB_EFI_MEDIA_DEVICE_PATH_TYPE;
++   fp->header.subtype = GRUB_EFI_FILE_PATH_DEVICE_PATH_SUBTYPE;
++ 
++-  size = grub_utf8_to_utf16 (fp->path_name, len * GRUB_MAX_UTF16_PER_UTF8,
++-			     (const grub_uint8_t *) str, len, 0);
++-  for (p = fp->path_name; p < fp->path_name + size; p++)
+++  path_name = grub_malloc (len * GRUB_MAX_UTF16_PER_UTF8 * sizeof (*path_name));
+++  if (!path_name)
+++    return;
+++
+++  size = grub_utf8_to_utf16 (path_name, len * GRUB_MAX_UTF16_PER_UTF8,
+++                             (const grub_uint8_t *) str, len, 0);
+++  for (p = path_name; p < path_name + size; p++)
++     if (*p == '/')
++       *p = '\\';
++ 
+++  grub_memcpy (fp->path_name, path_name, size * sizeof (*fp->path_name));
++   /* File Path is NULL terminated */
++   fp->path_name[size++] = '\0';
++   fp->header.length = size * sizeof (grub_efi_char16_t) + sizeof (*fp);
+++  grub_free (path_name);
++ }
++ 
++ static grub_efi_device_path_t *
+diff --git a/meta/recipes-bsp/grub/files/efi.patch b/meta/recipes-bsp/grub/files/efi.patch
+new file mode 100644
+index 0000000000..10b76ed373
+--- /dev/null
++++ b/meta/recipes-bsp/grub/files/efi.patch
+@@ -0,0 +1,51 @@
++diff --git a/grub-core/kern/efi/efi.c b/home/sujm02/efi.c
++index d467785..5bd9b3f 100644
++--- a/grub-core/kern/efi/efi.c
+++++ b/grub-core/kern/efi/efi.c
++@@ -360,6 +360,7 @@ grub_efi_get_filename (grub_efi_device_path_t *dp0)
++ 	{
++ 	  grub_efi_file_path_device_path_t *fp;
++ 	  grub_efi_uint16_t len;
+++          grub_efi_char16_t *dup_name;
++ 
++ 	  *p++ = '/';
++ 
++@@ -370,7 +371,14 @@ grub_efi_get_filename (grub_efi_device_path_t *dp0)
++ 	  while (len > 0 && fp->path_name[len - 1] == 0)
++ 	    len--;
++ 
++-	  p = (char *) grub_utf16_to_utf8 ((unsigned char *) p, fp->path_name, len);
+++          dup_name = grub_malloc (len * sizeof (*dup_name));
+++          if (!dup_name)
+++            {
+++              grub_free (name);
+++              return NULL;
+++            }
+++          p = (char *) grub_utf16_to_utf8 ((unsigned char *) p, grub_memcpy (dup_name, fp->path_name, len * sizeof (*dup_name)), len);
+++          grub_free (dup_name);
++ 	}
++ 
++       dp = GRUB_EFI_NEXT_DEVICE_PATH (dp);
++@@ -800,9 +808,20 @@ grub_efi_print_device_path (grub_efi_device_path_t *dp)
++ 		fp = (grub_efi_file_path_device_path_t *) dp;
++ 		buf = grub_malloc ((len - 4) * 2 + 1);
++ 		if (buf)
++-		  *grub_utf16_to_utf8 (buf, fp->path_name,
+++                  {
+++                    grub_efi_char16_t *dup_name = grub_malloc (len - 4);
+++                    if (!dup_name)
+++                      {
+++                        grub_errno = GRUB_ERR_NONE;
+++                        grub_printf ("/File((null))");
+++                        grub_free (buf);
+++                        break;
+++                      }
+++                    *grub_utf16_to_utf8 (buf, grub_memcpy (dup_name, fp->path_name, len - 4),
++ 				       (len - 4) / sizeof (grub_efi_char16_t))
++-		    = '\0';
+++                      = '\0';
+++                    grub_free (dup_name);
+++                  }
++ 		else
++ 		  grub_errno = GRUB_ERR_NONE;
++ 		grub_printf ("/File(%s)", buf);
+diff --git a/meta/recipes-bsp/grub/files/gcc9.patch b/meta/recipes-bsp/grub/files/gcc9.patch
+new file mode 100644
+index 0000000000..d51cbe4a5b
+--- /dev/null
++++ b/meta/recipes-bsp/grub/files/gcc9.patch
+@@ -0,0 +1,114 @@
++diff --git a/grub-core/fs/hfsplus.c b/grub-core/fs/hfsplus.c
++index 21159e8..9075ac9 100644
++--- a/grub-2.02/grub-core/fs/hfsplus.c
+++++ b/grub-core/fs/hfsplus.c
++@@ -661,6 +661,7 @@ list_nodes (void *record, void *hook_arg)
++   char *filename;
++   int i;
++   struct grub_fshelp_node *node;
+++  grub_uint16_t *keyname;
++   struct grub_hfsplus_catfile *fileinfo;
++   enum grub_fshelp_filetype type = GRUB_FSHELP_UNKNOWN;
++   struct list_nodes_ctx *ctx = hook_arg;
++@@ -719,32 +720,34 @@ list_nodes (void *record, void *hook_arg)
++   if (! filename)
++     return 0;
++ 
+++  keyname = grub_malloc (grub_be_to_cpu16 (catkey->namelen) * sizeof (*keyname));
+++  if (!keyname)
+++    {
+++      grub_free (filename);
+++      return 0;
+++    }
+++
++   /* Make sure the byte order of the UTF16 string is correct.  */
++   for (i = 0; i < grub_be_to_cpu16 (catkey->namelen); i++)
++     {
++-      catkey->name[i] = grub_be_to_cpu16 (catkey->name[i]);
+++      keyname[i] = grub_be_to_cpu16 (catkey->name[i]);
++ 
++-      if (catkey->name[i] == '/')
++-	catkey->name[i] = ':';
+++      if (keyname[i] == '/')
+++	keyname[i] = ':';
++ 
++       /* If the name is obviously invalid, skip this node.  */
++-      if (catkey->name[i] == 0)
+++      if (keyname[i] == 0)
++ 	{
+++	  grub_free (keyname);
++ 	  grub_free (filename);
++ 	  return 0;
++ 	}
++     }
++ 
++-  *grub_utf16_to_utf8 ((grub_uint8_t *) filename, catkey->name,
+++  *grub_utf16_to_utf8 ((grub_uint8_t *) filename, keyname,
++ 		       grub_be_to_cpu16 (catkey->namelen)) = '\0';
++ 
++-  /* Restore the byte order to what it was previously.  */
++-  for (i = 0; i < grub_be_to_cpu16 (catkey->namelen); i++)
++-    {
++-      if (catkey->name[i] == ':')
++-	catkey->name[i] = '/';
++-      catkey->name[i] = grub_be_to_cpu16 (catkey->name[i]);
++-    }
+++  grub_free (keyname);
++ 
++   /* hfs+ is case insensitive.  */
++   if (! ctx->dir->data->case_sensitive)
++@@ -975,6 +978,7 @@ grub_hfsplus_label (grub_device_t device, char **label)
++   grub_disk_t disk = device->disk;
++   struct grub_hfsplus_catkey *catkey;
++   int i, label_len;
+++  grub_uint16_t *label_name;
++   struct grub_hfsplus_key_internal intern;
++   struct grub_hfsplus_btnode *node = NULL;
++   grub_disk_addr_t ptr = 0;
++@@ -1003,22 +1007,41 @@ grub_hfsplus_label (grub_device_t device, char **label)
++     grub_hfsplus_btree_recptr (&data->catalog_tree, node, ptr);
++ 
++   label_len = grub_be_to_cpu16 (catkey->namelen);
+++  label_name = grub_malloc (label_len * sizeof (*label_name));
+++  if (!label_name)
+++    {
+++      grub_free (node);
+++      grub_free (data);
+++      return grub_errno;
+++    }
+++
++   for (i = 0; i < label_len; i++)
++     {
++-      catkey->name[i] = grub_be_to_cpu16 (catkey->name[i]);
+++      label_name[i] = grub_be_to_cpu16 (catkey->name[i]);
++ 
++       /* If the name is obviously invalid, skip this node.  */
++-      if (catkey->name[i] == 0)
++-	return 0;
+++      if (label_name[i] == 0)
+++       {
+++         grub_free (label_name);
+++         grub_free (node);
+++         grub_free (data);
+++	 return 0;
+++       }
++     }
++ 
++   *label = grub_malloc (label_len * GRUB_MAX_UTF8_PER_UTF16 + 1);
++   if (! *label)
++-    return grub_errno;
+++    {
+++      grub_free (label_name);
+++      grub_free (node);
+++      grub_free (data);
+++      return grub_errno;
+++    }
++ 
++-  *grub_utf16_to_utf8 ((grub_uint8_t *) (*label), catkey->name,
+++  *grub_utf16_to_utf8 ((grub_uint8_t *) (*label), label_name,
++ 		       label_len) = '\0';
++ 
+++  grub_free (label_name);
++   grub_free (node);
++   grub_free (data);
++ 
+diff --git a/meta/recipes-bsp/grub/files/jfs.patch b/meta/recipes-bsp/grub/files/jfs.patch
+new file mode 100644
+index 0000000000..18a701cca0
+--- /dev/null
++++ b/meta/recipes-bsp/grub/files/jfs.patch
+@@ -0,0 +1,18 @@
++diff --git a/grub-core/fs/jfs.c b/home/sujm02/jfs.c
++index aab3e8c..1353a7e 100644
++--- a/grub-core/fs/jfs.c
+++++ b/grub-core/fs/jfs.c
++@@ -499,10 +499,11 @@ grub_jfs_closedir (struct grub_jfs_diropen *diro)
++ }
++ 
++ static void
++-le_to_cpu16_copy (grub_uint16_t *out, grub_uint16_t *in, grub_size_t len)
+++le_to_cpu16_copy (grub_uint16_t *out, const void *in, grub_size_t len)
++ {
+++  const grub_uint16_t *p = (const grub_uint16_t *)in;
++   while (len--)
++-    *out++ = grub_le_to_cpu16 (*in++);
+++    *out++ = grub_le_to_cpu16 (grub_get_unaligned16 (p++));
++ }
++ 
++ 
+diff --git a/meta/recipes-bsp/grub/files/usbtest.patch b/meta/recipes-bsp/grub/files/usbtest.patch
+new file mode 100644
+index 0000000000..5123200588
+--- /dev/null
++++ b/meta/recipes-bsp/grub/files/usbtest.patch
+@@ -0,0 +1,32 @@
++diff --git a/./luv/build/tmp/work/aarch64-oe-linux/grub-efi/2.02-r0/grub-2.02/grub-core/commands/usbtest.c b/home/sujm02/usbtest.c
++index 01cdca9..b42e746 100644
++--- a/grub-core/commands/usbtest.c
+++++ b/grub-core/commands/usbtest.c
++@@ -69,6 +69,7 @@ grub_usb_get_string (grub_usb_device_t dev, grub_uint8_t index, int langid,
++ {
++   struct grub_usb_desc_str descstr;
++   struct grub_usb_desc_str *descstrp;
+++  grub_uint16_t *strbuf;
++   grub_usb_err_t err;
++ 
++   /* Only get the length.  */
++@@ -101,8 +102,18 @@ grub_usb_get_string (grub_usb_device_t dev, grub_uint8_t index, int langid,
++       return GRUB_USB_ERR_INTERNAL;
++     }
++ 
++-  *grub_utf16_to_utf8 ((grub_uint8_t *) *string, descstrp->str,
+++  strbuf = grub_malloc (descstrp->length - sizeof (*descstrp));
+++  if (!strbuf)
+++    {
+++      grub_free (*string);
+++      grub_free (descstrp);
+++      return GRUB_USB_ERR_INTERNAL;
+++    }
+++
+++  grub_memcpy (strbuf, descstrp->str, descstrp->length - sizeof (*descstrp));
+++  *grub_utf16_to_utf8 ((grub_uint8_t *) *string, strbuf,
++ 		       descstrp->length / 2 - 1) = 0;
+++  grub_free (strbuf);
++   grub_free (descstrp);
++ 
++   return GRUB_USB_ERR_NONE;
+diff --git a/meta/recipes-bsp/grub/grub2.inc b/meta/recipes-bsp/grub/grub2.inc
+index a8f335e1f8..0d100dc089 100644
+--- a/meta/recipes-bsp/grub/grub2.inc
++++ b/meta/recipes-bsp/grub/grub2.inc
+@@ -19,6 +19,12 @@ SRC_URI = "https://ftp.gnu.org/gnu/grub/grub-${PV}.tar.gz \
+            file://0001-grub.d-10_linux.in-add-oe-s-kernel-name.patch \
+ 	   file://fix.build.with.gcc-7.patch \
+            file://gcc8.patch \
++           file://gcc9.patch \
++           file://jfs.patch \
++           file://chainloader.patch \
++           file://usbtest.patch \
++           file://efi.patch \
++           file://GRUB-fix-switch-fallthrough-cases-with-GCC9.patch \
+ "
+ SRC_URI[md5sum] = "1116d1f60c840e6dbd67abbc99acb45d"
+ SRC_URI[sha256sum] = "660ee136fbcee08858516ed4de2ad87068bfe1b6b8b37896ce3529ff054a726d"
+diff --git a/meta/recipes-connectivity/openssl/openssl_1.0.2p.bb b/meta/recipes-connectivity/openssl/openssl_1.0.2p.bb
+index 5d419772f9..01c04fcd65 100644
+--- a/meta/recipes-connectivity/openssl/openssl_1.0.2p.bb
++++ b/meta/recipes-connectivity/openssl/openssl_1.0.2p.bb
+@@ -61,7 +61,7 @@ UPSTREAM_CHECK_REGEX = "openssl-(?P<pver>1\.0.+)\.tar"
+ inherit pkgconfig siteinfo multilib_header ptest relative_symlinks manpages
+ 
+ PACKAGECONFIG ?= "cryptodev-linux"
+-PACKAGECONFIG_class-native = ""
++PACKAGECONFIG_class-native = "-fPIC"
+ PACKAGECONFIG_class-nativesdk = ""
+ 
+ PACKAGECONFIG[cryptodev-linux] = "-DHAVE_CRYPTODEV -DUSE_CRYPTODEV_DIGESTS,,cryptodev-linux"
+diff --git a/meta/recipes-core/glib-2.0/glib-2.0/Avoid_printing_null_strings.patch b/meta/recipes-core/glib-2.0/glib-2.0/Avoid_printing_null_strings.patch
+new file mode 100644
+index 0000000000..788a2b264a
+--- /dev/null
++++ b/meta/recipes-core/glib-2.0/glib-2.0/Avoid_printing_null_strings.patch
+@@ -0,0 +1,40 @@
++diff --git a/gio/gdbusauth.c b/gio/gdbusauth.c
++index e46e622600..e5c78ae13c 100644
++--- a/gio/gdbusauth.c
+++++ b/gio/gdbusauth.c
++@@ -1302,9 +1302,9 @@ _g_dbus_auth_run_server (GDBusAuth              *auth,
++                                                     &line_length,
++                                                     cancellable,
++                                                     error);
++-          debug_print ("SERVER: WaitingForBegin, read '%s'", line);
++           if (line == NULL)
++             goto out;
+++          debug_print ("SERVER: WaitingForBegin, read '%s'", line);
++           if (g_strcmp0 (line, "BEGIN") == 0)
++             {
++               /* YAY, done! */
++diff --git a/gio/gdbusmessage.c b/gio/gdbusmessage.c
++index e80794ff6a..d4d120c2df 100644
++--- a/gio/gdbusmessage.c
+++++ b/gio/gdbusmessage.c
++@@ -2697,7 +2697,6 @@ g_dbus_message_to_blob (GDBusMessage          *message,
++   if (message->body != NULL)
++     {
++       gchar *tupled_signature_str;
++-      tupled_signature_str = g_strdup_printf ("(%s)", signature_str);
++       if (signature == NULL)
++         {
++           g_set_error (error,
++@@ -2705,10 +2704,10 @@ g_dbus_message_to_blob (GDBusMessage          *message,
++                        G_IO_ERROR_INVALID_ARGUMENT,
++                        _("Message body has signature “%s” but there is no signature header"),
++                        signature_str);
++-          g_free (tupled_signature_str);
++           goto out;
++         }
++-      else if (g_strcmp0 (tupled_signature_str, g_variant_get_type_string (message->body)) != 0)
+++      tupled_signature_str = g_strdup_printf ("(%s)", signature_str);
+++      if (g_strcmp0 (tupled_signature_str, g_variant_get_type_string (message->body)) != 0)
++         {
++           g_set_error (error,
++                        G_IO_ERROR,
+diff --git a/meta/recipes-core/glib-2.0/glib-2.0_2.54.3.bb b/meta/recipes-core/glib-2.0/glib-2.0_2.54.3.bb
+index faf594569d..891dae89b9 100644
+--- a/meta/recipes-core/glib-2.0/glib-2.0_2.54.3.bb
++++ b/meta/recipes-core/glib-2.0/glib-2.0_2.54.3.bb
+@@ -10,6 +10,7 @@ SRC_URI = "${GNOME_MIRROR}/glib/${SHRT_VER}/glib-${PV}.tar.xz \
+            file://ptest-paths.patch \
+            file://uclibc_musl_translation.patch \
+            file://allow-run-media-sdX-drive-mount-if-username-root.patch \
++           file://Avoid_printing_null_strings.patch \
+            file://0001-Remove-the-warning-about-deprecated-paths-in-schemas.patch \
+            file://Enable-more-tests-while-cross-compiling.patch \
+            file://0001-Install-gio-querymodules-as-libexec_PROGRAM.patch \
+diff --git a/meta/recipes-core/glibc/cross-localedef-native_2.27.bb b/meta/recipes-core/glibc/cross-localedef-native_2.27.bb
+index 5e92eb71d5..5ac6eb56e7 100644
+--- a/meta/recipes-core/glibc/cross-localedef-native_2.27.bb
++++ b/meta/recipes-core/glibc/cross-localedef-native_2.27.bb
+@@ -44,7 +44,7 @@ SRCREV_FORMAT = "glibc_localedef"
+ S = "${WORKDIR}/git"
+ 
+ EXTRA_OECONF = "--with-glibc=${S}"
+-CFLAGS += "-fgnu89-inline -std=gnu99 -DIS_IN\(x\)='0'"
++CFLAGS += "-fgnu89-inline -std=gnu99 -DIS_IN\(x\)='0' -D_IO_fwide=fwide"
+ 
+ do_install() {
+ 	install -d ${D}${bindir}
+diff --git a/meta/recipes-devtools/bison/bison/110-glibc-change-work-around.patch b/meta/recipes-devtools/bison/bison/110-glibc-change-work-around.patch
+new file mode 100644
+index 0000000000..6481ec340d
+--- /dev/null
++++ b/meta/recipes-devtools/bison/bison/110-glibc-change-work-around.patch
+@@ -0,0 +1,33 @@
++Subject: Workaround change in glibc
++
++Temporary workaround to compile with glibc 2.28, which
++deprecated some constants
++
++Based on the workaround made for the tools/m4 package
++
++--- a/lib/stdio-impl.h
+++++ b/lib/stdio-impl.h
++@@ -18,6 +18,12 @@
++    the same implementation of stdio extension API, except that some fields
++    have different naming conventions, or their access requires some casts.  */
++ 
+++/* Glibc 2.28 made _IO_IN_BACKUP private.  For now, work around this
+++   problem by defining it ourselves.  FIXME: Do not rely on glibc
+++   internals.  */
+++#if !defined _IO_IN_BACKUP && defined _IO_EOF_SEEN
+++# define _IO_IN_BACKUP 0x100
+++#endif
++ 
++ /* BSD stdio derived implementations.  */
++ 
++--- a/lib/fseterr.c
+++++ b/lib/fseterr.c
++@@ -29,7 +29,7 @@
++   /* Most systems provide FILE as a struct and the necessary bitmask in
++      <stdio.h>, because they need it for implementing getc() and putc() as
++      fast macros.  */
++-#if defined _IO_ftrylockfile || __GNU_LIBRARY__ == 1 /* GNU libc, BeOS, Haiku, Linux libc5 */
+++#if defined _IO_EOF_SEEN || __GNU_LIBRARY__ == 1 /* GNU libc, BeOS, Haiku, Linux libc5 */
++   fp->_flags |= _IO_ERR_SEEN;
++ #elif defined __sferror || defined __DragonFly__ /* FreeBSD, NetBSD, OpenBSD, DragonFly, Mac OS X, Cygwin */
++   fp_->_flags |= __SERR;
+\ No newline at end of file
+diff --git a/meta/recipes-devtools/bison/bison_3.0.4.bb b/meta/recipes-devtools/bison/bison_3.0.4.bb
+index 58728f5021..7999bad884 100644
+--- a/meta/recipes-devtools/bison/bison_3.0.4.bb
++++ b/meta/recipes-devtools/bison/bison_3.0.4.bb
+@@ -13,6 +13,7 @@ SRC_URI = "${GNU_MIRROR}/bison/bison-${PV}.tar.xz \
+            file://0001-Unset-need_charset_alias-when-building-for-musl.patch \
+            file://dont-depend-on-help2man.patch.patch \
+            file://0001-src-local.mk-fix-parallel-issue.patch \
++           file://110-glibc-change-work-around.patch \
+            file://add-with-bisonlocaledir.patch \
+ "
+ 
+diff --git a/meta/recipes-devtools/elfutils/elfutils_0.170.bb b/meta/recipes-devtools/elfutils/elfutils_0.170.bb
+index 14ac22ee64..f8de5a238b 100644
+--- a/meta/recipes-devtools/elfutils/elfutils_0.170.bb
++++ b/meta/recipes-devtools/elfutils/elfutils_0.170.bb
+@@ -15,6 +15,7 @@ SRC_URI = "https://sourceware.org/elfutils/ftp/${PV}/${BP}.tar.bz2 \
+            file://0005-fix-a-stack-usage-warning.patch \
+            file://0006-Fix-build-on-aarch64-musl.patch \
+            file://0007-Fix-control-path-where-we-have-str-as-uninitialized-.patch \
++           file://Mark-fsize-and-msize-with-const-attribute.patch \
+            file://0001-libasm-may-link-with-libbz2-if-found.patch \
+            file://debian/hppa_backend.diff \
+            file://debian/arm_backend.diff \
+diff --git a/meta/recipes-devtools/elfutils/files/Mark-fsize-and-msize-with-const-attribute.patch b/meta/recipes-devtools/elfutils/files/Mark-fsize-and-msize-with-const-attribute.patch
+new file mode 100644
+index 0000000000..2e0346aa28
+--- /dev/null
++++ b/meta/recipes-devtools/elfutils/files/Mark-fsize-and-msize-with-const-attribute.patch
+@@ -0,0 +1,16 @@
++diff --git a/libelf/libelfP.h b/libelf/libelfP.h
++index 7ee6625a45..4007301b85 100644
++--- a/libelf/libelfP.h
+++++ b/libelf/libelfP.h
++@@ -463,9 +463,9 @@ extern Elf_Type __libelf_data_type (Elf *elf, int sh_type) internal_function;
++    These functions cannot be marked internal since they are aliases
++    of the export elfXX_fsize functions.*/
++ extern size_t __elf32_msize (Elf_Type __type, size_t __count,
++-			     unsigned int __version);
+++			     unsigned int __version) __const_attribute__;
++ extern size_t __elf64_msize (Elf_Type __type, size_t __count,
++-			     unsigned int __version);
+++			     unsigned int __version) __const_attribute__;
++ 
++ 
++ /* Create Elf descriptor from memory image.  */
+diff --git a/meta/recipes-devtools/m4/m4-1.4.18.inc b/meta/recipes-devtools/m4/m4-1.4.18.inc
+index ee8bee446b..a6cef6f328 100644
+--- a/meta/recipes-devtools/m4/m4-1.4.18.inc
++++ b/meta/recipes-devtools/m4/m4-1.4.18.inc
+@@ -9,6 +9,7 @@ inherit autotools texinfo
+ SRC_URI = "${GNU_MIRROR}/m4/m4-${PV}.tar.gz \
+            file://ac_config_links.patch \
+            file://remove-gets.patch \
++           file://m4-1.4.18-glibc-change-work-around.patch \
+            "
+ 
+ SRC_URI_append_class-target = " file://0001-Unset-need_charset_alias-when-building-for-musl.patch"
+diff --git a/meta/recipes-devtools/m4/m4/m4-1.4.18-glibc-change-work-around.patch b/meta/recipes-devtools/m4/m4/m4-1.4.18-glibc-change-work-around.patch
+new file mode 100644
+index 0000000000..72e7ae2080
+--- /dev/null
++++ b/meta/recipes-devtools/m4/m4/m4-1.4.18-glibc-change-work-around.patch
+@@ -0,0 +1,129 @@
++update for glibc libio.h removal in 2.28+
++
++see
++https://src.fedoraproject.org/rpms/m4/c/814d592134fad36df757f9a61422d164ea2c6c9b?branch=master
++
++Upstream-Status: Pending
++Signed-off-by: Khem Raj <raj.khem@gmail.com>
++Index: m4-1.4.18/lib/fflush.c
++===================================================================
++--- m4-1.4.18.orig/lib/fflush.c
+++++ m4-1.4.18/lib/fflush.c
++@@ -33,7 +33,7 @@
++ #undef fflush
++ 
++ 
++-#if defined _IO_ftrylockfile || __GNU_LIBRARY__ == 1 /* GNU libc, BeOS, Haiku, Linux libc5 */
+++#if defined _IO_EOF_SEEN || __GNU_LIBRARY__ == 1 /* GNU libc, BeOS, Haiku, Linux libc5 */
++ 
++ /* Clear the stream's ungetc buffer, preserving the value of ftello (fp).  */
++ static void
++@@ -72,7 +72,7 @@ clear_ungetc_buffer (FILE *fp)
++ 
++ #endif
++ 
++-#if ! (defined _IO_ftrylockfile || __GNU_LIBRARY__ == 1 /* GNU libc, BeOS, Haiku, Linux libc5 */)
+++#if ! (defined _IO_EOF_SEEN || __GNU_LIBRARY__ == 1 /* GNU libc, BeOS, Haiku, Linux libc5 */)
++ 
++ # if (defined __sferror || defined __DragonFly__ || defined __ANDROID__) && defined __SNPT
++ /* FreeBSD, NetBSD, OpenBSD, DragonFly, Mac OS X, Cygwin, Android */
++@@ -148,7 +148,7 @@ rpl_fflush (FILE *stream)
++   if (stream == NULL || ! freading (stream))
++     return fflush (stream);
++ 
++-#if defined _IO_ftrylockfile || __GNU_LIBRARY__ == 1 /* GNU libc, BeOS, Haiku, Linux libc5 */
+++#if defined _IO_EOF_SEEN || __GNU_LIBRARY__ == 1 /* GNU libc, BeOS, Haiku, Linux libc5 */
++ 
++   clear_ungetc_buffer_preserving_position (stream);
++ 
++Index: m4-1.4.18/lib/fpending.c
++===================================================================
++--- m4-1.4.18.orig/lib/fpending.c
+++++ m4-1.4.18/lib/fpending.c
++@@ -32,7 +32,7 @@ __fpending (FILE *fp)
++   /* Most systems provide FILE as a struct and the necessary bitmask in
++      <stdio.h>, because they need it for implementing getc() and putc() as
++      fast macros.  */
++-#if defined _IO_ftrylockfile || __GNU_LIBRARY__ == 1 /* GNU libc, BeOS, Haiku, Linux libc5 */
+++#if defined _IO_EOF_SEEN || __GNU_LIBRARY__ == 1 /* GNU libc, BeOS, Haiku, Linux libc5 */
++   return fp->_IO_write_ptr - fp->_IO_write_base;
++ #elif defined __sferror || defined __DragonFly__ || defined __ANDROID__
++   /* FreeBSD, NetBSD, OpenBSD, DragonFly, Mac OS X, Cygwin, Android */
++Index: m4-1.4.18/lib/fpurge.c
++===================================================================
++--- m4-1.4.18.orig/lib/fpurge.c
+++++ m4-1.4.18/lib/fpurge.c
++@@ -62,7 +62,7 @@ fpurge (FILE *fp)
++   /* Most systems provide FILE as a struct and the necessary bitmask in
++      <stdio.h>, because they need it for implementing getc() and putc() as
++      fast macros.  */
++-# if defined _IO_ftrylockfile || __GNU_LIBRARY__ == 1 /* GNU libc, BeOS, Haiku, Linux libc5 */
+++# if defined _IO_EOF_SEEN || __GNU_LIBRARY__ == 1 /* GNU libc, BeOS, Haiku, Linux libc5 */
++   fp->_IO_read_end = fp->_IO_read_ptr;
++   fp->_IO_write_ptr = fp->_IO_write_base;
++   /* Avoid memory leak when there is an active ungetc buffer.  */
++Index: m4-1.4.18/lib/freadahead.c
++===================================================================
++--- m4-1.4.18.orig/lib/freadahead.c
+++++ m4-1.4.18/lib/freadahead.c
++@@ -25,7 +25,7 @@
++ size_t
++ freadahead (FILE *fp)
++ {
++-#if defined _IO_ftrylockfile || __GNU_LIBRARY__ == 1 /* GNU libc, BeOS, Haiku, Linux libc5 */
+++#if defined _IO_EOF_SEEN || __GNU_LIBRARY__ == 1 /* GNU libc, BeOS, Haiku, Linux libc5 */
++   if (fp->_IO_write_ptr > fp->_IO_write_base)
++     return 0;
++   return (fp->_IO_read_end - fp->_IO_read_ptr)
++Index: m4-1.4.18/lib/freading.c
++===================================================================
++--- m4-1.4.18.orig/lib/freading.c
+++++ m4-1.4.18/lib/freading.c
++@@ -31,7 +31,7 @@ freading (FILE *fp)
++   /* Most systems provide FILE as a struct and the necessary bitmask in
++      <stdio.h>, because they need it for implementing getc() and putc() as
++      fast macros.  */
++-# if defined _IO_ftrylockfile || __GNU_LIBRARY__ == 1 /* GNU libc, BeOS, Haiku, Linux libc5 */
+++# if defined _IO_EOF_SEEN || __GNU_LIBRARY__ == 1 /* GNU libc, BeOS, Haiku, Linux libc5 */
++   return ((fp->_flags & _IO_NO_WRITES) != 0
++           || ((fp->_flags & (_IO_NO_READS | _IO_CURRENTLY_PUTTING)) == 0
++               && fp->_IO_read_base != NULL));
++Index: m4-1.4.18/lib/fseeko.c
++===================================================================
++--- m4-1.4.18.orig/lib/fseeko.c
+++++ m4-1.4.18/lib/fseeko.c
++@@ -47,7 +47,7 @@ fseeko (FILE *fp, off_t offset, int when
++ #endif
++ 
++   /* These tests are based on fpurge.c.  */
++-#if defined _IO_ftrylockfile || __GNU_LIBRARY__ == 1 /* GNU libc, BeOS, Haiku, Linux libc5 */
+++#if defined _IO_EOF_SEEN || __GNU_LIBRARY__ == 1 /* GNU libc, BeOS, Haiku, Linux libc5 */
++   if (fp->_IO_read_end == fp->_IO_read_ptr
++       && fp->_IO_write_ptr == fp->_IO_write_base
++       && fp->_IO_save_base == NULL)
++@@ -123,7 +123,7 @@ fseeko (FILE *fp, off_t offset, int when
++           return -1;
++         }
++ 
++-#if defined _IO_ftrylockfile || __GNU_LIBRARY__ == 1 /* GNU libc, BeOS, Haiku, Linux libc5 */
+++#if defined _IO_EOF_SEEN || __GNU_LIBRARY__ == 1 /* GNU libc, BeOS, Haiku, Linux libc5 */
++       fp->_flags &= ~_IO_EOF_SEEN;
++       fp->_offset = pos;
++ #elif defined __sferror || defined __DragonFly__ || defined __ANDROID__
++Index: m4-1.4.18/lib/stdio-impl.h
++===================================================================
++--- m4-1.4.18.orig/lib/stdio-impl.h
+++++ m4-1.4.18/lib/stdio-impl.h
++@@ -18,6 +18,12 @@
++    the same implementation of stdio extension API, except that some fields
++    have different naming conventions, or their access requires some casts.  */
++ 
+++/* Glibc 2.28 made _IO_IN_BACKUP private.  For now, work around this
+++   problem by defining it ourselves.  FIXME: Do not rely on glibc
+++   internals.  */
+++#if !defined _IO_IN_BACKUP && defined _IO_EOF_SEEN
+++# define _IO_IN_BACKUP 0x100
+++#endif
++ 
++ /* BSD stdio derived implementations.  */
++ 
+diff --git a/meta/recipes-devtools/qemu/qemu/0009-linux-user-rename-gettid-to-sysgettid.patch b/meta/recipes-devtools/qemu/qemu/0009-linux-user-rename-gettid-to-sysgettid.patch
+new file mode 100644
+index 0000000000..df6dcce466
+--- /dev/null
++++ b/meta/recipes-devtools/qemu/qemu/0009-linux-user-rename-gettid-to-sysgettid.patch
+@@ -0,0 +1,62 @@
++diff --git a/linux-user/syscall.c b/linux-user/syscall.c
++index 11c9116c4a..7d52355fe7 100644
++--- a/linux-user/syscall.c
+++++ b/linux-user/syscall.c
++@@ -41,6 +41,7 @@ int __clone2(int (*fn)(void *), void *child_stack_base,
++              size_t stack_size, int flags, void *arg, ...);
++ #endif
++ #include <sys/socket.h>
+++#include <linux/sockios.h>
++ #include <sys/un.h>
++ #include <sys/uio.h>
++ #include <poll.h>
++@@ -256,8 +257,9 @@ static type name (type1 arg1,type2 arg2,type3 arg3,type4 arg4,type5 arg5,	\
++ #define TARGET_NR__llseek TARGET_NR_llseek
++ #endif
++ 
+++#define __NR_sys_gettid __NR_gettid
++ #ifdef __NR_gettid
++-_syscall0(int, gettid)
+++_syscall0(int, sys_gettid)
++ #else
++ /* This is a replacement for the host gettid() and must return a host
++    errno. */
++@@ -6246,7 +6248,7 @@ static void *clone_func(void *arg)
++     cpu = ENV_GET_CPU(env);
++     thread_cpu = cpu;
++     ts = (TaskState *)cpu->opaque;
++-    info->tid = gettid();
+++    info->tid = sys_gettid();
++     task_settid(ts);
++     if (info->child_tidptr)
++         put_user_u32(info->tid, info->child_tidptr);
++@@ -6390,9 +6392,9 @@ static int do_fork(CPUArchState *env, unsigned int flags, abi_ulong newsp,
++                mapping.  We can't repeat the spinlock hack used above because
++                the child process gets its own copy of the lock.  */
++             if (flags & CLONE_CHILD_SETTID)
++-                put_user_u32(gettid(), child_tidptr);
+++                put_user_u32(sys_gettid(), child_tidptr);
++             if (flags & CLONE_PARENT_SETTID)
++-                put_user_u32(gettid(), parent_tidptr);
+++                put_user_u32(sys_gettid(), parent_tidptr);
++             ts = (TaskState *)cpu->opaque;
++             if (flags & CLONE_SETTLS)
++                 cpu_set_tls (env, newtls);
++@@ -8182,7 +8184,7 @@ abi_long do_syscall(void *cpu_env, int num, abi_long arg1,
++             time_t host_time;
++             if (get_user_sal(host_time, arg1))
++                 goto efault;
++-            ret = get_errno(stime(&host_time));
+++            ret = get_errno(clock_settime(CLOCK_REALTIME, &host_time));
++         }
++         break;
++ #endif
++@@ -11454,7 +11456,7 @@ abi_long do_syscall(void *cpu_env, int num, abi_long arg1,
++         break;
++ #endif
++     case TARGET_NR_gettid:
++-        ret = get_errno(gettid());
+++        ret = get_errno(sys_gettid());
++         break;
++ #ifdef TARGET_NR_readahead
++     case TARGET_NR_readahead:
+diff --git a/meta/recipes-devtools/qemu/qemu_2.11.1.bb b/meta/recipes-devtools/qemu/qemu_2.11.1.bb
+index a447dc7196..054a012ebe 100644
+--- a/meta/recipes-devtools/qemu/qemu_2.11.1.bb
++++ b/meta/recipes-devtools/qemu/qemu_2.11.1.bb
+@@ -12,6 +12,7 @@ SRC_URI = "http://wiki.qemu-project.org/download/${BP}.tar.bz2 \
+            file://0001-sdl.c-allow-user-to-disable-pointer-grabs.patch \
+            file://0002-qemu-Add-missing-wacom-HID-descriptor.patch \
+            file://0003-Add-subpackage-ptest-which-runs-all-unit-test-cases-.patch \
++           file://0009-linux-user-rename-gettid-to-sysgettid.patch \
+            file://run-ptest \
+            file://0004-qemu-Add-addition-environment-space-to-boot-loader-q.patch \
+            file://0005-qemu-disable-Valgrind.patch \
+diff --git a/meta/recipes-support/libgpg-error/libgpg-error/gawk5-suport.patch b/meta/recipes-support/libgpg-error/libgpg-error/gawk5-suport.patch
+new file mode 100644
+index 0000000000..b5338400cb
+--- /dev/null
++++ b/meta/recipes-support/libgpg-error/libgpg-error/gawk5-suport.patch
+@@ -0,0 +1,127 @@
++diff --git a/lang/cl/mkerrcodes.awk b/lang/cl/mkerrcodes.awk
++index ae290435fc..9a1fc18c55 100644
++--- a/lang/cl/mkerrcodes.awk
+++++ b/lang/cl/mkerrcodes.awk
++@@ -122,7 +122,7 @@ header {
++ }
++ 
++ !header {
++-  sub (/\#.+/, "");
+++  sub (/#.+/, "");
++   sub (/[ 	]+$/, ""); # Strip trailing space and tab characters.
++ 
++   if (/^$/)
++diff --git a/src/Makefile.am b/src/Makefile.am
++index 4714d22672..bd0bb6fb2b 100644
++--- a/src/Makefile.am
+++++ b/src/Makefile.am
++@@ -268,7 +268,7 @@ code-from-errno.h: mkerrcodes Makefile
++ 
++ errnos-sym.h: Makefile mkstrtable.awk errnos.in
++ 	$(AWK) -f $(srcdir)/mkstrtable.awk -v textidx=2 -v nogettext=1 \
++-		-v prefix=GPG_ERR_ -v namespace=errnos_ \
+++		-v prefix=GPG_ERR_ -v pkg_namespace=errnos_ \
++ 		$(srcdir)/errnos.in >$@
++ 
++ 
++diff --git a/src/mkerrcodes.awk b/src/mkerrcodes.awk
++index 46d436c6b0..e9c857c62f 100644
++--- a/src/mkerrcodes.awk
+++++ b/src/mkerrcodes.awk
++@@ -85,7 +85,7 @@ header {
++ }
++ 
++ !header {
++-  sub (/\#.+/, "");
+++  sub (/#.+/, "");
++   sub (/[ 	]+$/, ""); # Strip trailing space and tab characters.
++ 
++   if (/^$/)
++diff --git a/src/mkerrcodes1.awk b/src/mkerrcodes1.awk
++index a771a73602..4578e290ca 100644
++--- a/src/mkerrcodes1.awk
+++++ b/src/mkerrcodes1.awk
++@@ -81,7 +81,7 @@ header {
++ }
++ 
++ !header {
++-  sub (/\#.+/, "");
+++  sub (/#.+/, "");
++   sub (/[ 	]+$/, ""); # Strip trailing space and tab characters.
++ 
++   if (/^$/)
++diff --git a/src/mkerrcodes2.awk b/src/mkerrcodes2.awk
++index ea5850341c..188f7a48e3 100644
++--- a/src/mkerrcodes2.awk
+++++ b/src/mkerrcodes2.awk
++@@ -91,7 +91,7 @@ header {
++ }
++ 
++ !header {
++-  sub (/\#.+/, "");
+++  sub (/#.+/, "");
++   sub (/[ 	]+$/, ""); # Strip trailing space and tab characters.
++ 
++   if (/^$/)
++diff --git a/src/mkerrnos.awk b/src/mkerrnos.awk
++index f79df6613a..15b1aad225 100644
++--- a/src/mkerrnos.awk
+++++ b/src/mkerrnos.awk
++@@ -83,7 +83,7 @@ header {
++ }
++ 
++ !header {
++-  sub (/\#.+/, "");
+++  sub (/#.+/, "");
++   sub (/[ 	]+$/, ""); # Strip trailing space and tab characters.
++ 
++   if (/^$/)
++diff --git a/src/mkstrtable.awk b/src/mkstrtable.awk
++index c9de9c1e41..285e45f24c 100644
++--- a/src/mkstrtable.awk
+++++ b/src/mkstrtable.awk
++@@ -77,7 +77,7 @@
++ #
++ # The variable prefix can be used to prepend a string to each message.
++ #
++-# The variable namespace can be used to prepend a string to each
+++# The variable pkg_namespace can be used to prepend a string to each
++ # variable and macro name.
++ 
++ BEGIN {
++@@ -102,7 +102,7 @@ header {
++       print "/* The purpose of this complex string table is to produce";
++       print "   optimal code with a minimum of relocations.  */";
++       print "";
++-      print "static const char " namespace "msgstr[] = ";
+++      print "static const char " pkg_namespace "msgstr[] = ";
++       header = 0;
++     }
++   else
++@@ -110,7 +110,7 @@ header {
++ }
++ 
++ !header {
++-  sub (/\#.+/, "");
+++  sub (/#.+/, "");
++   sub (/[ 	]+$/, ""); # Strip trailing space and tab characters.
++ 
++   if (/^$/)
++@@ -150,7 +150,7 @@ END {
++   else
++     print "  gettext_noop (\"" last_msgstr "\");";
++   print "";
++-  print "static const int " namespace "msgidx[] =";
+++  print "static const int " pkg_namespace "msgidx[] =";
++   print "  {";
++   for (i = 0; i < coded_msgs; i++)
++     print "    " pos[i] ",";
++@@ -158,7 +158,7 @@ END {
++   print "  };";
++   print "";
++   print "static GPG_ERR_INLINE int";
++-  print namespace "msgidxof (int code)";
+++  print pkg_namespace "msgidxof (int code)";
++   print "{";
++   print "  return (0 ? 0";
++ 
+diff --git a/meta/recipes-support/libgpg-error/libgpg-error_1.27.bb b/meta/recipes-support/libgpg-error/libgpg-error_1.27.bb
+index b74f079f5d..79310f3b73 100644
+--- a/meta/recipes-support/libgpg-error/libgpg-error_1.27.bb
++++ b/meta/recipes-support/libgpg-error/libgpg-error_1.27.bb
+@@ -14,6 +14,7 @@ SECTION = "libs"
+ UPSTREAM_CHECK_URI = "https://gnupg.org/download/index.html"
+ SRC_URI = "${GNUPG_MIRROR}/libgpg-error/libgpg-error-${PV}.tar.bz2 \
+            file://pkgconfig.patch \
++           file://gawk5-suport.patch \
+ 	  "
+ 
+ SRC_URI[md5sum] = "5217ef3e76a7275a2a3b569a12ddc989"
+-- 
+2.25.1
+

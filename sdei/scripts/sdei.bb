@@ -41,6 +41,15 @@ do_configure () {
     git clone https://github.com/tianocore/edk2
     cd edk2
     git checkout UDK2018
+    # Checking for latest tool version
+    VERSION=`/usr/bin/lsb_release -d | awk '{ print $3 }' | cut -c1-5`
+    MAJOR_VERSION=`echo $VERSION | awk -F '.' '{print $1}'`
+    MINOR_VERSION=`echo $VERSION | awk -F '.' '{print $2}'`
+    if [ $MAJOR_VERSION -ge 20 ] && [ $MINOR_VERSION -ge 04 ]
+    then
+        echo "do_configure: Adding additional LUVOS patch."
+        git apply ${TOPDIR}/../../luvos/patches/Basetools_change_warning.patch
+    fi
     cd ..
 
     cp -r ${THISDIR}/files/sdei edk2/AppPkg/Applications/sdei-acs
