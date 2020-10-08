@@ -16,6 +16,9 @@
 LUVDIR=$PWD/luv
 LUVDIRTEMP=$PWD/luvtemp
 TOPDIR=$PWD
+VERSION=`/usr/bin/lsb_release -d | awk '{ print $3 }' | cut -c1-5`
+MAJOR_VERSION=`echo $VERSION | awk -F '.' '{print $1}'`
+MINOR_VERSION=`echo $VERSION | awk -F '.' '{print $2}'`
 
 CLONEDIR=$LUVDIR;
 if [ -d $TOPDIR/luv ]; then
@@ -26,6 +29,11 @@ git clone https://github.com/intel/luv-yocto.git $CLONEDIR
 cd $CLONEDIR
 git checkout -b v2.3 v2.3
 git am $TOPDIR/luvos/patches/luvos.patch
+if [ $MAJOR_VERSION -ge 20 ] && [ $MINOR_VERSION -ge 04 ];then
+   echo "Adding luvos additional patch"
+   git am --ignore-whitespace $TOPDIR/luvos/patches/luvos_additional.patch
+fi
+
 cd $TOPDIR
 
 if [ -d  $LUVDIRTEMP ]; then

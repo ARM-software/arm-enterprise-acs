@@ -32,8 +32,7 @@ These tests are split between UEFI and Linux (supported by corresponding kernel 
 
 ### Prerequisites
 Before starting the ACS build, ensure that the following requirements are met:
- - Ubuntu 18.04 LTS with at least 64GB of free disk space.
- - ACS build on Ubuntu 20.04 is currently not supported.
+ - Ubuntu 18.04 LTS with at least 64GB of free disk space (build on Ubuntu 20.04 is also supported from this version).
  - Must use Bash shell.
  - Build is supported on x86 or aarch64 machines.
 

@@ -45,6 +45,18 @@ do_configure () {
         cd ${WORKDIR}
     fi
 
+    # Checking for latest tool version
+    VERSION=`/usr/bin/lsb_release -d | awk '{ print $3 }' | cut -c1-5`
+    MAJOR_VERSION=`echo $VERSION | awk -F '.' '{print $1}'`
+    MINOR_VERSION=`echo $VERSION | awk -F '.' '{print $2}'`
+    if [ $MAJOR_VERSION -ge 20 ] && [ $MINOR_VERSION -ge 04 ]
+    then
+        cd ${WORKDIR}/edk2
+        echo "do_configure: Adding additional LUVOS patch."
+        git apply ${TOPDIR}/../../luvos/patches/Basetools_change_warning.patch
+        cd ${WORKDIR}
+    fi
+
     if [ ! -d ${WORKDIR}/edk2-libc ]
     then
         echo "do_configure: Cloning EDK2 LibC repository."
