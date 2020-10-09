@@ -22,11 +22,11 @@ rm -rf $SRCDIR
 
 git clone https://github.com/ARM-software/sbsa-acs.git src
 cd src
-git checkout -b v20.08_REL2.5 v20.08_REL2.5
+git checkout -b v20.10_REL3.0 v20.10_REL3.0
 cd ..
 git clone git://linux-arm.org/linux-acs.git
 cd linux-acs
-git checkout -b v20.08_REL2.5 v20.08_REL2.5
+git checkout -b v20.10_REL3.0 v20.10_REL3.0
 cd ..
 
 mv linux-acs/sbsa-acs-drv/files/platform/pal_linux $SRCDIR/platform/

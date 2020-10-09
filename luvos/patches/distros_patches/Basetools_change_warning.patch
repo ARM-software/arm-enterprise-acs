@@ -1,0 +1,25 @@
+diff --git a/BaseTools/Source/C/Makefiles/header.makefile b/BaseTools/Source/C/Makefiles/header.makefile
+index 1c105ee7d4..f3f3f9fabc 100644
+--- a/BaseTools/Source/C/Makefiles/header.makefile
++++ b/BaseTools/Source/C/Makefiles/header.makefile
+@@ -77,17 +77,17 @@ BUILD_OPTFLAGS = -O2 $(EXTRA_OPTFLAGS)
+ ifeq ($(DARWIN),Darwin)
+ # assume clang or clang compatible flags on OS X
+ BUILD_CFLAGS = -MD -fshort-wchar -fno-strict-aliasing -Wall -Werror \
+--Wno-deprecated-declarations -Wno-self-assign -Wno-unused-result -nostdlib -g
++-Wno-deprecated-declarations  -Wno-stringop-truncation -Wno-stringop-overflow  -Wno-self-assign -Wno-unused-result -nostdlib -g
+ else
+ ifeq ($(CXX), llvm)
+ BUILD_CFLAGS = -MD -fshort-wchar -fno-strict-aliasing -fwrapv \
+ -fno-delete-null-pointer-checks -Wall -Werror \
+--Wno-deprecated-declarations -Wno-self-assign \
++-Wno-deprecated-declarations -Wno-stringop-truncation -Wno-stringop-overflow -Wno-self-assign \
+ -Wno-unused-result -nostdlib -g
+ else
+ BUILD_CFLAGS = -MD -fshort-wchar -fno-strict-aliasing -fwrapv \
+ -fno-delete-null-pointer-checks -Wall -Werror \
+--Wno-deprecated-declarations -Wno-stringop-truncation -Wno-restrict \
++-Wno-deprecated-declarations -Wno-stringop-truncation -Wno-stringop-overflow -Wno-restrict \
+ -Wno-unused-result -nostdlib -g
+ endif
+ endif
