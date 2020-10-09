@@ -23,7 +23,7 @@ Running of SBBR SCT tests is now automated. You can choose to skip the automated
 
 - Shell>Press any key to stop the EFI SCT running
 
-To run SCT manually, Follow these steps: 
+To run SCT manually, Follow these steps:
 
 Enter the following commands to install SCT.
 
@@ -61,8 +61,8 @@ Logs are stored into the "luv-results" partition, which can be viewed on any mac
 ## Debug Information
 SBBR source directories can be found at the following paths:
 
-- SBBR FWTS source at /path/to/arm-enterprise-acs/luv/build/tmp/work/qemuarm64-oe-linux/fwts/V18.02.00+gitAUTOINC+f0afecfc70-r0/git/
-- SBBR SCT source at /path/to/arm-enterprise-acs/luv/build/tmp/work/aarch64-oe-linux/sbbr/v1.0+gitAUTOINC+1ff61591f1-r0/git/
+- SBBR FWTS source at /path/to/arm-enterprise-acs/luv/build/tmp/work/qemuarm64-oe-linux/fwts/V20.07.00+gitAUTOINC+fc05873414-r0/git/
+- SBBR SCT source at /path/to/arm-enterprise-acs/luv/build/tmp/work/aarch64-oe-linux/sbbr/v1.2+gitAUTOINC+ed8a7477d4-r0/git/
 
 To compile and test changes in the above source code, follow these steps:
 - cd /path/to/arm-enterprise-acs/luv

@@ -24,6 +24,8 @@ else
 fi
 echo "GCC49_AARCH64_PREFIX=$GCC49_AARCH64_PREFIX"
 
+echo "do_compile: Initializing EDK2 LibC package."
+export PACKAGES_PATH=${1}/edk2-libc
 
 echo "do_compile: Initializing EDK2 for building."
 set --
@@ -33,4 +35,4 @@ echo "do_compile: Building BaseTools."
 make -C BaseTools/Source/C
 
 echo "do_compile: Building SBSA."
-source AppPkg/Applications/sbsa-acs/tools/scripts/avsbuild.sh NIST
+source ShellPkg/Application/sbsa-acs/tools/scripts/avsbuild.sh NIST

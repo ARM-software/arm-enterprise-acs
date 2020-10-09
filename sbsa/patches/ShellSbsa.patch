@@ -1,8 +1,8 @@
 diff --git a/ShellPkg/Application/Shell/Shell.c b/ShellPkg/Application/Shell/Shell.c
-index 577e17311b..ec63cb729c 100644
+index a556307097..e580f13e7c 100644
 --- a/ShellPkg/Application/Shell/Shell.c
 +++ b/ShellPkg/Application/Shell/Shell.c
-@@ -315,6 +315,41 @@ InternalEfiShellStartCtrlSMonitor(
+@@ -310,6 +310,41 @@ InternalEfiShellStartCtrlSMonitor(
  }
  
  
@@ -44,7 +44,7 @@ index 577e17311b..ec63cb729c 100644
  
  /**
    The entry point for the application.
-@@ -603,28 +638,10 @@ UefiMain (
+@@ -598,28 +633,10 @@ UefiMain (
          //
          // begin the UI waiting loop
          //
@@ -78,24 +78,23 @@ index 577e17311b..ec63cb729c 100644
        if (OldConIn != NULL && ConInHandle != NULL) {
          CloseSimpleTextInOnFile (gST->ConIn);
 diff --git a/ShellPkg/Library/UefiShellLevel3CommandsLib/UefiShellLevel3CommandsLib.c b/ShellPkg/Library/UefiShellLevel3CommandsLib/UefiShellLevel3CommandsLib.c
-index 448f7234dd..df1ca2d98d 100644
+index ce4afd117a..9afaf1c072 100644
 --- a/ShellPkg/Library/UefiShellLevel3CommandsLib/UefiShellLevel3CommandsLib.c
 +++ b/ShellPkg/Library/UefiShellLevel3CommandsLib/UefiShellLevel3CommandsLib.c
-@@ -16,6 +16,13 @@
+@@ -10,6 +10,12 @@
  
  CONST CHAR16 gShellLevel3FileName[] = L"ShellCommands";
- EFI_HANDLE gShellLevel3HiiHandle = NULL;
+ EFI_HII_HANDLE gShellLevel3HiiHandle = NULL;
 +INTN
 +EFIAPI
 +ShellAppMain (
 +  IN UINTN Argc,
 +  IN CHAR16 **Argv
 +  );
-+
  
  /**
    return the filename to get help from is not using HII.
-@@ -75,7 +82,7 @@ ShellLevel3CommandsLibConstructor (
+@@ -69,7 +75,7 @@ ShellLevel3CommandsLibConstructor (
    ShellCommandRegisterCommandName(L"pause",   ShellCommandRunPause  , ShellCommandGetManFileNameLevel3, 3, L"", TRUE , gShellLevel3HiiHandle, STRING_TOKEN(STR_GET_HELP_PAUSE));
    ShellCommandRegisterCommandName(L"getmtc",  ShellCommandRunGetMtc , ShellCommandGetManFileNameLevel3, 3, L"", TRUE , gShellLevel3HiiHandle, STRING_TOKEN(STR_GET_HELP_GETMTC));
    ShellCommandRegisterCommandName(L"help",    ShellCommandRunHelp   , ShellCommandGetManFileNameLevel3, 3, L"", TRUE , gShellLevel3HiiHandle, STRING_TOKEN(STR_GET_HELP_HELP));
@@ -105,10 +104,10 @@ index 448f7234dd..df1ca2d98d 100644
  
    return (EFI_SUCCESS);
 diff --git a/ShellPkg/Library/UefiShellLevel3CommandsLib/UefiShellLevel3CommandsLib.h b/ShellPkg/Library/UefiShellLevel3CommandsLib/UefiShellLevel3CommandsLib.h
-index be88dd5f28..4ff5dafc66 100644
+index c095b9275e..d47fcda58d 100644
 --- a/ShellPkg/Library/UefiShellLevel3CommandsLib/UefiShellLevel3CommandsLib.h
 +++ b/ShellPkg/Library/UefiShellLevel3CommandsLib/UefiShellLevel3CommandsLib.h
-@@ -157,5 +157,13 @@ ShellCommandRunHelp (
+@@ -151,5 +151,13 @@ ShellCommandRunHelp (
    IN EFI_SYSTEM_TABLE  *SystemTable
    );
  
@@ -123,10 +122,10 @@ index be88dd5f28..4ff5dafc66 100644
  #endif
  
 diff --git a/ShellPkg/Library/UefiShellLevel3CommandsLib/UefiShellLevel3CommandsLib.inf b/ShellPkg/Library/UefiShellLevel3CommandsLib/UefiShellLevel3CommandsLib.inf
-index a13cd9babf..b302f2f863 100644
+index 9429d6f4ea..242a4c921a 100644
 --- a/ShellPkg/Library/UefiShellLevel3CommandsLib/UefiShellLevel3CommandsLib.inf
 +++ b/ShellPkg/Library/UefiShellLevel3CommandsLib/UefiShellLevel3CommandsLib.inf
-@@ -30,6 +30,7 @@
+@@ -25,6 +25,7 @@
    Type.c
    Touch.c
    Ver.c
@@ -134,7 +133,7 @@ index a13cd9babf..b302f2f863 100644
    UefiShellLevel3CommandsLib.uni
    UefiShellLevel3CommandsLib.c
    UefiShellLevel3CommandsLib.h
-@@ -39,6 +40,102 @@
+@@ -34,6 +35,141 @@
    Pause.c
    GetMtc.c
    Help.c
@@ -169,6 +168,16 @@ index a13cd9babf..b302f2f863 100644
 +  test_pool/pe/test_c026.c
 +  test_pool/pe/test_c027.c
 +  test_pool/pe/test_c028.c
++  test_pool/pe/test_c029.c
++  test_pool/pe/test_c030.c
++  test_pool/pe/test_c031.c
++  test_pool/pe/test_c032.c
++  test_pool/pe/test_c033.c
++  test_pool/pe/test_c034.c
++  test_pool/pe/test_c035.c
++  test_pool/pe/test_c036.c
++  test_pool/pe/test_c037.c
++  test_pool/pe/test_c038.c
 +  test_pool/gic/test_g001.c
 +  test_pool/gic/test_g002.c
 +  test_pool/gic/test_g003.c
@@ -183,8 +192,10 @@ index a13cd9babf..b302f2f863 100644
 +  test_pool/timer_wd/test_t008.c
 +  test_pool/timer_wd/test_w001.c
 +  test_pool/timer_wd/test_w002.c
++  test_pool/timer_wd/test_w003.c
 +  test_pool/pcie/test_p001.c
 +  test_pool/pcie/test_p002.c
++  test_pool/pcie/test_p003.c
 +  test_pool/pcie/test_p020.c
 +  test_pool/pcie/test_p021.c
 +  test_pool/pcie/test_p022.c
@@ -211,12 +222,34 @@ index a13cd9babf..b302f2f863 100644
 +  test_pool/pcie/test_p043.c
 +  test_pool/pcie/test_p044.c
 +  test_pool/pcie/test_p045.c
++  test_pool/pcie/test_p046.c
++  test_pool/pcie/test_p047.c
++  test_pool/pcie/test_p048.c
++  test_pool/pcie/test_p049.c
++  test_pool/pcie/test_p050.c
++  test_pool/pcie/test_p051.c
++  test_pool/pcie/test_p052.c
++  test_pool/pcie/test_p053.c
++  test_pool/pcie/test_p054.c
++  test_pool/pcie/test_p055.c
++  test_pool/pcie/test_p056.c
++  test_pool/pcie/test_p057.c
 +  test_pool/io_virt/test_i001.c
 +  test_pool/io_virt/test_i002.c
 +  test_pool/io_virt/test_i003.c
 +  test_pool/io_virt/test_i004.c
 +  test_pool/io_virt/test_i005.c
 +  test_pool/io_virt/test_i006.c
++  test_pool/io_virt/test_i007.c
++  test_pool/io_virt/test_i008.c
++  test_pool/io_virt/test_i009.c
++  test_pool/io_virt/test_i010.c
++  test_pool/io_virt/test_i011.c
++  test_pool/io_virt/test_i012.c
++  test_pool/io_virt/test_i013.c
++  test_pool/io_virt/test_i014.c
++  test_pool/io_virt/test_i015.c
++  test_pool/io_virt/test_i016.c
 +  test_pool/power_wakeup/test_u001.c
 +  test_pool/power_wakeup/test_u002.c
 +  test_pool/peripherals/test_d001.c
@@ -234,10 +267,15 @@ index a13cd9babf..b302f2f863 100644
 +  test_pool/exerciser/test_e008.c
 +  test_pool/exerciser/test_e009.c
 +  test_pool/exerciser/test_e010.c
++  test_pool/exerciser/test_e011.c
++  test_pool/exerciser/test_e012.c
++  test_pool/exerciser/test_e013.c
++  test_pool/exerciser/test_e014.c
++  test_pool/exerciser/test_e015.c
  
  
  [Packages]
-@@ -60,6 +157,8 @@
+@@ -55,6 +191,8 @@
    HiiLib
    FileHandleLib
    HandleParsingLib
@@ -246,4 +284,3 @@ index a13cd9babf..b302f2f863 100644
  
  [Guids]
    gEfiFileInfoGuid                                        ## UNDEFINED
-
