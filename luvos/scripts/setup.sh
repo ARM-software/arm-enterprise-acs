@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2017-2019, ARM Limited or its affiliates. All rights reserved.
+# Copyright (c) 2017-2020, ARM Limited or its affiliates. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,9 +16,11 @@
 LUVDIR=$PWD/luv
 LUVDIRTEMP=$PWD/luvtemp
 TOPDIR=$PWD
-VERSION=`/usr/bin/lsb_release -d | awk '{ print $3 }' | cut -c1-5`
+VERSION=`/usr/bin/lsb_release -r | awk -F ':' '{ print $2 }' | sed 's/[ \t]*//g'`
 MAJOR_VERSION=`echo $VERSION | awk -F '.' '{print $1}'`
 MINOR_VERSION=`echo $VERSION | awk -F '.' '{print $2}'`
+
+DISTRO=`/usr/bin/lsb_release -i | awk -F ':' '{print $2}' | sed 's/[ \t]*//g'`
 
 CLONEDIR=$LUVDIR;
 if [ -d $TOPDIR/luv ]; then
@@ -29,9 +31,15 @@ git clone https://github.com/intel/luv-yocto.git $CLONEDIR
 cd $CLONEDIR
 git checkout -b v2.3 v2.3
 git am $TOPDIR/luvos/patches/luvos.patch
-if [ $MAJOR_VERSION -ge 20 ] && [ $MINOR_VERSION -ge 04 ];then
+if [ "$DISTRO" == "Ubuntu" ] && [ $MAJOR_VERSION -ge 20 ] && [ $MINOR_VERSION -ge 04 ];then
+   echo "Adding luvos additional patch in Ubuntu"
+   git am --ignore-whitespace --ignore-space-change $TOPDIR/luvos/patches/distros_patches/luvos_additional.patch
+fi
+
+if [ "$DISTRO" == "Debian" ] && [ $MAJOR_VERSION -ge 10 ]
+then
    echo "Adding luvos additional patch"
-   git am --ignore-whitespace $TOPDIR/luvos/patches/luvos_additional.patch
+   git am --ignore-whitespace --ignore-space-change $TOPDIR/luvos/patches/distros_patches/luvos_additional.patch
 fi
 
 cd $TOPDIR
