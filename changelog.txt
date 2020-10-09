@@ -1,3 +1,16 @@
+v20.10_REL3.0
+* SBSA: Added SBSA Level 6 PE, SMMU Tests.
+* SBSA: Added New PCIe, Exerciser tests Related to ATS, P2P, ACS Rules.
+* SBSA: Added SMMU & Gic-ITS Functional Tests in Exerciser.
+* SBSA: EDKII: Migration to edk2-stable202008.
+* SBSA: Bug Fixes & Test Updates.
+* SBSA: Print information about Number of PCIe Devices.
+* SBBR: Migrated SCT to latest edk2test Code Base
+* SBBR: Migrated SCT build to latest edk2-stable202008
+* Support Enterprise ACS build on Ubuntu 20.04 Version
+* Updated README to reflect SBSA v6.0 and SBBR v1.2
+* Minor Enhancements and updates in build scripts
+
 v20.08_REL2.5
 * SBSA: Add changes to skip if there are any host bridge or legacy PCI devices
 * SBSA: Increased to support nodes of IORT table
