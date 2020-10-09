@@ -1,5 +1,5 @@
 #! /bin/bash
-# Copyright (c) 2017, ARM Limited or its affiliates. All rights reserved.
+# Copyright (c) 2017-2020, ARM Limited or its affiliates. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -48,6 +48,20 @@ if [ $MACHINE = "aarch64" ]; then
 	PACKAGES_TO_CHECK+=("python3-distutils");
 fi
 
+#Add additional packages specific to Ubuntu 20.04 and above build here
+VERSION=`/usr/bin/lsb_release -r | awk -F ':' '{ print $2 }' | sed 's/[ \t]*//g'`
+MAJOR_VERSION=`echo $VERSION | awk -F '.' '{print $1}'`
+MINOR_VERSION=`echo $VERSION | awk -F '.' '{print $2}'`
+DISTRO=`/usr/bin/lsb_release -i | awk -F ':' '{print $2}' | sed 's/[ \t]*//g'`
+if [ "$DISTRO" == "Ubuntu" ] && [ $MAJOR_VERSION -ge 20 ] && [ $MINOR_VERSION -ge 04 ]
+then
+        PACKAGES_TO_CHECK+=("python3-distutils");
+fi
+
+if [ "$DISTRO" == "Debian" ] && [ $MAJOR_VERSION -ge 10 ]
+then
+        PACKAGES_TO_CHECK+=("python3-distutils");
+fi
 
 RC_ERROR=1
 RC_SUCCESS=0
