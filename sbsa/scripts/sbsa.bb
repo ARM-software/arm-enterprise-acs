@@ -46,14 +46,24 @@ do_configure () {
     fi
 
     # Checking for latest tool version
-    VERSION=`/usr/bin/lsb_release -d | awk '{ print $3 }' | cut -c1-5`
+    VERSION=`/usr/bin/lsb_release -r | awk -F ':' '{ print $2 }' | sed 's/[ \t]*//g'`
     MAJOR_VERSION=`echo $VERSION | awk -F '.' '{print $1}'`
     MINOR_VERSION=`echo $VERSION | awk -F '.' '{print $2}'`
-    if [ $MAJOR_VERSION -ge 20 ] && [ $MINOR_VERSION -ge 04 ]
+    DISTRO=`/usr/bin/lsb_release -i | awk -F ':' '{print $2}' | sed 's/[ \t]*//g'`
+
+    if [ "$DISTRO" == "Ubuntu" ] &&  [ $MAJOR_VERSION -ge 20 ] && [ $MINOR_VERSION -ge 04 ]
+    then
+        cd ${WORKDIR}/edk2
+        echo "do_configure: Adding additional LUVOS patch Ubuntu."
+        git apply ${TOPDIR}/../../luvos/patches/distros_patches/Basetools_change_warning.patch
+        cd ${WORKDIR}
+    fi
+
+    if [ "$DISTRO" == "Debian" ] && [ $MAJOR_VERSION -ge 10 ]
     then
         cd ${WORKDIR}/edk2
         echo "do_configure: Adding additional LUVOS patch."
-        git apply ${TOPDIR}/../../luvos/patches/Basetools_change_warning.patch
+        git apply ${TOPDIR}/../../luvos/patches/distros_patches/Basetools_change_warning.patch
         cd ${WORKDIR}
     fi
 
