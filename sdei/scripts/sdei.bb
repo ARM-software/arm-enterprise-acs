@@ -46,13 +46,13 @@ do_configure () {
     MAJOR_VERSION=`echo $VERSION | awk -F '.' '{print $1}'`
     MINOR_VERSION=`echo $VERSION | awk -F '.' '{print $2}'`
     DISTRO=`/usr/bin/lsb_release -i | awk -F ':' '{print $2}' | sed 's/[ \t]*//g'`
-    if [ "$DISTRO" == "Ubuntu" ] && [ $MAJOR_VERSION -ge 20 ] && [ $MINOR_VERSION -ge 04 ]
+    if [ "$DISTRO" = "Ubuntu" ] && [ $MAJOR_VERSION -ge 20 ] && [ $MINOR_VERSION -ge 04 ]
     then
         echo "do_configure: Adding additional LUVOS patch in Ubuntu."
         git apply ${TOPDIR}/../../luvos/patches/distros_patches/Basetools_change_warning_sdei.patch
     fi
 
-    if [ "$DISTRO" == "Debian" ] && [ $MAJOR_VERSION -ge 10 ]
+    if [ "$DISTRO" = "Debian" ] && [ $MAJOR_VERSION -ge 10 ]
     then
         echo "do_configure: Adding additional LUVOS patch."
         git apply ${TOPDIR}/../../luvos/patches/distros_patches/Basetools_change_warning_sdei.patch
