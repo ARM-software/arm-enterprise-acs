@@ -17,7 +17,7 @@ so that implementations can verify if these behaviors have been interpreted corr
   - Tests were written for MPAM v1.0 specification.
   - The compliance suite is not a substitute for design verification.
   - To review the MPAM ACS logs, Arm licensees can contact Arm directly through their partner managers.
-  - To know about the gaps in the test coverage, see [Scenario Document](docs/Mpam_ACS_Scenario_document.pdf).
+  - To know about the gaps in the test coverage, see [Scenario Document](docs/Arm_MPAM_ACS_Scenario_Document.pdf).
 
 ## GitHub branch
   - To get the latest version of the code with bug fixes, use the master branch.
