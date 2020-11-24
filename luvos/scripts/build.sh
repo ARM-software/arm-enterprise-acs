@@ -155,7 +155,7 @@ if [ $CLEANALLONLY -eq 1 ]; then
 	fi
 fi
 
-echo "Building LuvOS Image with SBBR and SBSA for AARCH4 ..."
+echo "Building LuvOS Image with SBBR and SBSA for AARCH64 ..."
 echo ""
 echo "Default kernel command line parameters: 'systemd.log_target=null plymouth.ignore-serial-consoles debug ip=dhcp log_buf_len=1M efi=debug acpi=on crashkernel=256M earlycon uefi_debug'"
 echo -n "Append parameters (press Enter for default):"
