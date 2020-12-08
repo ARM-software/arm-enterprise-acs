@@ -31,6 +31,7 @@ git clone https://github.com/intel/luv-yocto.git $CLONEDIR
 cd $CLONEDIR
 git checkout -b v2.3 v2.3
 git am $TOPDIR/luvos/patches/luvos.patch
+git am $TOPDIR/luvos/patches/shim-signed_tar.patch
 if [ "$DISTRO" == "Ubuntu" ] && [ $MAJOR_VERSION -ge 20 ] && [ $MINOR_VERSION -ge 04 ];then
    echo "Adding luvos additional patch in Ubuntu"
    git am --ignore-whitespace --ignore-space-change $TOPDIR/luvos/patches/distros_patches/luvos_additional.patch
