@@ -37,7 +37,6 @@ sbsa_acs_val-objs += $(VAL_SRC)/avs_status.o \
     $(TEST_POOL)/test_p001.o \
     $(TEST_POOL)/test_p002.o \
     $(TEST_POOL)/test_p003.o \
-    $(TEST_POOL)/test_p004.o \
     $(TEST_POOL)/test_p005.o \
     $(TEST_POOL)/test_p006.o \
     $(TEST_POOL)/test_p007.o \
