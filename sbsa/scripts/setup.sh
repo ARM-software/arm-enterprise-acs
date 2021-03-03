@@ -18,10 +18,19 @@
 TOPDIR=$PWD
 SRCDIR=$PWD/src
 LUVDIR=$PWD/luv
+SBSA_ACS_COMMIT=cc4e1eb3cd38c9565120fa24ce3641087e281d19
+LINUX_ACS_COMMIT=8345992487e2f22cb5b148f5772be1da5801ab7c
+
 rm -rf $SRCDIR
 
 git clone https://github.com/ARM-software/sbsa-acs.git src
+cd $SRCDIR || exit
+git checkout $SBSA_ACS_COMMIT
+cd $TOPDIR || exit
 git clone git://linux-arm.org/linux-acs.git
+cd linux-acs || exit
+git checkout $LINUX_ACS_COMMIT
+cd $TOPDIR || exit
 
 mv linux-acs/sbsa-acs-drv/files/platform/pal_linux $SRCDIR/platform/
 mv linux-acs/sbsa-acs-drv $SRCDIR
