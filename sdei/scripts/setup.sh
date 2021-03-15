@@ -20,7 +20,7 @@ SRCDIR=$PWD/sdei
 LUVDIR=$PWD/luv
 
 cd $SRCDIR 
-git clone git://linux-arm.org/linux-acs.git
+git clone https://git.gitlab.arm.com/linux-arm/linux-acs.git
 cp -r linux-acs/sdei-acs-drv .
 rm -rf linux-acs
 cd $TOPDIR
