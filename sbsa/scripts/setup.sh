@@ -21,7 +21,7 @@ LUVDIR=$PWD/luv
 rm -rf $SRCDIR
 
 git clone https://github.com/ARM-software/sbsa-acs.git src
-git clone git://linux-arm.org/linux-acs.git
+git clone https://git.gitlab.arm.com/linux-arm/linux-acs.git
 
 mv linux-acs/sbsa-acs-drv/files/platform/pal_linux $SRCDIR/platform/
 mv linux-acs/sbsa-acs-drv $SRCDIR
