@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+set -e
+
 TOPDIR=`pwd`
 
 #This parameter can be set to 0 if luv-netboot image is not needed in full build

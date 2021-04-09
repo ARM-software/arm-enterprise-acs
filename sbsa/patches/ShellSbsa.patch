@@ -137,9 +137,9 @@ index 9429d6f4ea..242a4c921a 100644
    Pause.c
    GetMtc.c
    Help.c
-+  test_pool/secure/test_s001.c
-+  test_pool/secure/test_s002.c
-+  test_pool/secure/test_s003.c
++  #test_pool/secure/test_s001.c
++  #test_pool/secure/test_s002.c
++  #test_pool/secure/test_s003.c
 +  test_pool/pe/test_c001.c
 +  test_pool/pe/test_c002.c
 +  test_pool/pe/test_c003.c
@@ -176,8 +176,6 @@ index 9429d6f4ea..242a4c921a 100644
 +  test_pool/pe/test_c034.c
 +  test_pool/pe/test_c035.c
 +  test_pool/pe/test_c036.c
-+  test_pool/pe/test_c037.c
-+  test_pool/pe/test_c038.c
 +  test_pool/gic/test_g001.c
 +  test_pool/gic/test_g002.c
 +  test_pool/gic/test_g003.c
@@ -275,7 +273,7 @@ index 9429d6f4ea..242a4c921a 100644
  
  
  [Packages]
-@@ -55,6 +191,8 @@
+@@ -55,6 +189,8 @@
    HiiLib
    FileHandleLib
    HandleParsingLib
