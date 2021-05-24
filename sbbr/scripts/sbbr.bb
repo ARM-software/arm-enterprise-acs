@@ -71,10 +71,10 @@ do_configure () {
 	fi
 
         # Checking for latest tool version
-        VERSION=`/usr/bin/lsb_release -r | awk -F ':' '{ print $2 }' | sed 's/[ \t]*//g'`
-        MAJOR_VERSION=`echo $VERSION | awk -F '.' '{print $1}'`
-        MINOR_VERSION=`echo $VERSION | awk -F '.' '{print $2}'`
-        DISTRO=`/usr/bin/lsb_release -i | awk -F ':' '{print $2}' | sed 's/[ \t]*//g'`
+        VERSION=$(/usr/bin/lsb_release -r | awk -F ':' '{ print $2 }' | sed 's/[ \t]*//g')
+        MAJOR_VERSION=$(echo $VERSION | awk -F '.' '{print $1}')
+        MINOR_VERSION=$(echo $VERSION | awk -F '.' '{print $2}')
+        DISTRO=$(/usr/bin/lsb_release -i | awk -F ':' '{print $2}' | sed 's/[ \t]*//g')
 
         if [ "$DISTRO" == "Ubuntu" ] && [ $MAJOR_VERSION -ge 20 ] && [ $MINOR_VERSION -ge 04 ]
         then
@@ -111,7 +111,7 @@ do_compile () {
 	export BB_ENV_EXTRAWHITE="$BB_ENV_EXTRAWHITE PATH"
 	echo "New PATH = $PATH"
 
-        MACHINE=`uname -m`
+        MACHINE=$(uname -m)
         if [ $MACHINE = "aarch64" ]; then
            export CROSS_COMPILE="/usr/bin/"
         else
