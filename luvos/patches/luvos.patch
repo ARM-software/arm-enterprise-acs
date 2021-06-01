@@ -528,10 +528,12 @@ index 3d58d447d1..9e4a0a0672 100644
  
  # These patches are under discussion on ML
  SRC_URI += "file://0001-serial-SPCR-check-bit-width-for-the-16550-UART.patch  \
-@@ -82,6 +83,7 @@ SRC_URI += "file://0001-PCI-Vulcan-AHCI-PCI-bar-fix-for-Broadcom-Vulcan-earl.pat
+@@ -82,6 +83,9 @@ SRC_URI += "file://0001-PCI-Vulcan-AHCI-PCI-bar-fix-for-Broadcom-Vulcan-earl.pat
              file://0001-selftests-change-reboot-flag-location.patch \
              file://0001-pstore-test-remove-log-directory.patch \
              file://0001-x86-mttr-Update-only-valid-variable-range-MTRRs.patch \
++            file://0001-8250_fsl.patch \
++            file://0001-SPCR-Consider-baud-rate-0-as-preconfigured-state.patch \
 +            file://0001-Enterprise-acs-linux-v4.18.patch \
             "
  
