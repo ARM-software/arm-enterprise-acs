@@ -56,4 +56,5 @@ ln -s $TOPDIR/luvos/scripts/luv-sbsa-test $LUVDIR/meta-luv/recipes-core/luv-test
 ln -s $TOPDIR/luvos/scripts/luv-sdei-test $LUVDIR/meta-luv/recipes-core/luv-test/luv-test/luv-sdei-test
 ln -s $TOPDIR/luvos/patches/0001-8250_fsl.patch $LUVDIR/meta-luv/recipes-kernel/linux/linux-luv/
 ln -s $TOPDIR/luvos/patches/0001-SPCR-Consider-baud-rate-0-as-preconfigured-state.patch $LUVDIR/meta-luv/recipes-kernel/linux/linux-luv/
+ln -s $TOPDIR/luvos/patches/0001-8250_tegra-Create-Tegra-specific-8250-driver.patch $LUVDIR/meta-luv/recipes-kernel/linux/linux-luv/
 ln -s $TOPDIR/luvos/patches/0001-Enterprise-acs-linux-v4.18.patch $LUVDIR/meta-luv/recipes-kernel/linux/linux-luv/
