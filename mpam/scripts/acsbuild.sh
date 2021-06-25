@@ -6,5 +6,5 @@ then
     return 0
 fi
 
-build -a AARCH64 -t GCC49 -p ShellPkg/ShellPkg.dsc -m AppPkg/Applications/mpam/uefi_app/MpamAcs.inf
+build -a AARCH64 -t GCC49 -p ShellPkg/ShellPkg.dsc -m AppPkg/Applications/mpam/mpam/uefi_app/MpamAcs.inf
 
