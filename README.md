@@ -138,6 +138,8 @@ The live image boots to UEFI Shell. The different test applications can be run i
 - [Server Base System Architecture (SBSA)](https://github.com/ARM-software/sbsa-acs) TAG: 1b3a37214fe6809e07e471f79d1ef856461bc803
 
 - [UEFI Self Certification Tests (UEFI-SCT)](https://github.com/tianocore/edk2-test) TAG: b558bad25479ec83d43399673d7580294c81c8f8
+Note: UEFI-SCT is based on edk2-test release (tag:edk2-test-stable201910) which supports UEFI Specifications version 2.7
+Refer to https://uefi.org/testtools for more details
 
 
 ## Security Implication
@@ -154,3 +156,7 @@ Arm Enterprise ACS is distributed under Apache v2.0 License.
  - For support, please send an email to "support-enterprise-acs@arm.com" with details.
  - Arm licensees can contact Arm directly through their partner managers.
  - Arm welcomes code contributions through GitHub pull requests. For details, see "docs/Contributions.txt".
+
+--------------
+
+*Copyright (c) 2018-2021, Arm Limited and Contributors. All rights reserved.*

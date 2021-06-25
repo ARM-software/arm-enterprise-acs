@@ -1,4 +1,4 @@
-From 7e993c94ee1cb2e339b2214e8230f989739aa5b4 Mon Sep 17 00:00:00 2001
+From eb1e62eed5521b531da4598f233fa78f04b6226e Mon Sep 17 00:00:00 2001
 From: Mahesh Bireddy <mahesh.reddybireddy@arm.com>
 Date: Fri, 9 Nov 2018 13:23:59 +0530
 Subject: [PATCH] Luvos v3.0 ACS patch
@@ -15,17 +15,17 @@ Signed-off-by: Gowtham Siddarth <gowtham.siddarth@arm.com>
  .../recipes-core/efivarfs/efivarfs-test.bb    |   1 -
  meta-luv/recipes-core/fwts/fwts_git.bb        |   8 +-
  .../images/core-image-efi-initramfs.bb        |   2 +-
- meta-luv/recipes-core/images/luv-image.inc    |   3 +-
+ meta-luv/recipes-core/images/luv-image.inc    |   5 +-
  .../recipes-core/images/luv-live-image.bb     |  10 +-
  .../recipes-core/images/luv-netboot-image.bb  |  10 +-
  .../kernel-efi-warnings_0.1.bb                |   2 -
  meta-luv/recipes-core/luv-test/luv-test.bb    |   8 +
  .../luv-test/luv-test/luv-test-manager        |   9 +
  .../sbsigntool/sbsigntool_git.bb              |  11 +-
- .../recipes-kernel/linux/linux-luv_4.18.bb    |   4 +-
+ .../recipes-kernel/linux/linux-luv_4.18.bb    |   7 +-
  meta/conf/bitbake.conf                        |   2 +-
  .../systemd-serialgetty/serial-getty@.service |   2 +-
- 17 files changed, 247 insertions(+), 21 deletions(-)
+ 17 files changed, 251 insertions(+), 22 deletions(-)
 
 diff --git a/.templateconf b/.templateconf
 index 0fe6f82503..dce51a4f7a 100644
@@ -353,7 +353,7 @@ index 952953483d..868d37c06e 100644
  
  X86_ADDITIONS = "chipsec python-codecs python-subprocess vmcore-dmesg bits \
 diff --git a/meta-luv/recipes-core/images/luv-image.inc b/meta-luv/recipes-core/images/luv-image.inc
-index def23444e6..62b55d1d26 100644
+index def23444e6..e14e96dbc9 100644
 --- a/meta-luv/recipes-core/images/luv-image.inc
 +++ b/meta-luv/recipes-core/images/luv-image.inc
 @@ -3,6 +3,7 @@ LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/MIT;md5=0835ade698e0bcf8506ecda
@@ -364,7 +364,7 @@ index def23444e6..62b55d1d26 100644
  
  HDDDIR = "${S}/hddimg"
  
-@@ -24,7 +25,7 @@ COMMON_CMDLINE_x86 += "splash nomodeset crash_kexec_post_notifiers"
+@@ -24,13 +25,13 @@ COMMON_CMDLINE_x86 += "splash nomodeset crash_kexec_post_notifiers"
  
  # Unlike the += operand, _append's do not insert a space between the current value
  # and the appended string. Thus, we add them.
@@ -373,6 +373,13 @@ index def23444e6..62b55d1d26 100644
  CMDLINE_append_x86 = "${COMMON_CMDLINE_x86}"
  CMDLINE_append_x86-64 = "${COMMON_CMDLINE_x86}"
  
+ LUVCFG_netconsole = "LUV_NETCONSOLE=none"
+ LUVCFG_storage_url = "LUV_STORAGE_URL=none"
+-LUVCFG_tests = "LUV_TESTS='efivarfs-test,fwts,kernel-efi-warnings,pstore-tests,"
++LUVCFG_tests = "LUV_TESTS='fwts,"
+ LUVCFG_tests_append_x86-64 = "bits,chipsec,ndctl'"
+ LUVCFG_tests_append_aarch64 = "'"
+ LUVCFG_reboot_tests = "LUV_REBOOT_TESTS=none"
 diff --git a/meta-luv/recipes-core/images/luv-live-image.bb b/meta-luv/recipes-core/images/luv-live-image.bb
 index b105b7b033..1b330c39db 100644
 --- a/meta-luv/recipes-core/images/luv-live-image.bb
@@ -515,7 +522,7 @@ index 69f050bb83..e85c758049 100644
  }
 +#End-For aarch64 Build
 diff --git a/meta-luv/recipes-kernel/linux/linux-luv_4.18.bb b/meta-luv/recipes-kernel/linux/linux-luv_4.18.bb
-index 3d58d447d1..9e4a0a0672 100644
+index 3d58d447d1..55d735d96a 100644
 --- a/meta-luv/recipes-kernel/linux/linux-luv_4.18.bb
 +++ b/meta-luv/recipes-kernel/linux/linux-luv_4.18.bb
 @@ -61,7 +61,8 @@ KERNEL_FEATURES_remove= " features/debug/printk.scc \
