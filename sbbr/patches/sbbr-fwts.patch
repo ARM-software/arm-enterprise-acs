@@ -1,7 +1,9 @@
+From 511ced020f5ed9d2e37314eb38997f7718f2a790 Mon Sep 17 00:00:00 2001
 From: G Edhaya Chandran <edhaya.chandran@arm.com>
 Date: Thu, 13 Aug 2020 12:23:34 +0530
 Subject: [PATCH] Upgrade SBBR changes to FWTS V20.07.00
 
+Added patch : https://kernel.ubuntu.com/git/hwe/fwts.git/patch/?id=2ff5a219f2eb818f11ff48ef2c041b149ea76c63
 Signed-off-by: G Edhaya Chandran <edhaya.chandran@arm.com>
 ---
  src/Makefile.am                  |   2 +
@@ -10,10 +12,11 @@ Signed-off-by: G Edhaya Chandran <edhaya.chandran@arm.com>
  src/acpi/devices/pcie/rc.c       | 183 +++++++++++++++++++++++++++++++
  src/acpi/hest/hest.c             |  36 +++++-
  src/acpi/method/method.c         |  61 ++++++++---
+ src/acpi/spcr/spcr.c             |   3 +
  src/dmi/dmicheck/dmicheck.c      |  80 ++++++++++----
  src/lib/src/fwts_framework.c     |   3 +
  src/sbbr/acpitables/acpitables.c |   9 +-
- 9 files changed, 510 insertions(+), 38 deletions(-)
+ 10 files changed, 513 insertions(+), 38 deletions(-)
  create mode 100644 src/acpi/devices/ged/ged.c
  create mode 100644 src/acpi/devices/pcie/rc.c
 
@@ -664,8 +667,22 @@ index c4939087..d4901105 100644
  	{ method_test_DSS, "Test _DSS (Device Set State)." },
  	{ method_test_DGS, "Test _DGS (Query Graphics State)." },
  	{ method_test_DOD, "Test _DOD (Enumerate All Devices Attached to Display Adapter)." },
+diff --git a/src/acpi/spcr/spcr.c b/src/acpi/spcr/spcr.c
+index bde4ec9c..2b5a0ade 100644
+--- a/src/acpi/spcr/spcr.c
++++ b/src/acpi/spcr/spcr.c
+@@ -177,6 +177,9 @@ static int spcr_test1(fwts_framework *fw)
+ 
+ 	reserved = false;
+ 	switch (spcr->baud_rate) {
++	case 0x00:
++		str = "preconfigured in firmware";
++		break;
+ 	case 0x03:
+ 		str = "9600";
+ 		break;
 diff --git a/src/dmi/dmicheck/dmicheck.c b/src/dmi/dmicheck/dmicheck.c
-index 023bf485..28484090 100644
+index 259279fb..b90b6f8b 100644
 --- a/src/dmi/dmicheck/dmicheck.c
 +++ b/src/dmi/dmicheck/dmicheck.c
 @@ -57,6 +57,8 @@
@@ -677,7 +694,7 @@ index 023bf485..28484090 100644
  #define GET_UINT16(x) (uint16_t)(*(const uint16_t *)(x))
  #define GET_UINT32(x) (uint32_t)(*(const uint32_t *)(x))
  #define GET_UINT64(x) (uint64_t)(*(const uint64_t *)(x))
-@@ -296,23 +298,36 @@ static const fwts_dmi_type_length type_info[] = {
+@@ -298,23 +300,36 @@ static const fwts_dmi_type_length type_info[] = {
  	{ 0, 0, 0, 0 } /* terminator */
  };
  
@@ -721,7 +738,7 @@ index 023bf485..28484090 100644
  {
  	int fd;
  	char *p;
-@@ -340,12 +355,12 @@ static int dmi_load_file_variable_size(const char* filename, void *buf, size_t *
+@@ -342,12 +357,12 @@ static int dmi_load_file_variable_size(const char* filename, void *buf, size_t *
  	(void)close(fd);
  	*size = total;
  	return FWTS_OK;
@@ -736,7 +753,7 @@ index 023bf485..28484090 100644
  	void *table;
  	void *mem;
  	char anchor[8];
-@@ -357,18 +372,24 @@ static void* dmi_table_smbios(fwts_framework *fw, fwts_smbios_entry *entry)
+@@ -359,18 +374,24 @@ static void* dmi_table_smbios(fwts_framework *fw, fwts_smbios_entry *entry)
  		return NULL;
  	}
  
@@ -764,7 +781,7 @@ index 023bf485..28484090 100644
  	mem = fwts_mmap(addr, length);
  	if (mem != FWTS_MAP_FAILED) {
  		/* Can we safely copy the table? */
-@@ -393,7 +414,7 @@ static void* dmi_table_smbios(fwts_framework *fw, fwts_smbios_entry *entry)
+@@ -395,7 +416,7 @@ static void* dmi_table_smbios(fwts_framework *fw, fwts_smbios_entry *entry)
  static void* dmi_table_smbios30(fwts_framework *fw, fwts_smbios30_entry *entry)
  {
  	off_t addr = (off_t)entry->struct_table_address;
@@ -773,7 +790,7 @@ index 023bf485..28484090 100644
  	void *table;
  	void *mem;
  	char anchor[8];
-@@ -405,18 +426,23 @@ static void* dmi_table_smbios30(fwts_framework *fw, fwts_smbios30_entry *entry)
+@@ -407,18 +428,23 @@ static void* dmi_table_smbios30(fwts_framework *fw, fwts_smbios30_entry *entry)
  		return NULL;
  	}
  
@@ -800,7 +817,7 @@ index 023bf485..28484090 100644
  	mem = fwts_mmap(addr, length);
  	if (mem != FWTS_MAP_FAILED) {
  		/* Can we safely copy the table? */
-@@ -432,8 +458,8 @@ static void* dmi_table_smbios30(fwts_framework *fw, fwts_smbios30_entry *entry)
+@@ -434,8 +460,8 @@ static void* dmi_table_smbios30(fwts_framework *fw, fwts_smbios30_entry *entry)
  		return table;
  	}
  
@@ -811,7 +828,7 @@ index 023bf485..28484090 100644
  	return NULL;
  }
  
-@@ -1925,6 +1951,19 @@ static void dmicheck_entry(fwts_framework *fw,
+@@ -1927,6 +1953,19 @@ static void dmicheck_entry(fwts_framework *fw,
  					"while accessing entry '%s' @ "
  					"0x%8.8" PRIx32 ", field '%s', offset 0x%2.2x",
  					data[0x4], table, addr, "Reference Designation", 0x4);
@@ -831,7 +848,7 @@ index 023bf485..28484090 100644
  			break;
  
  		case 43: /* 7.44 */
-@@ -2079,7 +2118,7 @@ static sbbr_test_entry sbbr_test[] = {
+@@ -2081,7 +2120,7 @@ static sbbr_test_entry sbbr_test[] = {
  	{ "Memory Device", 17, 1, 0, 0 },
  	{ "Memory Array Mapped Address", 19, 1, 0, 0 },
  	{ "System Boot Information", 32, 1, 0, 0 },
@@ -840,7 +857,7 @@ index 023bf485..28484090 100644
  	{ "Onboard Devices Extended Information", 41, 0, RECOMMENDED_STRUCTURE_DEFAULT_MSG, 0 },
  	{ 0, 0, 0, 0, 0 }
  };
-@@ -2174,7 +2213,10 @@ static int dmicheck_test2(fwts_framework *fw)
+@@ -2176,7 +2215,10 @@ static int dmicheck_test2(fwts_framework *fw)
  	uint8_t  *table;
  
  	if (fw->flags & FWTS_FLAG_TEST_SBBR)
@@ -852,7 +869,7 @@ index 023bf485..28484090 100644
  	if (!smbios_found) {
  		fwts_skipped(fw, "Cannot find SMBIOS or DMI table entry, skip the test.");
 diff --git a/src/lib/src/fwts_framework.c b/src/lib/src/fwts_framework.c
-index 424092f1..a82110e9 100644
+index 424092f1..038ceebe 100644
 --- a/src/lib/src/fwts_framework.c
 +++ b/src/lib/src/fwts_framework.c
 @@ -33,6 +33,8 @@
