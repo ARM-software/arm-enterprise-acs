@@ -17,7 +17,7 @@ Partners can also write their own abstraction layer implementations to allow SBS
 Shell>FS2:<br/>
 FS2:>FS3:\EFI\BOOT\sbsa\sbsa.nsh
 
-If any failures are encountered, see [SBSA User Guide](https://github.com/ARM-software/sbsa-acs/raw/master/docs/SBSA_ACS_User_Guide.pdf) for debug options.
+If any failures are encountered, see [SBSA User Guide](https://github.com/ARM-software/sbsa-acs/blob/master/docs/Arm_SBSA_Architecture_Compliance_User_Guide.pdf) for debug options.
 Power reset the system after completion of this test and continue with the next step. <br />
 
 Note:
