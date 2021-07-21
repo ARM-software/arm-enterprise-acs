@@ -41,24 +41,26 @@ if [ $# -gt 0 ]; then
     validate_param $*
 fi
 
-./check_deps.sh
-if [ $? != 0 ]
-then
-    echo -e "\nDependencies have not been met to successfully download the software."
-    echo -e "\nWould you like to install the dependencies? [Y/N]"
-    read input
-    INSTALL=${input^^}
-    if [ "${INSTALL}" == "Y" ]
+if [ -n "$TERM" ] && [ "$TERM" != "dumb" ]; then
+    ./check_deps.sh
+    if [ $? != 0 ]
     then
-        echo -e "Installing dependencies."
-        sudo ./check_deps.sh -ip
-        if [ $? != 0 ]
+        echo -e "\nDependencies have not been met to successfully download the software."
+        echo -e "\nWould you like to install the dependencies? [Y/N]"
+        read input
+        INSTALL=${input^^}
+        if [ "${INSTALL}" == "Y" ]
         then
-            echo -e "$(tput setaf 1)Dependencies install failed. Exiting.$(tput sgr 0)"
+            echo -e "Installing dependencies."
+            sudo ./check_deps.sh -ip
+            if [ $? != 0 ]
+            then
+                echo -e "$(tput setaf 1)Dependencies install failed. Exiting.$(tput sgr 0)"
+                exit
+            fi
+        else
             exit
         fi
-    else
-        exit
     fi
 fi
 
