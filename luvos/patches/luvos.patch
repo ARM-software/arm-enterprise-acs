@@ -1,4 +1,4 @@
-From eb1e62eed5521b531da4598f233fa78f04b6226e Mon Sep 17 00:00:00 2001
+From 47f385c091ea8545c665c1d010c8ef53171ae8fe Mon Sep 17 00:00:00 2001
 From: Mahesh Bireddy <mahesh.reddybireddy@arm.com>
 Date: Fri, 9 Nov 2018 13:23:59 +0530
 Subject: [PATCH] Luvos v3.0 ACS patch
@@ -7,6 +7,7 @@ Signed-off-by: Mahesh Bireddy <mahesh.reddybireddy@arm.com>
 Signed-off-by: Rajat Goyal <rajat.goyal@arm.com>
 Signed-off-by: G Edhaya Chandran <edhaya.chandran@arm.com>
 Signed-off-by: Gowtham Siddarth <gowtham.siddarth@arm.com>
+Signed-off-by: G Edhaya Chandran <edhaya.chandran@arm.com>
 ---
  .templateconf                                 |   2 +-
  meta-luv/classes/luv-efi.bbclass              | 187 +++++++++++++++++-
@@ -15,7 +16,7 @@ Signed-off-by: Gowtham Siddarth <gowtham.siddarth@arm.com>
  .../recipes-core/efivarfs/efivarfs-test.bb    |   1 -
  meta-luv/recipes-core/fwts/fwts_git.bb        |   8 +-
  .../images/core-image-efi-initramfs.bb        |   2 +-
- meta-luv/recipes-core/images/luv-image.inc    |   5 +-
+ meta-luv/recipes-core/images/luv-image.inc    |  10 +-
  .../recipes-core/images/luv-live-image.bb     |  10 +-
  .../recipes-core/images/luv-netboot-image.bb  |  10 +-
  .../kernel-efi-warnings_0.1.bb                |   2 -
@@ -25,7 +26,7 @@ Signed-off-by: Gowtham Siddarth <gowtham.siddarth@arm.com>
  .../recipes-kernel/linux/linux-luv_4.18.bb    |   7 +-
  meta/conf/bitbake.conf                        |   2 +-
  .../systemd-serialgetty/serial-getty@.service |   2 +-
- 17 files changed, 251 insertions(+), 22 deletions(-)
+ 17 files changed, 255 insertions(+), 23 deletions(-)
 
 diff --git a/.templateconf b/.templateconf
 index 0fe6f82503..dce51a4f7a 100644
@@ -353,10 +354,10 @@ index 952953483d..868d37c06e 100644
  
  X86_ADDITIONS = "chipsec python-codecs python-subprocess vmcore-dmesg bits \
 diff --git a/meta-luv/recipes-core/images/luv-image.inc b/meta-luv/recipes-core/images/luv-image.inc
-index def23444e6..e14e96dbc9 100644
+index def23444e6..b4d5e62adc 100644
 --- a/meta-luv/recipes-core/images/luv-image.inc
 +++ b/meta-luv/recipes-core/images/luv-image.inc
-@@ -3,6 +3,7 @@ LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/MIT;md5=0835ade698e0bcf8506ecda
+@@ -3,14 +3,18 @@ LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/MIT;md5=0835ade698e0bcf8506ecda
  
  DEPENDS_append_x86 = " bits"
  DEPENDS_append_x86-64 = " bits"
@@ -364,7 +365,19 @@ index def23444e6..e14e96dbc9 100644
  
  HDDDIR = "${S}/hddimg"
  
-@@ -24,13 +25,13 @@ COMMON_CMDLINE_x86 += "splash nomodeset crash_kexec_post_notifiers"
+ INITRD_IMAGE_LIVE = "core-image-efi-initramfs"
+ IMGDEPLOYDIR = "${DEPLOY_DIR_IMAGE}"
+ 
++# Option to find the ACS root filesystem, in case its not found by default
++ACS_PARTITION = "root=PARTLABEL=BOOT"
++
+ # Tell plymouth to ignore serial consoles and limit the amount of systemD logs.
+-CMDLINE_USERSPACE = "systemd.log_target=null plymouth.ignore-serial-consoles"
++CMDLINE_USERSPACE = " ${ACS_PARTITION}  systemd.log_target=null plymouth.ignore-serial-consoles"
+ 
+ # Kernel commandline for luv live image boot
+ CMDLINE_BASE = "${CMDLINE_USERSPACE} debug crashkernel=512M,high log_buf_len=1M efi=debug"
+@@ -24,13 +28,13 @@ COMMON_CMDLINE_x86 += "splash nomodeset crash_kexec_post_notifiers"
  
  # Unlike the += operand, _append's do not insert a space between the current value
  # and the appended string. Thus, we add them.
