@@ -13,10 +13,10 @@ In summary, the Arm Enterprise ACS product contains the following: <ol>
 These tests are split between UEFI and Linux (supported by corresponding kernel driver) applications that together determine whether an architectural implementation is compliant with the enterprise specifications. These tests are further described in detail.
 
 ## Release details
- - Code Quality: REL v3.0
- - **The latest pre-built release of ACS is available for download here: [v20.10_REL3.0](https://github.com/ARM-software/arm-enterprise-acs/tree/release/prebuilt_images/v20.10_REL3.0)**
+ - Code Quality: REL v3.1
+ - **The latest pre-built release of ACS is available for download here: [v21.09_REL3.1](https://github.com/ARM-software/arm-enterprise-acs/tree/release/prebuilt_images/v21.09_REL3.1)**
  - The SBSA tests are written for version 6.0 of the SBSA specification.
- - The SBBR tests are written for version 1.2 of the SBBR specification.
+ - The SBBR tests are written for version 1.0 of the BBR specification.
  - The compliance suite is not a substitute for design verification.
  - To review the ACS logs, Arm licensees can contact Arm directly through their partner managers.
 
@@ -33,11 +33,10 @@ These tests are split between UEFI and Linux (supported by corresponding kernel 
 
 ### Prerequisites
 Before starting the ACS build, ensure that the following requirements are met:
- - Ubuntu 18.04 LTS with at least 64GB of free disk space (build on Ubuntu 20.04 is also supported from this version).
+ - Ubuntu 18.04 LTS or Ubuntu 20.04 with at least 64GB of free disk space.
  - Must use Bash shell.
- - Build is supported on x86 or aarch64 machines.
+ - Build is supported on x86 and AArch64 machines.
 
-Note : Windows build steps will be provided in the future releases.
 <br />
 
 Perform the following steps to start the ACS build:
@@ -78,40 +77,38 @@ For more information, see [Yocto Project](https://www.yoctoproject.org/documenta
 
 ## Test Suite Execution
 
-### Juno Reference Platform
+Note: UEFI EDK2 setting for "Console Preference": The default is "Graphical". When that is selected, Linux output will go only to the graphical console (HDMI monitor). To force serial console output, you may change the "Console Preference" to "Serial".
 
-Follow the instructions [here](https://community.arm.com/docs/DOC-10804) to install an EDK2 (UEFI) prebuilt configuration on your Juno board.
-For additional information, see the FAQs and tutorials [here](https://community.arm.com/groups/arm-development-platforms) or contact [juno-support@arm.com](mailto:juno-support@arm.com).
+### Verification of the luv-live-image on the Arm Neoverse N2 reference design (RD-N2)
 
+#### Prerequisites
+- If the system supports LPIs (Interrupt ID > 8192) then Firmware should support installation of handler for LPI interrupts.
+    - If you are using edk2, change the ArmGic driver in the ArmPkg to support installation of handler for LPIs.
+    - Add the following in \<path to RDN2 software stack\>/uefi/edk2/ArmPkg/Drivers/ArmGic/GicV3/ArmGicV3Dxe.c
+>        - After [#define ARM_GIC_DEFAULT_PRIORITY  0x80]
+>          +#define ARM_GIC_MAX_NUM_INTERRUPT 16384
+>        - Change this in GicV3DxeInitialize function.
+>          -mGicNumInterrupts      = ArmGicGetMaxNumInterrupts (mGicDistributorBase);
+>          +mGicNumInterrupts      = ARM_GIC_MAX_NUM_INTERRUPT;
 
-After installing the EDK2 prebuilt configuration on your Juno board, follow these steps:
+#### Follow the steps mentioned in [RD-N2 platform software user guide](https://gitlab.arm.com/arm-reference-solutions/arm-reference-solutions-docs/-/tree/master/docs/infra/rdn2) to obtain RD-N2 FVP.
 
-1. Burn the LUV OS bootable image to a USB stick: <br />
-$ lsblk <br />
-$ sudo dd if=/path/to/luv-live-image-gpt.img of=/dev/sdX <br />
-$ sync <br />
-Note: Replace '/dev/sdX' with the handle corresponding to your
-  USB stick as identified by the `lsblk' command.
-2. Insert the USB stick into one of the Juno's rear USB ports.
-3. Power cycle the Juno.
+### For software stack build instructions follow Busybox Boot link under Supported Features by RD-N2 platform software stack section in the same guide.
 
-### Fixed Virtual Platform (FVP) environment
+Note: RD-N2 should be built with the GIC Changes mentioned in Prerequisites.<br />
+Note: sudo permission will be required by building software stack.<br />
 
-The steps for running the Arm Enterprise ACS on an FVP are the
-same as those for running on Juno but with a few exceptions:
+1. Set the environment variable 'MODEL'
+```
+export MODEL=<absolute path to the RD-N2 FVP binary/FVP_RD_N2>
+```
+2. Launch the RD-N2 FVP with the pre-built image with the below command
+```
+cd /path to RD-N2_FVP platform software/model-scripts/rdinfra/platforms/rdn2
+./run_model.sh -v /path-to-luv-live-image/luv-live-image-gpt.img
+```
+This will start the luv live image automation and run the test suites in sequence.
 
-- Follow the different instructions [here](https://community.arm.com/dev-platforms/b/documents/posts/using-linaros-deliverables-on-an-fvp) to install an EDK2 (UEFI) prebuilt configuration on your FVP.
-- Modify 'run_model.sh' to add a model command argument that
-  loads 'luv-live-image-gpt.img' as a virtual disk image. For example,
-  if running on the AEMv8-A Base Platform FVP, add
-
-    `bp.virtioblockdevice.image path=<work_dir>/arm-enterprise- acs/luv/build/tmp/deploy/images/qemuarm64/luv-live-image-gpt.img'
-
-    to your model options. <br />
-Or, <br />
-To launch the FVP model with script ‘run_model.sh’ that supports -v option for virtual disk image, use the following command:
-
-    $ ./run_model.sh -v &lt;work_dir>/arm-enterprise-acs/luv/build/tmp/deploy/images/qemuarm64/luv-live-image-gpt.img
 
 ### Automation
 The test suite execution can be automated or manual. Automated execution is the default execution method when no key is pressed during boot. <br />
@@ -132,18 +129,25 @@ The live image boots to UEFI Shell. The different test applications can be run i
 - [Linux UEFI Validation OS](https://github.com/intel/luv-yocto)
         - SHA: 73f995b61a7b1b856a082203cbeb744a3f21880d
 
-- [Firmware Test Suite (FWTS) TAG: V20.08.00](http://kernel.ubuntu.com/git/hwe/fwts.git)
+- [Firmware Test Suite (FWTS) TAG: V21.08.00](http://kernel.ubuntu.com/git/hwe/fwts.git)
   Note: For improved FTWS test coverage, use release images of ACSv2.5 or higher
 
 - [Server Base System Architecture (SBSA)](https://github.com/ARM-software/sbsa-acs) TAG: 1b3a37214fe6809e07e471f79d1ef856461bc803
 
-- [UEFI Self Certification Tests (UEFI-SCT)](https://github.com/tianocore/edk2-test) TAG: b558bad25479ec83d43399673d7580294c81c8f8
-Note: UEFI-SCT is based on edk2-test release (tag:edk2-test-stable201910) which supports UEFI Specifications version 2.7
+- [UEFI Self Certification Tests (UEFI-SCT)](https://github.com/tianocore/edk2-test) TAG: f3b3456152dacf26ec0abaa0c21a9432cc176630
+Note: UEFI-SCT is based on edk2-test release (tag:edk2-test-stable202108) which supports UEFI Specifications version 2.7
 Refer to https://uefi.org/testtools for more details
 
 
 ## Security Implication
 Arm Enterprise ACS test suite may run at higher privilege level. An attacker may utilize these tests as a means to elevate privilege which can potentially reveal the platform security assets. To prevent the leakage of secure information, it is strongly recommended that the ACS test suite is run only on development platforms. If it is run on production systems, the system should be scrubbed after running the test suite.
+
+## Limitations
+
+Validating the compliance of certain PCIe rules defined in the BSA specification require the PCIe end-point generate specific stimulus during the runtime of the test. Examples of such stimulus are  P2P, PASID, ATC, etc. The tests that requires these stimuli are grouped together in the exerciser module. The exerciser layer is an abstraction layer that enables the integration of hardware capable of generating such stimuli to the test framework.
+The details of the hardware or Verification IP which enable these exerciser tests platform specific and are beyond the scope of this document.
+
+The Live image does not allow customizations, hence, the exerciser module is not included in the Live image. To enable exerciser tests for greater coverage of PCIe rules, please refer to [SBSA](https://github.com/ARM-software/sbsa-acs) Or contact your Arm representative for details.
 
 
 ## License
