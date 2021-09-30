@@ -1,4 +1,4 @@
-From 47f385c091ea8545c665c1d010c8ef53171ae8fe Mon Sep 17 00:00:00 2001
+From 7765b81bcfcfb8866a2dfde99235817ffc3799b0 Mon Sep 17 00:00:00 2001
 From: Mahesh Bireddy <mahesh.reddybireddy@arm.com>
 Date: Fri, 9 Nov 2018 13:23:59 +0530
 Subject: [PATCH] Luvos v3.0 ACS patch
@@ -37,7 +37,7 @@ index 0fe6f82503..dce51a4f7a 100644
 -TEMPLATECONF=${TEMPLATECONF:-meta-poky/conf}
 +TEMPLATECONF=${TEMPLATECONF:-meta-luv/conf}
 diff --git a/meta-luv/classes/luv-efi.bbclass b/meta-luv/classes/luv-efi.bbclass
-index 86b364953c..f743857155 100644
+index 86b364953c..115e0af0b5 100644
 --- a/meta-luv/classes/luv-efi.bbclass
 +++ b/meta-luv/classes/luv-efi.bbclass
 @@ -16,6 +16,13 @@ def get_bits_depends(d):
@@ -167,7 +167,7 @@ index 86b364953c..f743857155 100644
 +              cd uefi
 +              for %j in 0 1 2 3 4 5 6 7 8 9 A B C D E F then
 +                if exist FS%j:\EFI\BOOT\sbsa\Sbsa.efi then
-+                  FS%j:\EFI\BOOT\sbsa\Sbsa.efi -f SbsaResults.log
++                  FS%j:\EFI\BOOT\sbsa\Sbsa.efi -skip 800 -f SbsaResults.log
 +                  goto Done
 +                endif
 +              endfor
@@ -228,7 +228,7 @@ index 86b364953c..f743857155 100644
 +          :DoneSbsa
 +          for %k in 0 1 2 3 4 5 6 7 8 9 A B C D E F then
 +            if exist FS%k:\EFI\BOOT\sdei\sdei.nsh then
-+              FS%k:\EFI\BOOT\sdei\sdei.nsh
++              #FS%k:\EFI\BOOT\sdei\sdei.nsh #Disabled SDEI to run in the LuvOS automated tests
 +              goto DoneSdei
 +            endif
 +          endfor
@@ -493,15 +493,15 @@ index e6263d9a63..922435f522 100644
  
         install -m 0644 ${WORKDIR}/luv-test-manager.service ${D}${systemd_unitdir}/system
 diff --git a/meta-luv/recipes-core/luv-test/luv-test/luv-test-manager b/meta-luv/recipes-core/luv-test/luv-test/luv-test-manager
-index ffb197c3ca..7ed9401f4f 100644
+index ffb197c3ca..902f2caa9a 100644
 --- a/meta-luv/recipes-core/luv-test/luv-test/luv-test-manager
 +++ b/meta-luv/recipes-core/luv-test/luv-test/luv-test-manager
 @@ -385,6 +385,15 @@ result=$(cat /tmp/testsuites)
  echo -e '\n'$result | tee -a /tmp/luv.results ${LUV_SAVE_RESULTS_DIR}/luv.results | \
          html_inline ${LUV_HTML_REPORT}
  
-+#test SDEI compliance on luv
-+sh /etc/luv-sdei-test ${LUV_STORAGE}
++#test SDEI compliance on luv #Disabled SDEI tests from running automatically
++#sh /etc/luv-sdei-test ${LUV_STORAGE}
 +
 +# test SBSA compliance on luv
 +sh /etc/luv-sbsa-test ${LUV_STORAGE}

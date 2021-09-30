@@ -145,6 +145,13 @@ Refer to https://uefi.org/testtools for more details
 ## Security Implication
 Arm Enterprise ACS test suite may run at higher privilege level. An attacker may utilize these tests as a means to elevate privilege which can potentially reveal the platform security assets. To prevent the leakage of secure information, it is strongly recommended that the ACS test suite is run only on development platforms. If it is run on production systems, the system should be scrubbed after running the test suite.
 
+## Limitations
+
+Validating the compliance of certain PCIe rules defined in the BSA specification require the PCIe end-point generate specific stimulus during the runtime of the test. Examples of such stimulus are  P2P, PASID, ATC, etc. The tests that requires these stimuli are grouped together in the exerciser module. The exerciser layer is an abstraction layer that enables the integration of hardware capable of generating such stimuli to the test framework.
+The details of the hardware or Verification IP which enable these exerciser tests platform specific and are beyond the scope of this document.
+
+The Live image does not allow customizations, hence, the exerciser module is not included in the Live image. To enable exerciser tests for greater coverage of PCIe rules, please refer to [SBSA](https://github.com/ARM-software/sbsa-acs) Or contact your Arm representative for details.
+
 
 ## License
 
