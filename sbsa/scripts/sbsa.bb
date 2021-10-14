@@ -35,6 +35,7 @@ inherit deploy
 do_configure () {
     # Downloading EDK2 into ${WORKDIR}/edk2.
     echo "do_configure: Checking if EDK2 repository already exists."
+    export GIT_SSL_NO_VERIFY=1
     cd ${WORKDIR}
     if [ ! -d ${WORKDIR}/edk2 ]
     then
@@ -140,6 +141,7 @@ do_configure () {
 }
 
 do_compile () {
+    export GIT_SSL_NO_VERIFY=1
     cd ${WORKDIR}
     ./compile.sh ${WORKDIR}
 }

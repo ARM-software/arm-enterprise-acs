@@ -1,4 +1,4 @@
-From 82abdf799bfbedcef148bdf2ec952f6af01f3d2a Mon Sep 17 00:00:00 2001
+From adfb5e0adb4e152c775a0567779873d9c575e13f Mon Sep 17 00:00:00 2001
 From: Mahesh Bireddy <mahesh.reddybireddy@arm.com>
 Date: Fri, 9 Nov 2018 13:23:59 +0530
 Subject: [PATCH] Luvos v3.1 ACS patch
@@ -10,7 +10,7 @@ Signed-off-by: Gowtham Siddarth <gowtham.siddarth@arm.com>
 Signed-off-by: G Edhaya Chandran <edhaya.chandran@arm.com>
 ---
  .templateconf                                 |   2 +-
- meta-luv/classes/luv-efi.bbclass              | 207 +++++++++++++++++-
+ meta-luv/classes/luv-efi.bbclass              | 188 +++++++++++++++++-
  meta-luv/conf/distro/luv.conf                 |   2 +-
  meta-luv/conf/local.conf.sample               |   5 +-
  .../recipes-core/efivarfs/efivarfs-test.bb    |   1 -
@@ -26,7 +26,7 @@ Signed-off-by: G Edhaya Chandran <edhaya.chandran@arm.com>
  .../recipes-kernel/linux/linux-luv_4.18.bb    |   7 +-
  meta/conf/bitbake.conf                        |   2 +-
  .../systemd-serialgetty/serial-getty@.service |   2 +-
- 17 files changed, 275 insertions(+), 23 deletions(-)
+ 17 files changed, 256 insertions(+), 23 deletions(-)
 
 diff --git a/.templateconf b/.templateconf
 index 0fe6f82503..dce51a4f7a 100644
@@ -37,7 +37,7 @@ index 0fe6f82503..dce51a4f7a 100644
 -TEMPLATECONF=${TEMPLATECONF:-meta-poky/conf}
 +TEMPLATECONF=${TEMPLATECONF:-meta-luv/conf}
 diff --git a/meta-luv/classes/luv-efi.bbclass b/meta-luv/classes/luv-efi.bbclass
-index 86b364953c..5c3d3310c3 100644
+index 86b364953c..61e807843f 100644
 --- a/meta-luv/classes/luv-efi.bbclass
 +++ b/meta-luv/classes/luv-efi.bbclass
 @@ -16,6 +16,13 @@ def get_bits_depends(d):
@@ -80,7 +80,7 @@ index 86b364953c..5c3d3310c3 100644
      fi
  
      if echo "${TARGET_ARCH}" | grep -q "i.86" || [ "${TARGET_ARCH}" = "x86_64" ]; then
-@@ -90,6 +104,187 @@ efi_populate() {
+@@ -90,6 +104,168 @@ efi_populate() {
      install -m 0644 ${LUV_CFG} ${DEST}
  }
  
@@ -97,25 +97,6 @@ index 86b364953c..5c3d3310c3 100644
 +              if %lasterror% == 0 then
 +                goto Done
 +              endif
-+
-+              if  exist FS%i:\SCT_RUN\Overall\Summary.log then
-+                    echo SCT has completed run. Press any key to start UEFI-SCT execution from the begining.
-+                    echo WARNING: Ensure you have already backed up the existing UEFI-SCT logs.
-+                    stallforkey.efi 5
-+                    if %lasterror% == 0 then
-+                        #Backup the existing logs
-+                        rm -q FS%i:\SCT_RUN\Overall_old
-+                        mkdir FS%i:\SCT_RUN\Overall_old
-+                        cp -r FS%i:\SCT_RUN\Overall FS%i:\SCT_RUN\Overall_old
-+                        echo "Reset SCT"
-+                        SCT -r
-+                        echo "Start SCT with SBBR.seq"
-+                        SCT -s SBBR.seq
-+                    else
-+                        goto Done
-+                    endif
-+              endif
-+
 +
 +              if exist FS%i:\SCT_RUN\.passive.mode then
 +                if exist FS%i:\SCT_RUN\.verbose.mode then
@@ -268,7 +249,7 @@ index 86b364953c..5c3d3310c3 100644
  BITS_EFI_LOADER_IMAGE = "${DEST_EFI_LOADER_IMAGE}"
  efi_populate_bits() {
      DEST=$1
-@@ -170,6 +365,11 @@ python build_efi_cfg() {
+@@ -170,6 +346,11 @@ python build_efi_cfg() {
         cfgfile.write('default=bits\n')
         cfgfile.write('fallback=0\n')
  
@@ -280,7 +261,7 @@ index 86b364953c..5c3d3310c3 100644
      cfgfile.write('menuentry \'luv\' {\n')
      kernel = d.getVar('KERNEL_IMAGETYPE')
      cfgfile.write('linux /%s ' % (kernel))
-@@ -200,6 +400,11 @@ python build_efi_cfg() {
+@@ -200,6 +381,11 @@ python build_efi_cfg() {
         cfgfile.write('chainloader /EFI/BOOT/bits/%s\n' % loader)
         cfgfile.write('}\n')
  

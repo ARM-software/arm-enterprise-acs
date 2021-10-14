@@ -14,7 +14,7 @@
 # limitations under the License.
 
 set -e
-
+export GIT_SSL_NO_VERIFY=1
 TOPDIR=`pwd`
 
 #This parameter can be set to 0 if luv-netboot image is not needed in full build

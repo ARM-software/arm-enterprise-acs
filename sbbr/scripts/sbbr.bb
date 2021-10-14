@@ -57,7 +57,8 @@ do_configure () {
 	# Specify any needed configure commands here
 	:
 	echo "do_configure()"
-	cd ${WORKDIR}
+	export GIT_SSL_NO_VERIFY=1
+        cd ${WORKDIR}
 
 	# Specify any needed configure commands here
 	cp -r SbbrBootServices git/uefi-sct/SctPkg/TestCase/UEFI/EFI/BootServices/
