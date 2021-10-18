@@ -31,6 +31,7 @@ git clone https://github.com/intel/luv-yocto.git $CLONEDIR
 cd $CLONEDIR
 git checkout -b v2.3 v2.3
 git am $TOPDIR/luvos/patches/luvos.patch
+git am $TOPDIR/luvos/patches/shim-signed_tar.patch
 if [ "$DISTRO" == "Ubuntu" ] && [ $MAJOR_VERSION -ge 20 ] && [ $MINOR_VERSION -ge 04 ];then
    echo "Adding luvos additional patch in Ubuntu"
    git am --ignore-whitespace --ignore-space-change $TOPDIR/luvos/patches/distros_patches/luvos_additional.patch
@@ -53,4 +54,7 @@ fi
 ln -s $TOPDIR/luvos/scripts/luv-collect-results $LUVDIR/meta-luv/recipes-core/luv-test/luv-test/luv-collect-results
 ln -s $TOPDIR/luvos/scripts/luv-sbsa-test $LUVDIR/meta-luv/recipes-core/luv-test/luv-test/luv-sbsa-test
 ln -s $TOPDIR/luvos/scripts/luv-sdei-test $LUVDIR/meta-luv/recipes-core/luv-test/luv-test/luv-sdei-test
+ln -s $TOPDIR/luvos/patches/0001-8250_fsl.patch $LUVDIR/meta-luv/recipes-kernel/linux/linux-luv/
+ln -s $TOPDIR/luvos/patches/0001-SPCR-Consider-baud-rate-0-as-preconfigured-state.patch $LUVDIR/meta-luv/recipes-kernel/linux/linux-luv/
+ln -s $TOPDIR/luvos/patches/0001-8250_tegra-Create-Tegra-specific-8250-driver.patch $LUVDIR/meta-luv/recipes-kernel/linux/linux-luv/
 ln -s $TOPDIR/luvos/patches/0001-Enterprise-acs-linux-v4.18.patch $LUVDIR/meta-luv/recipes-kernel/linux/linux-luv/

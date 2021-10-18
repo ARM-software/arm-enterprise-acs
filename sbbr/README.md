@@ -1,10 +1,10 @@
 # Server Base Boot Requirements - Architecture Compliance Suite
-SBBR specification complements the SBSA specification by defining the base firmware requirements
+The SBBR recipe as defined in the BBR specifications complements the SBSA specification by defining the base firmware requirements
 required for out-of-box support of any SBSA compatible operating system or hypervisor. These requirements are comprehensive enough
 to enable booting multi-core 64-bit ARMv8 server platforms while remaining minimal enough to allow for OEM and ODM innovation, and
 market differentiation.
 
-For more information, see [SBBR specification](http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.den0044c/index.html).
+For more information, see the SBBR Recipe in the [BBR specification](https://developer.arm.com/documentation/den0044/latest).
 
 This release includes both UEFI Shell and OS context tests that are packaged into a bootable LUV OS image.
 The SBBR test suites check for compliance against the SBBR specification. Like the SBSA tests, these tests are also delivered through two runtime executable environments:
@@ -38,7 +38,7 @@ Enter the following commands after installation of SCT:
 - Shell>FS2:
 - FS2:>cd SCT <br/>
  #To run all tests
-- FS2:\SCT>SCT.efi -a -v
+- FS2:\SCT>SCT.efi -s SBBR.seq
 
 User can select and run tests based on available choices. For information about running the tests, see [SCT User Guide](http://www.uefi.org/testtools).
 

@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+set -e
+export GIT_SSL_NO_VERIFY=1
 TOPDIR=`pwd`
 
 #This parameter can be set to 0 if luv-netboot image is not needed in full build
@@ -155,13 +157,15 @@ if [ $CLEANALLONLY -eq 1 ]; then
 	fi
 fi
 
-echo "Building LuvOS Image with SBBR and SBSA for AARCH4 ..."
+echo "Building LuvOS Image with SBBR and SBSA for AARCH64 ..."
 echo ""
 echo "Default kernel command line parameters: 'systemd.log_target=null plymouth.ignore-serial-consoles debug ip=dhcp log_buf_len=1M efi=debug acpi=on crashkernel=256M earlycon uefi_debug'"
-echo -n "Append parameters (press Enter for default):"
-read ACS_CMDLINE_APPEND
-export ACS_CMDLINE_APPEND
-export BB_ENV_EXTRAWHITE="BB_ENV_EXTRAWHITE ACS_CMDLINE_APPEND"
+if [ -n "$TERM" ] && [ "$TERM" != "dumb" ]; then
+	echo -n "Append parameters (press Enter for default):"
+	read ACS_CMDLINE_APPEND
+	export ACS_CMDLINE_APPEND
+	export BB_ENV_EXTRAWHITE="BB_ENV_EXTRAWHITE ACS_CMDLINE_APPEND"
+fi
 
 if [ $NUMOFARGS -gt 0 ]; then
 	if [ $NUMOFARGS -eq 1 ]; then

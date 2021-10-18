@@ -36,7 +36,7 @@ S = "${WORKDIR}/git"
 inherit deploy
 
 # No information for SRC_URI yet (only an external source tree was specified)
-SRCREV  = "ed8a7477d47459be07cac790f7182afe68ed53c6"
+SRCREV  = "f3b3456152dacf26ec0abaa0c21a9432cc176630"
 SRC_URI = "git://github.com/tianocore/edk2-test;protocol=https \
            file://SbbrBootServices/ \
            file://SbbrEfiSpecVerLvl/ \
@@ -47,6 +47,8 @@ SRC_URI = "git://github.com/tianocore/edk2-test;protocol=https \
            file://SBBR_SCT.dsc \
            file://build_sbbr.sh \
            file://edk2-test-sbbr.patch \
+           file://SBBR.seq \
+           file://EfiCompliant_SBBR.ini \
           "
 
 # NOTE: no Makefile found, unable to determine what needs to be done
@@ -55,28 +57,31 @@ do_configure () {
 	# Specify any needed configure commands here
 	:
 	echo "do_configure()"
-	cd ${WORKDIR}
+	export GIT_SSL_NO_VERIFY=1
+        cd ${WORKDIR}
 
 	# Specify any needed configure commands here
 	cp -r SbbrBootServices git/uefi-sct/SctPkg/TestCase/UEFI/EFI/BootServices/
 	cp -r SbbrEfiSpecVerLvl SbbrRequiredUefiProtocols SbbrSmbios SbbrSysEnvConfig git/uefi-sct/SctPkg/TestCase/UEFI/EFI/Generic/
 	cp -r SBBRRuntimeServices git/uefi-sct/SctPkg/TestCase/UEFI/EFI/RuntimeServices/
 	cp SBBR_SCT.dsc git/uefi-sct/SctPkg/UEFI/
+	cp SBBR.seq git/uefi-sct/SctPkg/UEFI/
+	cp EfiCompliant_SBBR.ini git/uefi-sct/SctPkg/UEFI/
 	cp build_sbbr.sh git/uefi-sct/SctPkg/
 
 	if [ ! -d ${WORKDIR}/edk2 ]
 	then
 		echo "do_configure: Cloning EDK2 repository."
-		git clone --recursive -b edk2-stable202008 https://github.com/tianocore/edk2.git
+		git clone --recursive -b edk2-stable202102 https://github.com/tianocore/edk2.git
 	fi
 
         # Checking for latest tool version
-        VERSION=`/usr/bin/lsb_release -r | awk -F ':' '{ print $2 }' | sed 's/[ \t]*//g'`
-        MAJOR_VERSION=`echo $VERSION | awk -F '.' '{print $1}'`
-        MINOR_VERSION=`echo $VERSION | awk -F '.' '{print $2}'`
-        DISTRO=`/usr/bin/lsb_release -i | awk -F ':' '{print $2}' | sed 's/[ \t]*//g'`
+        VERSION=$(/usr/bin/lsb_release -r | awk -F ':' '{ print $2 }' | sed 's/[ \t]*//g')
+        MAJOR_VERSION=$(echo $VERSION | awk -F '.' '{print $1}')
+        MINOR_VERSION=$(echo $VERSION | awk -F '.' '{print $2}')
+        DISTRO=$(/usr/bin/lsb_release -i | awk -F ':' '{print $2}' | sed 's/[ \t]*//g')
 
-        if [ "$DISTRO" == "Ubuntu" ] && [ $MAJOR_VERSION -ge 20 ] && [ $MINOR_VERSION -ge 04 ]
+        if [ "$DISTRO" = "Ubuntu" ] && [ $MAJOR_VERSION -ge 20 ] && [ $MINOR_VERSION -ge 04 ]
         then
             cd ${WORKDIR}/edk2
             echo "do_configure: Adding additional LUVOS patch in Ubuntu."
@@ -84,7 +89,7 @@ do_configure () {
             cd ${WORKDIR}
         fi
 
-        if [ "$DISTRO" == "Debian" ] && [ $MAJOR_VERSION -ge 10 ]
+        if [ "$DISTRO" = "Debian" ] && [ $MAJOR_VERSION -ge 10 ]
         then
             cd ${WORKDIR}/edk2
             echo "do_configure: Adding additional LUVOS patch."
@@ -111,7 +116,7 @@ do_compile () {
 	export BB_ENV_EXTRAWHITE="$BB_ENV_EXTRAWHITE PATH"
 	echo "New PATH = $PATH"
 
-        MACHINE=`uname -m`
+        MACHINE=$(uname -m)
         if [ $MACHINE = "aarch64" ]; then
            export CROSS_COMPILE="/usr/bin/"
         else

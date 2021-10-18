@@ -1,4 +1,4 @@
-# Copyright (c) 2016-2020, Arm Limited or its affiliates. All rights reserved.
+# Copyright (c) 2016-2021, Arm Limited or its affiliates. All rights reserved.
 # SPDX-License-Identifier : Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,7 +23,7 @@ SRC_URI = "git://github.com/ARM-software/sbsa-acs.git;protocol=https \
            file://compile.sh"
 
 PV = "1.0+git${SRCPV}"
-SRCREV = "1b3a37214fe6809e07e471f79d1ef856461bc803"
+SRCREV = "3a0b377406850206db9dfba9d3b881a87e300d92"
 
 # GCC checksum.
 SRC_URI[md5sum] = "24ac2e26f50f49f3043f281440b41bba"
@@ -35,6 +35,7 @@ inherit deploy
 do_configure () {
     # Downloading EDK2 into ${WORKDIR}/edk2.
     echo "do_configure: Checking if EDK2 repository already exists."
+    export GIT_SSL_NO_VERIFY=1
     cd ${WORKDIR}
     if [ ! -d ${WORKDIR}/edk2 ]
     then
@@ -46,12 +47,12 @@ do_configure () {
     fi
 
     # Checking for latest tool version
-    VERSION=`/usr/bin/lsb_release -r | awk -F ':' '{ print $2 }' | sed 's/[ \t]*//g'`
-    MAJOR_VERSION=`echo $VERSION | awk -F '.' '{print $1}'`
-    MINOR_VERSION=`echo $VERSION | awk -F '.' '{print $2}'`
-    DISTRO=`/usr/bin/lsb_release -i | awk -F ':' '{print $2}' | sed 's/[ \t]*//g'`
+    VERSION=$(/usr/bin/lsb_release -r | awk -F ':' '{ print $2 }' | sed 's/[ \t]*//g')
+    MAJOR_VERSION=$(echo $VERSION | awk -F '.' '{print $1}')
+    MINOR_VERSION=$(echo $VERSION | awk -F '.' '{print $2}')
+    DISTRO=$(/usr/bin/lsb_release -i | awk -F ':' '{print $2}' | sed 's/[ \t]*//g')
 
-    if [ "$DISTRO" == "Ubuntu" ] &&  [ $MAJOR_VERSION -ge 20 ] && [ $MINOR_VERSION -ge 04 ]
+    if [ "$DISTRO" = "Ubuntu" ] &&  [ $MAJOR_VERSION -ge 20 ] && [ $MINOR_VERSION -ge 04 ]
     then
         cd ${WORKDIR}/edk2
         echo "do_configure: Adding additional LUVOS patch Ubuntu."
@@ -59,7 +60,7 @@ do_configure () {
         cd ${WORKDIR}
     fi
 
-    if [ "$DISTRO" == "Debian" ] && [ $MAJOR_VERSION -ge 10 ]
+    if [ "$DISTRO" = "Debian" ] && [ $MAJOR_VERSION -ge 10 ]
     then
         cd ${WORKDIR}/edk2
         echo "do_configure: Adding additional LUVOS patch."
@@ -128,7 +129,7 @@ do_configure () {
     then
         sed -i 's/static const int map/const int map/g' ${WORKDIR}/edk2-libc/StdLib/LibC/Main/Arm/flt_rounds.c
     fi
-    MACHINE=`uname -m`
+    MACHINE=$(uname -m)
     echo "Architecture Detected : $MACHINE"
     if [ $MACHINE = "aarch64" ]; then
         if ! grep -q AARCH64_BUILD "${WORKDIR}/edk2/ShellPkg/ShellPkg.dsc"
@@ -140,6 +141,7 @@ do_configure () {
 }
 
 do_compile () {
+    export GIT_SSL_NO_VERIFY=1
     cd ${WORKDIR}
     ./compile.sh ${WORKDIR}
 }
