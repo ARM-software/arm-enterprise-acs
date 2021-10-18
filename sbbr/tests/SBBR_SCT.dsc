@@ -99,7 +99,7 @@
   *_*_AARCH64_PP_FLAGS         = -D EFIAARCH64 $(GCC_VER_MACRO)
   RVCT:*_*_AARCH64_DLINK_FLAGS = --muldefweak
 
-  DEBUG_*_*_CC_FLAGS  = -DEFI_DEBUG -DACS_VERSION=\"v3.0\"
+  DEBUG_*_*_CC_FLAGS  = -DEFI_DEBUG -DACS_VERSION=\"v3.1\"
   RELEASE_*_*_CC_FLAGS  = -DMDEPKG_NDEBUG
 
 [Libraries]
@@ -188,6 +188,95 @@ SctPkg/SCRT/SCRTDriver/SCRTDriver.inf
 #
 
 # Boot Services Tests - SBBR v1.0 Appendix A
+SctPkg/TestCase/UEFI/EFI/Generic/EfiCompliant/BlackBoxTest/EfiCompliantBBTest_uefi.inf
+SctPkg/TestCase/UEFI/EFI/BootServices/EventTimerTaskPriorityServices/BlackBoxTest/EventTimerTaskPriorityServicesBBTest_uefi.inf
+SctPkg/TestCase/UEFI/EFI/BootServices/ImageServices/BlackBoxTest/ImageBBTest.inf
+SctPkg/TestCase/UEFI/EFI/BootServices/MemoryAllocationServices/BlackBoxTest/MemoryAllocationServicesBBTest.inf
+SctPkg/TestCase/UEFI/EFI/BootServices/MiscBootServices/BlackBoxTest/MiscBootServicesBBTest.inf
+SctPkg/TestCase/UEFI/EFI/BootServices/ProtocolHandlerServices/BlackBoxTest/ProtocolHandlerBBTest.inf
+
+SctPkg/TestCase/UEFI/EFI/RuntimeServices/MiscRuntimeServices/BlackBoxTest/MiscRuntimeServicesBBTest.inf
+SctPkg/TestCase/UEFI/EFI/RuntimeServices/TimeServices/BlackBoxTest/TimeServicesBBTest.inf
+SctPkg/TestCase/UEFI/EFI/RuntimeServices/VariableServices/BlackBoxTest/VariableServicesBBTest.inf
+
+SctPkg/TestCase/UEFI/EFI/Protocol/GraphicsOutput/BlackBoxTest/GraphicsOutputBBTest.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/Bis/BlackBoxTest/BisBBTest.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/BlockIo/BlackBoxTest/BlockIoBBTest.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/BlockIo2/BlackBoxTest/BlockIo2BBTest.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/BusSpecificDriverOverride/BlackBoxTest/BusSpecificDriverOverrideBBTest.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/DebugPort/BlackBoxTest/DebugPortBBTest.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/DebugSupport/BlackBoxTest/DebugSupportBBTest.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/Decompress/BlackBoxTest/DecompressBBTest.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/DevicePath/BlackBoxTest/DevicePathBBTest.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/DevicePathUtilities/BlackBoxTest/DevicePathUtilitiesBBTest.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/DevicePathToText/BlackBoxTest/DevicePathToTextBBTest.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/DevicePathFromText/BlackBoxTest/DevicePathFromTextBBTest.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/DiskIo/BlackBoxTest/DiskIoBBTest.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/DiskIo2/BlackBoxTest/DiskIo2BBTest.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/Ebc/BlackBoxTest/EbcBBTest.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/LoadedImage/BlackBoxTest/LoadedImageBBTest.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/LoadFile/BlackBoxTest/LoadFileBBTest.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/PciIo/BlackBoxTest/PciIoBBTest.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/PciRootBridgeIo/BlackBoxTest/PciRootBridgeIoBBTest.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/PlatformDriverOverride/BlackBoxTest/PlatformDriverOverrideBBTest.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/PxeBaseCode/BlackBoxTest/PxeBBTest.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/ScsiIo/BlackBoxTest/ScsiIoBBTest.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/ExtScsiPassThru/BlackBoxTest/ExtScsiPassThruBBTest.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/iScsiInitiatorName/BlackBoxTest/iScsiInitiatorNameBBTest.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/SerialIo/BlackBoxTest/SerialIoBBTest.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/SimpleNetwork/BlackBoxTest/SimpleNetworkBBTest.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/SimpleFileSystem/BlackBoxTest/SimpleFileSystemBBTest.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/SimplePointer/BlackBoxTest/SimplePointerBBTest.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/SimpleTextIn/BlackBoxTest/SimpleTextInBBTest.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/SimpleTextOut/BlackBoxTest/SimpleTextOutBBTest_uefi.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/UnicodeCollation2/BlackBoxTest/UnicodeCollation2BBTest.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/RegularExpression/BlackBoxTest/RegularExpressionBBTest.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/Usb2Hc/BlackBoxTest/Usb2HcTest.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/UsbIo/BlackBoxTest/UsbIoTest.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/Authentication/BlackBoxTest/AuthenticationBBTest.inf
+#SctPkg/TestCase/UEFI/EFI/Protocol/Hash/BlackBoxTest/HashBBTest.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/Tape/BlackBoxTest/TapeBBTest.inf
+
+SctPkg/TestCase/UEFI/EFI/Protocol/DriverDiagnostics2/BlackBoxTest/DriverDiagnostics2BBTest.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/ACPITable/BlackBoxTest/AcpiTableProtocolBBTest.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/SimpleTextInputEx/BlackBoxTest/SimpleTextInputExBBTest.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/ComponentName2/BlackBoxTest/ComponentName2BBTest.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/HIIDatabase/BlackBoxTest/HIIDatabaseBBTest.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/HIIString/BlackBoxTest/HIIStringBBTest.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/HIIImage/BlackBoxTest/HIIImageBBTest.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/HIIImageEx/BlackBoxTest/HIIImageExBBTest.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/HIIFont/BlackBoxTest/HIIFontBBTest.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/HIIFontEx/BlackBoxTest/HIIFontExBBTest.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/HIIConfigAccess/BlackBoxTest/HIIConfigAccessBBTest.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/HIIConfigRouting/BlackBoxTest/HIIConfigRoutingBBTest.inf
+
+SctPkg/TestCase/UEFI/EFI/Protocol/VlanConfig/BlackBoxTest/VlanConfigBBTest.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/IPsecConfig/BlackBoxTest/IPsecConfigBBTest.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/IPsec2/BlackBoxTest/IPsec2BBTest.inf
+
+SctPkg/TestCase/UEFI/EFI/Protocol/AbsolutePointer/BlackBoxTest/AbsolutePointerBBTest.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/PlatformToDriverConfiguration/BlackBoxTest/PlatformToDriverConfigurationBBTest.inf
+
+SctPkg/TestCase/UEFI/EFI/Protocol/FirmwareManagement/BlackBoxTest/FirmwareManagementBBTest.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/AtaPassThru/BlackBoxTest/AtaPassThruBBTest.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/StorageSecurityCommand/BlackBoxTest/StorageSecurityCommandBBTest.inf
+
+SctPkg/TestCase/UEFI/EFI/Protocol/AdapterInfo/BlackBoxTest/AdapterInfoProtocolBBTest.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/TimeStamp/BlackBoxTest/TimeStampProtocolBBTest.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/RandomNumber/BlackBoxTest/RandomNumberBBTest.inf
+
+SctPkg/TestCase/UEFI/EFI/Protocol/Hash2/BlackBoxTest/Hash2BBTest.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/PKCS7Verify/BlackBoxTest/Pkcs7BBTest.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/ConfigKeywordHandler/BlackBoxTest/ConfigKeywordHandlerBBTest.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/RamDisk/BlackBoxTest/RamDiskProtocolBBTest.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/NVMEPassThru/BlackBoxTest/NVMEPassThruBBTest.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/EraseBlock/BlackBoxTest/EraseBlockBBTest.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/SDMMCPassThru/BlackBoxTest/SDMMCPassThruBBTest.inf
+
+SctPkg/TestCase/UEFI/EFI/Protocol/PartitionInfo/BlackBoxTest/PartitionInfoBBTest.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/UFSDeviceConfig/BlackBoxTest/UFSDeviceConfigBBTest.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/ResetNotification/BlackBoxTest/ResetNotificationBBTest.inf
+
 #
 ##  1. EFI_RAISE_TPL
 ##  2. EFI_RESTORE_TPL
@@ -197,7 +286,6 @@ SctPkg/SCRT/SCRTDriver/SCRTDriver.inf
 ##  6. EFI_SIGNAL_EVENT
 ##  7. EFI_CLOSE_EVENT
 ##  8. EFI_CREATE_EVENT_EX
-SctPkg/TestCase/UEFI/EFI/BootServices/EventTimerTaskPriorityServices/BlackBoxTest/EventTimerTaskPriorityServicesBBTest_uefi.inf
 #
 ##  9. EFI_IMAGE_LOAD
 ## 10. EFI_IMAGE_START
@@ -249,7 +337,7 @@ SctPkg/TestCase/UEFI/EFI/BootServices/ImageServices/BlackBoxTest/Dependency/Vali
 ## 16. EFI_GET_MEMORY_MAP
 ## 17. EFI_ALLOCATE_POOL
 ## 18. EFI_FREE_POOL
-SctPkg/TestCase/UEFI/EFI/BootServices/MemoryAllocationServices/BlackBoxTest/MemoryAllocationServicesBBTest.inf
+#SctPkg/TestCase/UEFI/EFI/BootServices/ImageServices/BlackBoxTest/Dependency/VeryLargeImage1/VeryLargeImage1.inf
 #
 ## 19. EFI_INSTALL_CONFIGURATION_TABLE
 ## 20. EFI_GET_NEXT_MONOTONIC_COUNT
@@ -258,7 +346,6 @@ SctPkg/TestCase/UEFI/EFI/BootServices/MemoryAllocationServices/BlackBoxTest/Memo
 ## 23. EFI_CALCULATE_CRC32
 ## 24. EFI_COPY_MEM
 ## 25. EFI_SET_MEM
-SctPkg/TestCase/UEFI/EFI/BootServices/MiscBootServices/BlackBoxTest/MiscBootServicesBBTest.inf
 #
 ## 26. EFI_INSTALL_PROTOCOL_INTERFACE
 ## 27. EFI_REINSTALL_PROTOCOL_INTERFACE
@@ -277,7 +364,6 @@ SctPkg/TestCase/UEFI/EFI/BootServices/MiscBootServices/BlackBoxTest/MiscBootServ
 ## 40. EFI_LOCATE_HANDLE_BUFFER
 ## 41. EFI_INSTALL_MULTIPLE_PROTOCOL_INTERFACES
 ## 42. EFI_UNINSTALL_MULTIPLE_PROTOCOL_INTERFACES
-SctPkg/TestCase/UEFI/EFI/BootServices/ProtocolHandlerServices/BlackBoxTest/ProtocolHandlerBBTest.inf
 ##
 ## Dependency files for Protocol Handler Services Test
 ##
@@ -313,6 +399,177 @@ SctPkg/TestCase/UEFI/EFI/BootServices/ProtocolHandlerServices/BlackBoxTest/Depen
 SctPkg/TestCase/UEFI/EFI/BootServices/ProtocolHandlerServices/BlackBoxTest/Dependency/TestDriver5/TestDriver5.inf
 SctPkg/TestCase/UEFI/EFI/BootServices/ProtocolHandlerServices/BlackBoxTest/Dependency/PlatformOverrideDriver1/PlatformOverrideDriver1.inf
 SctPkg/TestCase/UEFI/EFI/BootServices/ProtocolHandlerServices/BlackBoxTest/Dependency/BusOverrideDriver1/BusOverrideDriver1.inf
+
+#
+# Dependency files for Decompress Protocol Test
+#
+
+SctPkg/TestCase/UEFI/EFI/Protocol/Decompress/BlackBoxTest/Dependency/Config/Config.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/Decompress/BlackBoxTest/Dependency/CompressedFile1/CompressedFile1.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/Decompress/BlackBoxTest/Dependency/CompressedFile2/CompressedFile2.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/Decompress/BlackBoxTest/Dependency/UncompressedFile1/UncompressedFile1.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/Decompress/BlackBoxTest/Dependency/UncompressedFile2/UncompressedFile2.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/Decompress/BlackBoxTest/Dependency/InvalidCompressedFile1/InvalidCompressedFile1.inf
+
+#
+# Dependency files for EBC Protocol Test
+#
+SctPkg/TestCase/UEFI/EFI/Protocol/Ebc/BlackBoxTest/Dependency/EbcDriverBin/EbcDriverBin.inf
+
+#
+# Dependency files for Loaded Image Protocol Test
+#
+
+SctPkg/TestCase/UEFI/EFI/Protocol/LoadedImage/BlackBoxTest/Dependency/Application1/Application1.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/LoadedImage/BlackBoxTest/Dependency/Application2/Application2.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/LoadedImage/BlackBoxTest/Dependency/BootServicesDriver1/BootServicesDriver1.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/LoadedImage/BlackBoxTest/Dependency/BootServicesDriver2/BootServicesDriver2.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/LoadedImage/BlackBoxTest/Dependency/RuntimeServicesDriver1/RuntimeServicesDriver1.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/LoadedImage/BlackBoxTest/Dependency/RuntimeServicesDriver2/RuntimeServicesDriver2.inf
+
+#
+# Dependency files for PCI IO Protocol Test
+#
+
+SctPkg/TestCase/UEFI/EFI/Protocol/PciIo/BlackBoxTest/Dependency/Config/Config.inf
+SctPkg/TestCase/UEFI/EFI/Protocol/PciIo/BlackBoxTest/Dependency/MakeConfigWritable/MakeConfigWritable.inf
+
+#
+# Dependency files for PCI Root Bridge IO Protocol Test
+#
+
+SctPkg/TestCase/UEFI/EFI/Protocol/PciRootBridgeIo/BlackBoxTest/Dependency/Config/Config.inf
+
+#
+# Dependency files for PXE Base Code Protocol Test
+#
+SctPkg/TestCase/UEFI/EFI/Protocol/PxeBaseCode/BlackBoxTest/Dependency/Config/Config.inf
+
+#
+# Dependency files for Config Keyword Handler Protocol Test
+#
+SctPkg/TestCase/UEFI/EFI/Protocol/ConfigKeywordHandler/BlackBoxTest/Dependency/SampleDriver/DriverSampleDxe.inf
+
+#
+# Support Files
+#
+SctPkg/TestInfrastructure/SCT/Framework/ENTS/Eftp/Eftp.inf
+SctPkg/TestInfrastructure/SCT/Framework/ENTS/MonitorServices/SerialMonitor/SerialMonitor.inf
+SctPkg/TestInfrastructure/SCT/Framework/ENTS/MonitorServices/ManagedNetworkMonitor/ManagedNetworkMonitor.inf
+SctPkg/TestInfrastructure/SCT/Framework/ENTS/MonitorServices/IP4NetworkMonitor/IP4NetworkMonitor.inf
+
+
+#
+# Test Cases for RIVL (Only for UEFI SCT)
+#
+
+SctPkg/TestCase/RIVL/BootService/BootServiceENTSTest.inf
+SctPkg/TestCase/RIVL/RuntimeService/RuntimeServiceENTSTest.inf
+SctPkg/TestCase/RIVL/GenericService/GenericServiceENTSTest.inf
+
+SctPkg/TestCase/RIVL/Protocol/SimpleNetwork/SimpleNetworkENTSTest.inf
+SctPkg/TestCase/RIVL/Protocol/PXEBaseCode/PXEBaseCodeENTSTest.inf
+
+SctPkg/TestCase/RIVL/Protocol/AddressResolutionProtocol/Arp/ArpENTSTest.inf
+SctPkg/TestCase/RIVL/Protocol/AddressResolutionProtocol/ArpServiceBinding/ArpServiceBindingENTSTest.inf
+
+SctPkg/TestCase/RIVL/Protocol/InternetProtocol4/Ip4/Ip4ENTSTest.inf
+SctPkg/TestCase/RIVL/Protocol/InternetProtocol4/Ip4Config/Ip4ConfigENTSTest.inf
+SctPkg/TestCase/RIVL/Protocol/InternetProtocol4/Ip4Config2/Ip4Config2ENTSTest.inf
+SctPkg/TestCase/RIVL/Protocol/InternetProtocol4/Ip4ServiceBinding/Ip4ServiceBindingENTSTest.inf
+
+SctPkg/TestCase/RIVL/Protocol/InternetProtocol6/Ip6/Ip6ENTSTest.inf
+SctPkg/TestCase/RIVL/Protocol/InternetProtocol6/Ip6Config/Ip6ConfigENTSTest.inf
+SctPkg/TestCase/RIVL/Protocol/InternetProtocol6/Ip6ServiceBinding/Ip6ServiceBindingENTSTest.inf
+
+SctPkg/TestCase/RIVL/Protocol/ManagedNetwork/MNP/MnpENTSTest.inf
+SctPkg/TestCase/RIVL/Protocol/ManagedNetwork/MNPSB/MnpSBENTSTest.inf
+SctPkg/TestCase/RIVL/Protocol/Dhcp4/Dhcp4/Dhcp4ENTSTest.inf
+SctPkg/TestCase/RIVL/Protocol/Dhcp4/Dhcp4SB/Dhcp4SBENTSTest.inf
+
+SctPkg/TestCase/RIVL/Protocol/Dhcp6/Dhcp6/Dhcp6ENTSTest.inf
+SctPkg/TestCase/RIVL/Protocol/Dhcp6/Dhcp6SB/Dhcp6SBENTSTest.inf
+
+SctPkg/TestCase/RIVL/Protocol/Udp4/Udp4/Udp4ENTSTest.inf
+SctPkg/TestCase/RIVL/Protocol/Udp4/Udp4ServiceBinding/Udp4ServiceBindingENTSTest.inf
+
+SctPkg/TestCase/RIVL/Protocol/Udp6/Udp6/Udp6ENTSTest.inf
+SctPkg/TestCase/RIVL/Protocol/Udp6/Udp6ServiceBinding/Udp6ServiceBindingENTSTest.inf
+
+SctPkg/TestCase/RIVL/Protocol/Mtftp4/Mtftp4/Mtftp4ENTSTest.inf
+SctPkg/TestCase/RIVL/Protocol/Mtftp4/Mtftp4ServiceBinding/Mtftp4ServiceBindingENTSTest.inf
+
+SctPkg/TestCase/RIVL/Protocol/Mtftp6/Mtftp6/Mtftp6ENTSTest.inf
+SctPkg/TestCase/RIVL/Protocol/Mtftp6/Mtftp6ServiceBinding/Mtftp6ServiceBindingENTSTest.inf
+
+SctPkg/TestCase/RIVL/Protocol/Tcp4/Tcp4/Tcp4ENTSTest.inf
+SctPkg/TestCase/RIVL/Protocol/Tcp4/Tcp4ServiceBinding/Tcp4ServiceBindingENTSTest.inf
+
+SctPkg/TestCase/RIVL/Protocol/Tcp6/Tcp6/Tcp6ENTSTest.inf
+SctPkg/TestCase/RIVL/Protocol/Tcp6/Tcp6ServiceBinding/Tcp6ServiceBindingENTSTest.inf
+
+SctPkg/TestCase/RIVL/Protocol/Http/Http/HttpENTSTest.inf
+SctPkg/TestCase/RIVL/Protocol/Http/HttpServiceBinding/HttpServiceBindingENTSTest.inf
+
+
+#
+# Test cases for SBBR SCT
+#
+
+# Boot Services Tests - SBBR v1.0 Appendix A
+#
+##  1. EFI_RAISE_TPL
+##  2. EFI_RESTORE_TPL
+##  3. EFI_CREATE_EVENT
+##  4. EFI_SET_TIMER
+##  5. EFI_WAIT_FOR_EVENT
+##  6. EFI_SIGNAL_EVENT
+##  7. EFI_CLOSE_EVENT
+##  8. EFI_CREATE_EVENT_EX
+#SctPkg/TestCase/UEFI/EFI/BootServices/EventTimerTaskPriorityServices/BlackBoxTest/EventTimerTaskPriorityServicesBBTest_uefi.inf
+#
+##  9. EFI_IMAGE_LOAD
+## 10. EFI_IMAGE_START
+## 11. EFI_EXIT
+## 12. EFI_IMAGE_UNLOAD
+## 13. EFI_EXIT_BOOT_SERVICES
+#SctPkg/TestCase/UEFI/EFI/BootServices/ImageServices/BlackBoxTest/ImageBBTest.inf
+#
+## 14. EFI_ALLOCATE_PAGES
+## 15. EFI_FREE_PAGES
+## 16. EFI_GET_MEMORY_MAP
+## 17. EFI_ALLOCATE_POOL
+## 18. EFI_FREE_POOL
+#SctPkg/TestCase/UEFI/EFI/BootServices/MemoryAllocationServices/BlackBoxTest/MemoryAllocationServicesBBTest.inf
+#
+## 19. EFI_INSTALL_CONFIGURATION_TABLE
+## 20. EFI_GET_NEXT_MONOTONIC_COUNT
+## 21. EFI_STALL
+## 22. EFI_SET_WATCHDOG_TIMER
+## 23. EFI_CALCULATE_CRC32
+## 24. EFI_COPY_MEM
+## 25. EFI_SET_MEM
+#SctPkg/TestCase/UEFI/EFI/BootServices/MiscBootServices/BlackBoxTest/MiscBootServicesBBTest.inf
+#
+## 26. EFI_INSTALL_PROTOCOL_INTERFACE
+## 27. EFI_REINSTALL_PROTOCOL_INTERFACE
+## 28. EFI_UNINSTALL_PROTOCOL_INTERFACE
+## 29. EFI_HANDLE_PROTOCOL
+## 30. EFI_REGISTER_PROTOCOL_NOTIFY
+## 31. EFI_LOCATE_HANDLE
+## 32. EFI_LOCATE_PROTOCOL
+## 33. EFI_LOCATE_DEVICE_PATH
+## 34. EFI_CONNECT_CONTROLLER
+## 35. EFI_DISCONNECT_CONTROLLER
+## 36. EFI_OPEN_PROTOCOL
+## 37. EFI_CLOSE_PROTOCOL
+## 38. EFI_OPEN_PROTOCOL_INFORMATION
+## 39. EFI_PROTOCOLS_PER_HANDLE
+## 40. EFI_LOCATE_HANDLE_BUFFER
+## 41. EFI_INSTALL_MULTIPLE_PROTOCOL_INTERFACES
+## 42. EFI_UNINSTALL_MULTIPLE_PROTOCOL_INTERFACES
+#SctPkg/TestCase/UEFI/EFI/BootServices/ProtocolHandlerServices/BlackBoxTest/ProtocolHandlerBBTest.inf
+
 # End of Boot Services Tests - SBBR v1.0 Appendix A
 
 #
@@ -342,18 +599,18 @@ SctPkg/TestCase/UEFI/EFI/Generic/SbbrSmbios/BlackBoxTest/SbbrSmbiosBBTest.inf
 ##  2. EFI_SET_TIME
 ##  3. EFI_GET_WAKEUP_TIME
 ##  4. EFI_SET_WAKEUP_TIME
-SctPkg/TestCase/UEFI/EFI/RuntimeServices/TimeServices/BlackBoxTest/TimeServicesBBTest.inf
+#SctPkg/TestCase/UEFI/EFI/RuntimeServices/TimeServices/BlackBoxTest/TimeServicesBBTest.inf
 #
 ##  5. EFI_GET_VARIABLE
 ##  6. EFI_GET_NEXT_VARIABLE_NAME
 ##  7. EFI_SET_VARIABLE
 ##  8. EFI_QUERY_VARIABLE_INFO
-SctPkg/TestCase/UEFI/EFI/RuntimeServices/VariableServices/BlackBoxTest/VariableServicesBBTest.inf
+#SctPkg/TestCase/UEFI/EFI/RuntimeServices/VariableServices/BlackBoxTest/VariableServicesBBTest.inf
 #
 ##  9. EFI_QUERY_CAPSULE_CAPABILITIES
 ## 10. EFI_UPDATE_CAPSULE
 ## 11. EFI_RESET_SYSTEM
-SctPkg/TestCase/UEFI/EFI/RuntimeServices/MiscRuntimeServices/BlackBoxTest/MiscRuntimeServicesBBTest.inf
+#SctPkg/TestCase/UEFI/EFI/RuntimeServices/MiscRuntimeServices/BlackBoxTest/MiscRuntimeServicesBBTest.inf
 #
 ## 12. EFI_SET_VIRTUAL_ADDRESS_MAP
 ## 13. EFI_CONVERT_POINTER
@@ -364,23 +621,22 @@ SctPkg/TestCase/UEFI/EFI/RuntimeServices/SBBRRuntimeServices/BlackBoxTest/SBBRRu
 # UEFI Required Protocols Tests - SBBR Appendix C
 #
 SctPkg/TestCase/UEFI/EFI/Generic/SbbrRequiredUefiProtocols/BlackBoxTest/RequiredUefiProtocolsBBTest.inf
-SctPkg/TestCase/UEFI/EFI/Generic/EfiCompliant/BlackBoxTest/EfiCompliantBBTest_uefi.inf
+#SctPkg/TestCase/UEFI/EFI/Generic/EfiCompliant/BlackBoxTest/EfiCompliantBBTest_uefi.inf
 ##
 ## Dependency files for UEFI/EFI Compliant Test
 ##
-SctPkg/TestCase/UEFI/EFI/Generic/EfiCompliant/BlackBoxTest/Dependency/Config/Config.inf
+#SctPkg/TestCase/UEFI/EFI/Generic/EfiCompliant/BlackBoxTest/Dependency/Config/Config.inf
 # End of UEFI Required Protocols Tests - SBBR Appendix C
 
-SctPkg/TestCase/UEFI/EFI/Protocol/GraphicsOutput/BlackBoxTest/GraphicsOutputBBTest.inf
-SctPkg/TestCase/UEFI/EFI/Protocol/PciIo/BlackBoxTest/PciIoBBTest.inf
-SctPkg/TestCase/UEFI/EFI/Protocol/PciRootBridgeIo/BlackBoxTest/PciRootBridgeIoBBTest.inf
-SctPkg/TestCase/UEFI/EFI/Protocol/DevicePath/BlackBoxTest/DevicePathBBTest.inf
+#SctPkg/TestCase/UEFI/EFI/Protocol/GraphicsOutput/BlackBoxTest/GraphicsOutputBBTest.inf
+#SctPkg/TestCase/UEFI/EFI/Protocol/PciIo/BlackBoxTest/PciIoBBTest.inf
+#SctPkg/TestCase/UEFI/EFI/Protocol/PciRootBridgeIo/BlackBoxTest/PciRootBridgeIoBBTest.inf
+#SctPkg/TestCase/UEFI/EFI/Protocol/DevicePath/BlackBoxTest/DevicePathBBTest.inf
 
 #
 # Support Files
 #
-SctPkg/TestInfrastructure/SCT/Framework/ENTS/Eftp/Eftp.inf
-SctPkg/TestInfrastructure/SCT/Framework/ENTS/MonitorServices/SerialMonitor/SerialMonitor.inf
-SctPkg/TestInfrastructure/SCT/Framework/ENTS/MonitorServices/ManagedNetworkMonitor/ManagedNetworkMonitor.inf
-SctPkg/TestInfrastructure/SCT/Framework/ENTS/MonitorServices/IP4NetworkMonitor/IP4NetworkMonitor.inf
-
+#SctPkg/TestInfrastructure/SCT/Framework/ENTS/Eftp/Eftp.inf
+#SctPkg/TestInfrastructure/SCT/Framework/ENTS/MonitorServices/SerialMonitor/SerialMonitor.inf
+#SctPkg/TestInfrastructure/SCT/Framework/ENTS/MonitorServices/ManagedNetworkMonitor/ManagedNetworkMonitor.inf
+#SctPkg/TestInfrastructure/SCT/Framework/ENTS/MonitorServices/IP4NetworkMonitor/IP4NetworkMonitor.inf

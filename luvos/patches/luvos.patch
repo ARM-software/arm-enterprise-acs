@@ -1,7 +1,7 @@
-From 7765b81bcfcfb8866a2dfde99235817ffc3799b0 Mon Sep 17 00:00:00 2001
+From adfb5e0adb4e152c775a0567779873d9c575e13f Mon Sep 17 00:00:00 2001
 From: Mahesh Bireddy <mahesh.reddybireddy@arm.com>
 Date: Fri, 9 Nov 2018 13:23:59 +0530
-Subject: [PATCH] Luvos v3.0 ACS patch
+Subject: [PATCH] Luvos v3.1 ACS patch
 
 Signed-off-by: Mahesh Bireddy <mahesh.reddybireddy@arm.com>
 Signed-off-by: Rajat Goyal <rajat.goyal@arm.com>
@@ -10,7 +10,7 @@ Signed-off-by: Gowtham Siddarth <gowtham.siddarth@arm.com>
 Signed-off-by: G Edhaya Chandran <edhaya.chandran@arm.com>
 ---
  .templateconf                                 |   2 +-
- meta-luv/classes/luv-efi.bbclass              | 187 +++++++++++++++++-
+ meta-luv/classes/luv-efi.bbclass              | 188 +++++++++++++++++-
  meta-luv/conf/distro/luv.conf                 |   2 +-
  meta-luv/conf/local.conf.sample               |   5 +-
  .../recipes-core/efivarfs/efivarfs-test.bb    |   1 -
@@ -26,7 +26,7 @@ Signed-off-by: G Edhaya Chandran <edhaya.chandran@arm.com>
  .../recipes-kernel/linux/linux-luv_4.18.bb    |   7 +-
  meta/conf/bitbake.conf                        |   2 +-
  .../systemd-serialgetty/serial-getty@.service |   2 +-
- 17 files changed, 255 insertions(+), 23 deletions(-)
+ 17 files changed, 256 insertions(+), 23 deletions(-)
 
 diff --git a/.templateconf b/.templateconf
 index 0fe6f82503..dce51a4f7a 100644
@@ -37,7 +37,7 @@ index 0fe6f82503..dce51a4f7a 100644
 -TEMPLATECONF=${TEMPLATECONF:-meta-poky/conf}
 +TEMPLATECONF=${TEMPLATECONF:-meta-luv/conf}
 diff --git a/meta-luv/classes/luv-efi.bbclass b/meta-luv/classes/luv-efi.bbclass
-index 86b364953c..115e0af0b5 100644
+index 86b364953c..61e807843f 100644
 --- a/meta-luv/classes/luv-efi.bbclass
 +++ b/meta-luv/classes/luv-efi.bbclass
 @@ -16,6 +16,13 @@ def get_bits_depends(d):
@@ -80,7 +80,7 @@ index 86b364953c..115e0af0b5 100644
      fi
  
      if echo "${TARGET_ARCH}" | grep -q "i.86" || [ "${TARGET_ARCH}" = "x86_64" ]; then
-@@ -90,6 +104,167 @@ efi_populate() {
+@@ -90,6 +104,168 @@ efi_populate() {
      install -m 0644 ${LUV_CFG} ${DEST}
  }
  
@@ -132,7 +132,7 @@ index 86b364953c..115e0af0b5 100644
 +                    cp -r FS%j:\EFI\BOOT\sbbr\AARCH64\* SCT_RUN\\
 +                    cp FS%j:\EFI\BOOT\sbbr\SbbrSctStartup.nsh SCT_RUN\\
 +                    echo \"Running SCT Tests...\"
-+                    FS%i:\SCT_RUN\SCT.efi -a -v
++                    FS%i:\SCT_RUN\SCT.efi -s SBBR.seq
 +                    goto Done
 +                  endif
 +                endfor
@@ -208,6 +208,7 @@ index 86b364953c..115e0af0b5 100644
 +efi_populate_startup() {
 +    DEST=$1
 +    echo "echo -off
++          connect -r
 +          for %i in 0 1 2 3 4 5 6 7 8 9 A B C D E F then
 +            if exist FS%i:\EFI\BOOT\sbbr\sbbr.nsh then
 +              FS%i:\EFI\BOOT\sbbr\sbbr.nsh
@@ -248,7 +249,7 @@ index 86b364953c..115e0af0b5 100644
  BITS_EFI_LOADER_IMAGE = "${DEST_EFI_LOADER_IMAGE}"
  efi_populate_bits() {
      DEST=$1
-@@ -170,6 +345,11 @@ python build_efi_cfg() {
+@@ -170,6 +346,11 @@ python build_efi_cfg() {
         cfgfile.write('default=bits\n')
         cfgfile.write('fallback=0\n')
  
@@ -260,7 +261,7 @@ index 86b364953c..115e0af0b5 100644
      cfgfile.write('menuentry \'luv\' {\n')
      kernel = d.getVar('KERNEL_IMAGETYPE')
      cfgfile.write('linux /%s ' % (kernel))
-@@ -200,6 +380,11 @@ python build_efi_cfg() {
+@@ -200,6 +381,11 @@ python build_efi_cfg() {
         cfgfile.write('chainloader /EFI/BOOT/bits/%s\n' % loader)
         cfgfile.write('}\n')
  
@@ -312,7 +313,7 @@ index 9f185fd166..2a1e1c2403 100644
  LUV_TEST_JSON="efivarfs.json"
 -LUV_TEST="efivarfs"
 diff --git a/meta-luv/recipes-core/fwts/fwts_git.bb b/meta-luv/recipes-core/fwts/fwts_git.bb
-index 08c67ae912..ecaa84ea87 100644
+index 08c67ae912..947c04f302 100644
 --- a/meta-luv/recipes-core/fwts/fwts_git.bb
 +++ b/meta-luv/recipes-core/fwts/fwts_git.bb
 @@ -4,11 +4,12 @@ HOMEPAGE = "https://wiki.ubuntu.com/Kernel/Reference/fwts"
@@ -320,10 +321,10 @@ index 08c67ae912..ecaa84ea87 100644
  LIC_FILES_CHKSUM = "file://src/main.c;beginline=1;endline=16;md5=31da590f3e9f3bd34dcdb9e4db568519"
  
 -PV = "V18.09.00+git${SRCPV}"
-+PV = "V18.02.00+git${SRCPV}"
++PV = "V21.08.00+git${SRCPV}"
  
 -SRCREV = "55ecee114fd2a91ba01750914cff8efed77f58d4"
-+SRCREV = "fc058734142d1de80fc52a211c8908a50ee03986"
++SRCREV = "c250078e8ea49c766c50b8b353872dcb00187035"
  SRC_URI = "git://kernel.ubuntu.com/hwe/fwts.git \
             file://luv-parser-fwts \
 +           file://sbbr-fwts.patch \
@@ -336,7 +337,7 @@ index 08c67ae912..ecaa84ea87 100644
  LUV_TEST_LOG_PARSER="luv-parser-fwts"
 -LUV_TEST_ARGS="-r stdout -q --uefitests --log-format='%owner;%field ' \
 -	      --batch"
-+LUV_TEST_ARGS="-r stdout -q --sbbr"
++LUV_TEST_ARGS="-r stdout -q --sbbr esrt uefibootpath"
  
  FILES_${PN} += "${libdir}/fwts/lib*${SOLIBS}"
  FILES_${PN} += "/lib/modules/${KERNEL_VERSION}/extra/efi_runtime.ko"
@@ -493,14 +494,14 @@ index e6263d9a63..922435f522 100644
  
         install -m 0644 ${WORKDIR}/luv-test-manager.service ${D}${systemd_unitdir}/system
 diff --git a/meta-luv/recipes-core/luv-test/luv-test/luv-test-manager b/meta-luv/recipes-core/luv-test/luv-test/luv-test-manager
-index ffb197c3ca..902f2caa9a 100644
+index ffb197c3ca..b795329694 100644
 --- a/meta-luv/recipes-core/luv-test/luv-test/luv-test-manager
 +++ b/meta-luv/recipes-core/luv-test/luv-test/luv-test-manager
 @@ -385,6 +385,15 @@ result=$(cat /tmp/testsuites)
  echo -e '\n'$result | tee -a /tmp/luv.results ${LUV_SAVE_RESULTS_DIR}/luv.results | \
          html_inline ${LUV_HTML_REPORT}
  
-+#test SDEI compliance on luv #Disabled SDEI tests from running automatically
++#test SDEI compliance on luv. Disabled SDEI tests from running automatically
 +#sh /etc/luv-sdei-test ${LUV_STORAGE}
 +
 +# test SBSA compliance on luv
