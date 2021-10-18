@@ -14,7 +14,7 @@ These tests are split between UEFI and Linux (supported by corresponding kernel 
 
 ## Release details
  - Code Quality: REL v3.1
- - **The latest pre-built release of ACS is available for download here: [v21.09_REL3.1](https://github.com/ARM-software/arm-enterprise-acs/tree/release/prebuilt_images/v21.09_REL3.1)** <br />
+ - **The latest pre-built release of ACS is available for download here: [v21.10_REL3.1](https://github.com/ARM-software/arm-enterprise-acs/tree/release/prebuilt_images/v21.10_REL3.1)** <br />
     **Please Note: The pre-built image of Enterprise ACS v3.1 integrates the tag v21.10_REL3.1.1 of sbsa-acs**
  - The SBSA tests are written for version 6.0 of the SBSA specification.
  - The SBBR tests are written for the SBBR section in version 1.0 of the BBR specification.
