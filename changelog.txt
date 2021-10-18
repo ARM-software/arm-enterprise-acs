@@ -1,3 +1,18 @@
+v21.10_REL3.1
+* SBSA: Fixes in test (PE and GIC)
+* SBSA: Enabling mmio prints dumps on demand.
+* SBSA: Enabled new ARI test in exerciser
+* SBSA: Enabled bare-metal driver for GIC
+* SBSA: PCIe Enumeration enhancements
+* SBSA: Bug fix and enhancements related to P2P, SMMU and PCIe
+* SBSA: Updated interrupt related test cases
+* SBBR: Movement to BBRv1.0 SBBR Recipe
+* SBBR: Upgrade to FWTS tag v21.08.00
+* SBBR: The FWTS --sbbr option is refined and added ESRT and UEFIBootPath tests
+* SBBR: Disable of SDEI from automation
+* SBBR: Upgrade to SCT tag v21.08. Movement to SBBR.seq file
+* Updated README to reflect BBR v1.0
+
 v20.10_REL3.0
 * SBSA: Added SBSA Level 6 PE, SMMU Tests.
 * SBSA: Added New PCIe, Exerciser tests Related to ATS, P2P, ACS Rules.
