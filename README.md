@@ -14,9 +14,10 @@ These tests are split between UEFI and Linux (supported by corresponding kernel 
 
 ## Release details
  - Code Quality: REL v3.1
- - **The latest pre-built release of ACS is available for download here: [v21.09_REL3.1](https://github.com/ARM-software/arm-enterprise-acs/tree/release/prebuilt_images/v21.09_REL3.1)**
+ - **The latest pre-built release of ACS is available for download here: [v21.09_REL3.1](https://github.com/ARM-software/arm-enterprise-acs/tree/release/prebuilt_images/v21.09_REL3.1)** <br />
+    **Please Note: The pre-built image of Enterprise ACS v3.1 integrates the tag v21.10_REL3.1.1 of sbsa-acs**
  - The SBSA tests are written for version 6.0 of the SBSA specification.
- - The SBBR tests are written for version 1.0 of the BBR specification.
+ - The SBBR tests are written for the SBBR section in version 1.0 of the BBR specification.
  - The compliance suite is not a substitute for design verification.
  - To review the ACS logs, Arm licensees can contact Arm directly through their partner managers.
 
@@ -130,9 +131,8 @@ The live image boots to UEFI Shell. The different test applications can be run i
         - SHA: 73f995b61a7b1b856a082203cbeb744a3f21880d
 
 - [Firmware Test Suite (FWTS) TAG: V21.08.00](http://kernel.ubuntu.com/git/hwe/fwts.git)
-  Note: For improved FTWS test coverage, use release images of ACSv2.5 or higher
 
-- [Server Base System Architecture (SBSA)](https://github.com/ARM-software/sbsa-acs) TAG: 1b3a37214fe6809e07e471f79d1ef856461bc803
+- [Server Base System Architecture (SBSA)](https://github.com/ARM-software/sbsa-acs) TAG: v21.10_REL3.1.1
 
 - [UEFI Self Certification Tests (UEFI-SCT)](https://github.com/tianocore/edk2-test) TAG: f3b3456152dacf26ec0abaa0c21a9432cc176630
 Note: UEFI-SCT is based on edk2-test release (tag:edk2-test-stable202108) which supports UEFI Specifications version 2.7
