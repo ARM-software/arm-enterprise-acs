@@ -1,4 +1,4 @@
-From adfb5e0adb4e152c775a0567779873d9c575e13f Mon Sep 17 00:00:00 2001
+From 8de5299cab9a0ca98b30d6dc7e3db0460d641887 Mon Sep 17 00:00:00 2001
 From: Mahesh Bireddy <mahesh.reddybireddy@arm.com>
 Date: Fri, 9 Nov 2018 13:23:59 +0530
 Subject: [PATCH] Luvos v3.1 ACS patch
@@ -7,6 +7,7 @@ Signed-off-by: Mahesh Bireddy <mahesh.reddybireddy@arm.com>
 Signed-off-by: Rajat Goyal <rajat.goyal@arm.com>
 Signed-off-by: G Edhaya Chandran <edhaya.chandran@arm.com>
 Signed-off-by: Gowtham Siddarth <gowtham.siddarth@arm.com>
+Signed-off-by: G Edhaya Chandran <edhaya.chandran@arm.com>
 Signed-off-by: G Edhaya Chandran <edhaya.chandran@arm.com>
 ---
  .templateconf                                 |   2 +-
@@ -22,11 +23,11 @@ Signed-off-by: G Edhaya Chandran <edhaya.chandran@arm.com>
  .../kernel-efi-warnings_0.1.bb                |   2 -
  meta-luv/recipes-core/luv-test/luv-test.bb    |   8 +
  .../luv-test/luv-test/luv-test-manager        |   9 +
- .../sbsigntool/sbsigntool_git.bb              |  11 +-
+ .../sbsigntool/sbsigntool_git.bb              |  15 +-
  .../recipes-kernel/linux/linux-luv_4.18.bb    |   7 +-
  meta/conf/bitbake.conf                        |   2 +-
  .../systemd-serialgetty/serial-getty@.service |   2 +-
- 17 files changed, 256 insertions(+), 23 deletions(-)
+ 17 files changed, 258 insertions(+), 25 deletions(-)
 
 diff --git a/.templateconf b/.templateconf
 index 0fe6f82503..dce51a4f7a 100644
@@ -514,9 +515,25 @@ index ffb197c3ca..b795329694 100644
  sleep 2
  
 diff --git a/meta-luv/recipes-devtools/sbsigntool/sbsigntool_git.bb b/meta-luv/recipes-devtools/sbsigntool/sbsigntool_git.bb
-index 69f050bb83..e85c758049 100644
+index 69f050bb83..485c6b2cb3 100644
 --- a/meta-luv/recipes-devtools/sbsigntool/sbsigntool_git.bb
 +++ b/meta-luv/recipes-devtools/sbsigntool/sbsigntool_git.bb
+@@ -3,13 +3,13 @@ SUMMARY = "Signing utility for UEFI secure boot"
+ LICENSE = "GPLv3"
+ LIC_FILES_CHKSUM = "file://LICENSE.GPLv3;md5=9eef91148a9b14ec7f9df333daebc746"
+ 
+-SRC_URI = "gitsm://kernel.ubuntu.com/jk/sbsigntool;protocol=git \
++SRC_URI = "gitsm://kernel.googlesource.com/pub/scm/linux/kernel/git/jejb/sbsigntools;protocol=http \
+     file://fix-mixed-implicit-and-normal-rules.patch;apply=1 \
+     file://disable-man-page-creation.patch \
+     file://0001-configure-fix-cross-compilation.patch \
+ "
+ 
+-SRCREV="${AUTOREV}"
++SRCREV="951ee95a301674c046f55330cd7460e1314deff2"
+ 
+ inherit autotools-brokensep pkgconfig
+ 
 @@ -30,7 +30,16 @@ do_configure() {
      fi
  
