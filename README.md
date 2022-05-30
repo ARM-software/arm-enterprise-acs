@@ -1,5 +1,7 @@
 # Arm Enterprise ACS - Architecture Compliance Suite
 
+### DEPRECATION NOTICE: This repository is deprecated. All support for the repository will end on 31st October 2022 after which it shall be archived. Refer to [Arm SystemReady SR ACS](https://github.com/ARM-software/arm-systemready/tree/main/SR) for the new ACS.
+
 ## Architecture Compliance Suite
 Architecture Compliance Suite (ACS) is used to ensure architectural compliance across different implementations of the architecture. Arm Enterprise ACS includes a set of examples of the invariant behaviors that are provided by a set of specifications for enterprise systems (For example: SBSA, SBBR, etc.), so that implementers can verify if these behaviours have been interpreted correctly. ACS is delivered with tests in source form along with a build script, the output of the build being a bootable Linux UEFI Validation (LUV) OS image that can run all tests required by these specifications.
 
